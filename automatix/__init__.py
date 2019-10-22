@@ -1,12 +1,18 @@
 import argparse
 import logging
+import os
+import yaml
 
 from collections import OrderedDict
+
+CONFIG_PATH = os.getenv('AUTOMATIX_CONFIG_DIR', '~/automatix-config')
 
 CONFIG_FIELDS = OrderedDict()
 CONFIG_FIELDS['systems'] = 'Systems'
 CONFIG_FIELDS['vars'] = 'Variables'
 CONFIG_FIELDS['secrets'] = 'Secrets'
+
+yaml.warnings({'YAMLLoadWarning': False})
 
 LOG = logging.getLogger(__name__)
 
@@ -55,7 +61,35 @@ def _arguments():
     return parser.parse_args()
 
 
+def _overwrite(config: dict, key: str, data: str):
+    config.setdefault(key, {})
+    for item in data:
+        k, v = item.split('=')
+        config[key][k] = v
+
+
+def get_config(args: argparse.Namespace) -> dict:
+    configfile = args.configfile
+    if not os.path.isfile(args.configfile):
+        configfile = f'{CONFIG_PATH}/{args.configfile}'
+
+    config = read_config(configfile)
+
+    for field in CONFIG_FIELDS.keys():
+        if vars(args).get(field):
+            _overwrite(config=config, key=field, data=vars(args)[field])
+
+    return config
+
+
+def read_config(configfile: str) -> dict:
+    with open(configfile) as file:
+        return yaml.load(file.read())
+
+
 def main():
     args = _arguments()
+
+    config = get_config(args=args)
     
     print('Not implemented yet!')
