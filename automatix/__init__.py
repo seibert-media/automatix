@@ -5,6 +5,8 @@ import yaml
 
 from collections import OrderedDict
 
+from .logger import LOG
+
 CONFIG_PATH = os.getenv('AUTOMATIX_CONFIG_DIR', '~/automatix-config')
 
 CONFIG_FIELDS = OrderedDict()
@@ -13,8 +15,6 @@ CONFIG_FIELDS['vars'] = 'Variables'
 CONFIG_FIELDS['secrets'] = 'Secrets'
 
 yaml.warnings({'YAMLLoadWarning': False})
-
-LOG = logging.getLogger(__name__)
 
 
 def _arguments():
@@ -90,6 +90,9 @@ def read_config(configfile: str) -> dict:
 def main():
     args = _arguments()
 
+    if args.debug:
+        LOG.setLevel(logging.DEBUG)
+
     config = get_config(args=args)
-    
+
     print('Not implemented yet!')
