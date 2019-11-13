@@ -13,4 +13,6 @@ def _notice(self, msg, *args, **kwargs):
         self._log(NOTICE, msg, args, **kwargs)
 
 
+_patch_add_notice_level_to_logging()
 LOG = logging.getLogger('automatix')
+LOG.setLevel(logging.DEBUG)
