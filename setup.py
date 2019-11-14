@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='automatix',
-    version='0.0.3',
+    version='0.0.4',
     description='Automation wrapper for bash and python commands',
     url='https://github.com/seibert-media/automatix',
     author='Johannes Paul, //SEIBERT/MEDIA GmbH',

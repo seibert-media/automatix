@@ -1,5 +1,10 @@
 # Changelog
 
+# 0.0.4
+
+- Add AUTOMATIX_SCRIPT_DIR
+- Improve performance (by reducing multiple imports)
+
 # 0.0.3
 
 - Add bundlewrap, teamvault and custom logging support
