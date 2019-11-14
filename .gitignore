@@ -1,0 +1,5 @@
+build/
+dist/
+.automatix.cfg.yaml
+test.yaml
+*.egg-info/
