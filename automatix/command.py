@@ -2,21 +2,15 @@ import os
 import re
 import subprocess
 
-from importlib import import_module
 from shlex import quote
 
 from .constants import CONSTANTS
+from .logger import LOG
 
 ENCODING = os.getenv('ENCODING', 'utf-8')
 IMPORT_PATH = '.'
 SSH_CMD = 'ssh {hostname} sudo '
 REMOTE_TMP_DIR = 'automatix_tmp'
-
-if os.getenv('LOGGING_LIB'):
-    log_lib = import_module(os.getenv('LOGGING_LIB'))
-    LOG = log_lib.LOG
-else:
-    from .logger import LOG
 
 
 class Command:

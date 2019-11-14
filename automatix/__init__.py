@@ -1,13 +1,11 @@
 import argparse
-import logging
 import os
 import yaml
 
 from collections import OrderedDict
 
-from .command import Command, AbortException, LOG
-
-
+from .command import Command, AbortException
+from .logger import LOG, init_logger
 
 CONFIG_PATH = os.getenv('AUTOMATIX_CONFIG_DIR', '~/automatix-config')
 
@@ -149,9 +147,7 @@ def execute_extra_pipeline(config: dict, variables: dict, pipeline: str):
 
 def main():
     args = _arguments()
-
-    if args.debug:
-        LOG.setLevel(logging.DEBUG)
+    init_logger(debug=args.debug)
 
     config = get_config(args=args)
 
