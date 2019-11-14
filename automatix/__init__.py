@@ -35,6 +35,9 @@ configfile = os.getenv('AUTOMATIX_CONFIG', '~/.automatix.cfg.yaml')
 if os.path.isfile(configfile):
     CONFIG.update(read_yaml(configfile))
 
+if os.getenv('AUTOMATIX_SCRIPT_DIR'):
+    CONFIG['script_dir'] = os.getenv('AUTOMATIX_SCRIPT_DIR')
+
 if CONFIG.get('logging_lib'):
     log_lib = import_module(CONFIG.get('logging_lib'))
     init_logger = log_lib.init_logger
