@@ -1,6 +1,5 @@
 import logging
 
-from importlib import import_module
 from sys import stderr, stdout
 
 NOTICE = 25
@@ -93,10 +92,4 @@ def _notice(self, msg, *args, **kwargs):
         self._log(NOTICE, msg, args, **kwargs)
 
 
-LOG = logging.getLogger('automatix')
 _patch_add_notice_level_to_logging()
-
-# if os.getenv('LOGGING_LIB'):
-#     log_lib = import_module(os.getenv('LOGGING_LIB'))
-#     LOG = log_lib.LOG
-# else:

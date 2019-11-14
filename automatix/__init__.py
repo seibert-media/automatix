@@ -1,19 +1,58 @@
 import argparse
+import logging
 import os
 import yaml
 
 from collections import OrderedDict
+from importlib import import_module
 
 from .command import Command, AbortException
-from .logger import LOG, init_logger
 
-SCRIPT_PATH = os.getenv('AUTOMATIX_SCRIPTS_DIR', '~/automatix-config')
+yaml.warnings({'YAMLLoadWarning': False})
 
 SCRIPT_FIELDS = OrderedDict()
 SCRIPT_FIELDS['systems'] = 'Systems'
 SCRIPT_FIELDS['vars'] = 'Variables'
 
-yaml.warnings({'YAMLLoadWarning': False})
+
+def read_yaml(yamlfile: str) -> dict:
+    with open(yamlfile) as file:
+        return yaml.load(file.read())
+
+
+CONFIG = {
+    'script_dir': '~/automatix-config',
+    'encoding': os.getenv('ENCODING', 'utf-8'),
+    'import_path': '.',
+    'ssh_cmd': 'ssh {hostname} sudo ',
+    'remote_tmp_dir': 'automatix_tmp',
+    'logger': 'automatix',
+    'bundlewrap': False,
+    'teamvault': False,
+}
+
+configfile = os.getenv('AUTOMATIX_CONFIG', '~/.automatix.cfg.yaml')
+if os.path.isfile(configfile):
+    CONFIG.update(read_yaml(configfile))
+
+if CONFIG.get('logging_lib'):
+    log_lib = import_module(CONFIG.get('logging_lib'))
+    init_logger = log_lib.init_logger
+else:
+    from .logger import init_logger
+
+LOG = logging.getLogger(CONFIG['logger'])
+
+SCRIPT_PATH = CONFIG['script_dir']
+
+if CONFIG['teamvault']:
+    import bwtv
+
+    SCRIPT_FIELDS['secrets'] = 'Secrets'
+
+
+    class UnknownSecretTypeException(Exception):
+        pass
 
 
 def _arguments():
@@ -68,11 +107,11 @@ def _overwrite(script: dict, key: str, data: str):
 
 
 def get_script(args: argparse.Namespace) -> dict:
-    scriptfile = args.scriptfile
+    file = args.scriptfile
     if not os.path.isfile(args.scriptfile):
         file = f'{SCRIPT_PATH}/{args.scriptfile}'
 
-    script = read_script(scriptfile)
+    script = read_yaml(file)
 
     for field in SCRIPT_FIELDS.keys():
         if vars(args).get(field):
@@ -81,14 +120,20 @@ def get_script(args: argparse.Namespace) -> dict:
     return script
 
 
-def read_script(scriptfile: str) -> dict:
-    with open(scriptfile) as file:
-        return yaml.load(file.read())
-
-
 def collect_vars(script: dict) -> dict:
     var_dict = script.get('vars', {})
     script['vars'] = var_dict  # just for the case it was empty
+    if CONFIG['teamvault']:
+        for key, secret in script.get('secrets', {}).items():
+            sid, field = secret.split('_')
+            if field == 'password':
+                var_dict[key] = bwtv.password(sid)
+            elif field == 'username':
+                var_dict[key] = bwtv.username(sid)
+            elif field == 'file':
+                var_dict[key] = bwtv.file(sid)
+            else:
+                raise UnknownSecretTypeException(field)
     for syskey, system in script.get('systems', {}).items():
         var_dict[f'system_{syskey}'] = system
     return var_dict
@@ -98,6 +143,7 @@ def build_command_list(script: dict, variables: dict, pipeline: str) -> [Command
     command_list = []
     for index, cmd in enumerate(script[pipeline]):
         new_cmd = Command(
+            config=CONFIG,
             pipeline_cmd=cmd,
             index=index,
             systems=script.get('systems', {}),
@@ -147,7 +193,7 @@ def execute_extra_pipeline(script: dict, variables: dict, pipeline: str):
 
 def main():
     args = _arguments()
-    init_logger(debug=args.debug)
+    init_logger(name=CONFIG['logger'], debug=args.debug)
 
     script = get_script(args=args)
 

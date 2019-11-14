@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import subprocess
@@ -5,21 +6,23 @@ import subprocess
 from shlex import quote
 
 from .constants import CONSTANTS
-from .logger import LOG
-
-ENCODING = os.getenv('ENCODING', 'utf-8')
-IMPORT_PATH = '.'
-SSH_CMD = 'ssh {hostname} sudo '
-REMOTE_TMP_DIR = 'automatix_tmp'
 
 
 class Command:
-    def __init__(self, pipeline_cmd: dict, index: int, systems: dict, variables: dict, imports: []):
+    def __init__(self, config: dict, pipeline_cmd: dict, index: int, systems: dict, variables: dict, imports: []):
+        self.config = config
         self.pipeline_cmd = pipeline_cmd
         self.index = index
         self.systems = systems
         self.vars = variables
         self.imports = imports
+
+        self.LOG = logging.getLogger(config['logger'])
+
+        if self.config['bundlewrap']:
+            from bundlewrap.repo import Repository
+            self.bw_repo = Repository(repo_path=os.environ.get('BW_REPO_PATH'))
+
         for key, value in pipeline_cmd.items():
             self.orig_key = key
             self.assignment, self.assignment_var, self.key = get_assignment_var(key=key)
@@ -54,7 +57,7 @@ class Command:
         return self.value.format(**variables)
 
     def execute(self, interactive: bool = False, force: bool = False):
-        LOG.notice(f'\n({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
+        self.LOG.notice(f'\n({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
         return_code = 0
 
         if self.get_type() == 'manual' or interactive:
@@ -72,7 +75,7 @@ class Command:
             return_code = self._remote_action()
 
         if return_code != 0:
-            LOG.error(f'Command ({self.index}) failed with return code {return_code}.')
+            self.LOG.error(f'Command ({self.index}) failed with return code {return_code}.')
             if force:
                 return
             err_answer = input('What should I do? (p: proceed (default), r: retry, a: abort)')
@@ -82,55 +85,59 @@ class Command:
                 raise AbortException(str(return_code))
 
     def _local_action(self) -> int:
-        cmd = self._build_command(path=IMPORT_PATH)
+        cmd = self._build_command(path=self.config['import_path'])
         try:
             return self._run_local_command(cmd=cmd)
         except KeyboardInterrupt:
-            LOG.info('Abort command by user key stroke. Exit code is set to 130.')
+            self.LOG.info('Abort command by user key stroke. Exit code is set to 130.')
             return 130
 
     def _python_action(self) -> int:
         cmd = self.get_resolved_value()
-        # for key, value in self.systems.items():
-        #    exec(f'{key}_node = BW_REPO.get_node(value)')
+        if self.config['bundlewrap']:
+            for key, value in self.systems.items():
+                exec(f'{key}_node = self.bw_repo.get_node(value)')
         try:
-            LOG.debug(f'Run python command: {cmd}')
+            self.LOG.debug(f'Run python command: {cmd}')
             if self.assignment_var:
                 exec(f'self.vars[self.assignment_var] = {cmd}')
-                LOG.info(f'Variable {self.assignment_var} = {self.vars[self.assignment_var]}')
+                self.LOG.info(f'Variable {self.assignment_var} = {self.vars[self.assignment_var]}')
             else:
                 exec(cmd)
             return 0
         except KeyboardInterrupt:
-            LOG.info('Abort command by user key stroke. Exit code is set to 130.')
+            self.LOG.info('Abort command by user key stroke. Exit code is set to 130.')
             return 130
         except Exception as exc:
-            LOG.error(exc)
+            self.LOG.error(exc)
             return 1
 
     def _remote_action(self) -> int:
-        # node = BW_REPO.get_node(self.get_system())
         hostname = self.get_system()
-        ssh_cmd = SSH_CMD.format(hostname=hostname)
+        if self.config['bundlewrap']:
+            node = self.bw_repo.get_node(self.get_system())
+            hostname = node.hostname
+
+        ssh_cmd = self.config["ssh_cmd"].format(hostname=hostname)
         remote_cmd = self.get_resolved_value()
         prefix = ''
         if self.imports:
-            prefix = f'tar -C {IMPORT_PATH} -cf - ' + ' '.join(self.imports) + ' | '
-            remote_cmd = f'mkdir {REMOTE_TMP_DIR};' \
-                f' tar -C {REMOTE_TMP_DIR} -xf -;' \
-                f' {self._build_command(path=REMOTE_TMP_DIR)}'
+            prefix = f'tar -C {self.config["import_path"]} -cf - ' + ' '.join(self.imports) + ' | '
+            remote_cmd = f'mkdir {self.config["remote_tmp_dir"]};' \
+                f' tar -C {self.config["remote_tmp_dir"]} -xf -;' \
+                f' {self._build_command(path=self.config["remote_tmp_dir"])}'
 
         cmd = f'{prefix}{ssh_cmd}{quote("bash -c " + quote(remote_cmd))}'
 
         try:
             exitcode = self._run_local_command(cmd=cmd)
         except KeyboardInterrupt:
-            LOG.info('Abort command by user key stroke. Exit code is set to 130.')
+            self.LOG.info('Abort command by user key stroke. Exit code is set to 130.')
             exitcode = 130
 
-            ps_pids = get_remote_pids(hostname=hostname, cmd=self.get_resolved_value())
+            ps_pids = self.get_remote_pids(hostname=hostname, cmd=self.get_resolved_value())
             while ps_pids:
-                LOG.notice('Remote command seems still to be running! Found PIDs: {}'.format(','.join(ps_pids)))
+                self.LOG.notice('Remote command seems still to be running! Found PIDs: {}'.format(','.join(ps_pids)))
                 answer = input(
                     'What should I do? '
                     '(i: send SIGINT (default), t: send SIGTERM, k: send SIGKILL, p: do nothing and proceed) ')
@@ -145,18 +152,18 @@ class Command:
                     signal = 'INT'
                 for pid in ps_pids:
                     kill_cmd = f'{ssh_cmd} kill -{signal} {pid}'
-                    LOG.info(f'Kill {pid} on {hostname}')
+                    self.LOG.info(f'Kill {pid} on {hostname}')
                     subprocess.run(kill_cmd, shell=True)
 
-                ps_pids = get_remote_pids(hostname=hostname, cmd=self.get_resolved_value())
-            LOG.info('Keystroke interrupt handled.\n')
+                ps_pids = self.get_remote_pids(hostname=hostname, cmd=self.get_resolved_value())
+            self.LOG.info('Keystroke interrupt handled.\n')
 
         if self.imports:
-            cleanup_cmd = f'{ssh_cmd} rm -r {REMOTE_TMP_DIR}'
-            LOG.debug(f'Executing: {cleanup_cmd}')
+            cleanup_cmd = f'{ssh_cmd} rm -r {self.config["remote_tmp_dir"]}'
+            self.LOG.debug(f'Executing: {cleanup_cmd}')
             proc = subprocess.run(cleanup_cmd, shell=True, executable='/bin/bash')
             if proc.returncode != 0:
-                LOG.warning(f'Failed to remove {REMOTE_TMP_DIR}, exitcode: {proc.returncode}')
+                self.LOG.warning(f'Failed to remove {self.config["remote_tmp_dir"]}, exitcode: {proc.returncode}')
 
         return exitcode
 
@@ -166,23 +173,22 @@ class Command:
         return f'. {path}/' + f'; . {path}/'.join(self.imports) + '; ' + self.get_resolved_value()
 
     def _run_local_command(self, cmd: str) -> int:
-        LOG.debug(f'Executing: {cmd}')
+        self.LOG.debug(f'Executing: {cmd}')
         if self.assignment:
             proc = subprocess.run(cmd, shell=True, executable='/bin/bash', stdout=subprocess.PIPE)
-            output = proc.stdout.decode(ENCODING)
+            output = proc.stdout.decode(self.config["encoding"])
             self.vars[self.assignment_var] = output
-            LOG.info(f'Variable {self.assignment_var} = {output}')
+            self.LOG.info(f'Variable {self.assignment_var} = {output}')
         else:
             proc = subprocess.run(cmd, shell=True, executable='/bin/bash')
         return proc.returncode
 
+    def get_remote_pids(self, hostname, cmd) -> []:
+        ps_cmd = f"ps axu | grep {quote(cmd)} | grep -v 'grep' | awk '{{print $2}}'"
+        cmd = f'ssh {hostname} {quote(ps_cmd)} 2>&1'
+        pids = subprocess.check_output(cmd, shell=True, executable='/bin/bash').decode(self.config["encoding"]).split()
 
-def get_remote_pids(hostname, cmd) -> []:
-    ps_cmd = f"ps axu | grep {quote(cmd)} | grep -v 'grep' | awk '{{print $2}}'"
-    cmd = f'ssh {hostname} {quote(ps_cmd)} 2>&1'
-    pids = subprocess.check_output(cmd, shell=True, executable='/bin/bash').decode(ENCODING).split()
-
-    return pids
+        return pids
 
 
 def get_assignment_var(key) -> (bool, str, str):
