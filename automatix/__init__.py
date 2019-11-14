@@ -7,11 +7,11 @@ from collections import OrderedDict
 from .command import Command, AbortException
 from .logger import LOG, init_logger
 
-CONFIG_PATH = os.getenv('AUTOMATIX_CONFIG_DIR', '~/automatix-config')
+SCRIPT_PATH = os.getenv('AUTOMATIX_SCRIPTS_DIR', '~/automatix-config')
 
-CONFIG_FIELDS = OrderedDict()
-CONFIG_FIELDS['systems'] = 'Systems'
-CONFIG_FIELDS['vars'] = 'Variables'
+SCRIPT_FIELDS = OrderedDict()
+SCRIPT_FIELDS['systems'] = 'Systems'
+SCRIPT_FIELDS['vars'] = 'Variables'
 
 yaml.warnings({'YAMLLoadWarning': False})
 
@@ -21,14 +21,14 @@ def _arguments():
         description='Process automation tool',
     )
     parser.add_argument(
-        'configfile',
-        help='Path to configfile (yaml), use " -- " if needed to delimit this from argument fields',
+        'scriptfile',
+        help='Path to scriptfile (yaml), use " -- " if needed to delimit this from argument fields',
     )
-    for field in CONFIG_FIELDS.keys():
+    for field in SCRIPT_FIELDS.keys():
         parser.add_argument(
             f'--{field}',
             nargs='*',
-            help=f'Use this to set {field} without adding them to the config or to overwrite them. '
+            help=f'Use this to set {field} without adding them to the script or to overwrite them. '
             f'You can specify multiple {field} like: --{field} v1=string1 v2=string2 v3=string3',
         )
     parser.add_argument(
@@ -60,49 +60,49 @@ def _arguments():
     return parser.parse_args()
 
 
-def _overwrite(config: dict, key: str, data: str):
-    config.setdefault(key, {})
+def _overwrite(script: dict, key: str, data: str):
+    script.setdefault(key, {})
     for item in data:
         k, v = item.split('=')
-        config[key][k] = v
+        script[key][k] = v
 
 
-def get_config(args: argparse.Namespace) -> dict:
-    configfile = args.configfile
-    if not os.path.isfile(args.configfile):
-        configfile = f'{CONFIG_PATH}/{args.configfile}'
+def get_script(args: argparse.Namespace) -> dict:
+    scriptfile = args.scriptfile
+    if not os.path.isfile(args.scriptfile):
+        file = f'{SCRIPT_PATH}/{args.scriptfile}'
 
-    config = read_config(configfile)
+    script = read_script(scriptfile)
 
-    for field in CONFIG_FIELDS.keys():
+    for field in SCRIPT_FIELDS.keys():
         if vars(args).get(field):
-            _overwrite(config=config, key=field, data=vars(args)[field])
+            _overwrite(script=script, key=field, data=vars(args)[field])
 
-    return config
+    return script
 
 
-def read_config(configfile: str) -> dict:
-    with open(configfile) as file:
+def read_script(scriptfile: str) -> dict:
+    with open(scriptfile) as file:
         return yaml.load(file.read())
 
 
-def collect_vars(config: dict) -> dict:
-    var_dict = config.get('vars', {})
-    config['vars'] = var_dict  # just for the case it was empty
-    for syskey, system in config.get('systems', {}).items():
+def collect_vars(script: dict) -> dict:
+    var_dict = script.get('vars', {})
+    script['vars'] = var_dict  # just for the case it was empty
+    for syskey, system in script.get('systems', {}).items():
         var_dict[f'system_{syskey}'] = system
     return var_dict
 
 
-def build_command_list(config: dict, variables: dict, pipeline: str) -> [Command]:
+def build_command_list(script: dict, variables: dict, pipeline: str) -> [Command]:
     command_list = []
-    for index, cmd in enumerate(config[pipeline]):
+    for index, cmd in enumerate(script[pipeline]):
         new_cmd = Command(
             pipeline_cmd=cmd,
             index=index,
-            systems=config.get('systems', {}),
+            systems=script.get('systems', {}),
             variables=variables,
-            imports=config.get('imports', []),
+            imports=script.get('imports', []),
         )
         command_list.append(new_cmd)
         if new_cmd.assignment:
@@ -110,11 +110,11 @@ def build_command_list(config: dict, variables: dict, pipeline: str) -> [Command
     return command_list
 
 
-def print_main_data(config: dict):
-    LOG.info(f"\nName: {config['name']}")
-    for fieldkey, fieldvalue in CONFIG_FIELDS.items():
+def print_main_data(script: dict):
+    LOG.info(f"\nName: {script['name']}")
+    for fieldkey, fieldvalue in SCRIPT_FIELDS.items():
         LOG.info(f'\n{fieldvalue}:')
-        for key, value in config.get(fieldkey, {}).items():
+        for key, value in script.get(fieldkey, {}).items():
             LOG.info(f" {key}: {value}")
 
 
@@ -129,10 +129,10 @@ def execute_pipeline(command_list: [Command], args: argparse.Namespace, start_in
         cmd.execute(interactive=args.interactive, force=args.force)
 
 
-def execute_extra_pipeline(config: dict, variables: dict, pipeline: str):
+def execute_extra_pipeline(script: dict, variables: dict, pipeline: str):
     try:
-        if config.get(pipeline):
-            pipeline_list = build_command_list(config=config, variables=variables, pipeline=pipeline)
+        if script.get(pipeline):
+            pipeline_list = build_command_list(script=script, variables=variables, pipeline=pipeline)
             LOG.info('\n------------------------------')
             LOG.info(f' --- Start {pipeline.upper()} pipeline ---')
             execute_pipeline(command_list=pipeline_list, args=argparse.Namespace(interactive=False, force=False))
@@ -149,19 +149,19 @@ def main():
     args = _arguments()
     init_logger(debug=args.debug)
 
-    config = get_config(args=args)
+    script = get_script(args=args)
 
-    for field in CONFIG_FIELDS.keys():
+    for field in SCRIPT_FIELDS.keys():
         if vars(args).get(field):
-            _overwrite(config=config, key=field, data=vars(args)[field])
+            _overwrite(script=script, key=field, data=vars(args)[field])
 
-    variables = collect_vars(config)
+    variables = collect_vars(script)
 
-    command_list = build_command_list(config=config, variables=variables, pipeline='pipeline')
+    command_list = build_command_list(script=script, variables=variables, pipeline='pipeline')
 
-    execute_extra_pipeline(config=config, variables=variables, pipeline='always')
+    execute_extra_pipeline(script=script, variables=variables, pipeline='always')
 
-    print_main_data(config)
+    print_main_data(script)
     print_command_line_steps(command_list)
     if args.print_overview:
         exit()
@@ -170,14 +170,14 @@ def main():
         execute_pipeline(command_list=command_list, args=args, start_index=int(args.jump_to))
     except AbortException as exc:
         LOG.debug('Abort requested. Cleaning up.')
-        execute_extra_pipeline(config=config, variables=variables, pipeline='cleanup')
+        execute_extra_pipeline(script=script, variables=variables, pipeline='cleanup')
         LOG.debug('Clean up done. Exiting.')
         exit(int(str(exc)))
     except KeyboardInterrupt:
         LOG.warning('\nAborted by user. Exiting.')
         exit(130)
 
-    execute_extra_pipeline(config=config, variables=variables, pipeline='cleanup')
+    execute_extra_pipeline(script=script, variables=variables, pipeline='cleanup')
 
     LOG.info('---------------------------------------------------------------')
     LOG.info('Automatix finished: Congratulations and have a N.I.C.E. day :-)')

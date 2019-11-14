@@ -25,7 +25,7 @@ class Command:
             self.assignment, self.assignment_var, self.key = get_assignment_var(key=key)
             if isinstance(value, dict):
                 # We need this workaround because the yaml lib returns a dictionary instead of a string,
-                # if there is nothing but a variable in the command. Alternative is to use quotes in the config yaml.
+                # if there is nothing but a variable in the command. Alternative is to use quotes in the script yaml.
                 self.value = f'{{{next(iter(value))}}}'
             else:
                 self.value = value
