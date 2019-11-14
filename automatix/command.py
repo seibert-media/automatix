@@ -19,10 +19,6 @@ class Command:
 
         self.LOG = logging.getLogger(config['logger'])
 
-        if self.config['bundlewrap']:
-            from bundlewrap.repo import Repository
-            self.bw_repo = Repository(repo_path=os.environ.get('BW_REPO_PATH'))
-
         for key, value in pipeline_cmd.items():
             self.orig_key = key
             self.assignment, self.assignment_var, self.key = get_assignment_var(key=key)
@@ -96,7 +92,7 @@ class Command:
         cmd = self.get_resolved_value()
         if self.config['bundlewrap']:
             for key, value in self.systems.items():
-                exec(f'{key}_node = self.bw_repo.get_node(value)')
+                exec(f'{key}_node = self.config["bw_repo"].get_node(value)')
         try:
             self.LOG.debug(f'Run python command: {cmd}')
             if self.assignment_var:
@@ -115,7 +111,7 @@ class Command:
     def _remote_action(self) -> int:
         hostname = self.get_system()
         if self.config['bundlewrap']:
-            node = self.bw_repo.get_node(self.get_system())
+            node = self.config['bw_repo'].get_node(self.get_system())
             hostname = node.hostname
 
         ssh_cmd = self.config["ssh_cmd"].format(hostname=hostname)

@@ -44,6 +44,10 @@ if CONFIG.get('logging_lib'):
 else:
     from .logger import init_logger
 
+if CONFIG.get('bundlewrap'):
+    from bundlewrap.repo import Repository
+    CONFIG['bw_repo'] = Repository(repo_path=os.environ.get('BW_REPO_PATH'))
+
 LOG = logging.getLogger(CONFIG['logger'])
 
 SCRIPT_PATH = CONFIG['script_dir']
