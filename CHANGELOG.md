@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.0.5
+
+- Add warning to README
+
 # 0.0.4
 
 - Add AUTOMATIX_SCRIPT_DIR
