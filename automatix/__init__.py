@@ -46,7 +46,11 @@ else:
 
 if CONFIG.get('bundlewrap'):
     from bundlewrap.repo import Repository
+    from .bundlewrap import BWCommand
     CONFIG['bw_repo'] = Repository(repo_path=os.environ.get('BW_REPO_PATH'))
+    cmdClass = BWCommand
+else:
+    cmdClass = Command
 
 LOG = logging.getLogger(CONFIG['logger'])
 
@@ -149,7 +153,7 @@ def collect_vars(script: dict) -> dict:
 def build_command_list(script: dict, variables: dict, pipeline: str) -> [Command]:
     command_list = []
     for index, cmd in enumerate(script[pipeline]):
-        new_cmd = Command(
+        new_cmd = cmdClass(
             config=CONFIG,
             pipeline_cmd=cmd,
             index=index,

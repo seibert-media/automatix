@@ -1,5 +1,4 @@
 import logging
-import os
 import re
 import subprocess
 
@@ -88,11 +87,12 @@ class Command:
             self.LOG.info('Abort command by user key stroke. Exit code is set to 130.')
             return 130
 
+    def _prepare_python_action(self, scope: dict):
+        pass
+
     def _python_action(self) -> int:
         cmd = self.get_resolved_value()
-        if self.config['bundlewrap']:
-            for key, value in self.systems.items():
-                exec(f'{key}_node = self.config["bw_repo"].get_node(value)')
+        self._prepare_python_action(scope=locals())
         try:
             self.LOG.debug(f'Run python command: {cmd}')
             if self.assignment_var:
@@ -108,11 +108,11 @@ class Command:
             self.LOG.error(exc)
             return 1
 
+    def _get_remote_hostname(self):
+        return self.get_system()
+
     def _remote_action(self) -> int:
-        hostname = self.get_system()
-        if self.config['bundlewrap']:
-            node = self.config['bw_repo'].get_node(self.get_system())
-            hostname = node.hostname
+        hostname = self._get_remote_hostname()
 
         ssh_cmd = self.config["ssh_cmd"].format(hostname=hostname)
         remote_cmd = self.get_resolved_value()
