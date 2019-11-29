@@ -131,27 +131,31 @@ class Command:
             self.LOG.info('Abort command by user key stroke. Exit code is set to 130.')
             exitcode = 130
 
-            ps_pids = self.get_remote_pids(hostname=hostname, cmd=self.get_resolved_value())
-            while ps_pids:
-                self.LOG.notice('Remote command seems still to be running! Found PIDs: {}'.format(','.join(ps_pids)))
-                answer = input(
-                    'What should I do? '
-                    '(i: send SIGINT (default), t: send SIGTERM, k: send SIGKILL, p: do nothing and proceed) ')
-
-                if answer == 'p':
-                    break
-                elif answer == 't':
-                    signal = 'TERM'
-                elif answer == 'k':
-                    signal = 'KILL'
-                else:
-                    signal = 'INT'
-                for pid in ps_pids:
-                    kill_cmd = f'{ssh_cmd} kill -{signal} {pid}'
-                    self.LOG.info(f'Kill {pid} on {hostname}')
-                    subprocess.run(kill_cmd, shell=True)
-
+            try:
                 ps_pids = self.get_remote_pids(hostname=hostname, cmd=self.get_resolved_value())
+                while ps_pids:
+                    self.LOG.notice('Remote command seems still to be running! Found PIDs: {}'.format(','.join(ps_pids)))
+                    answer = input(
+                        'What should I do? '
+                        '(i: send SIGINT (default), t: send SIGTERM, k: send SIGKILL, p: do nothing and proceed) ')
+
+                    if answer == 'p':
+                        break
+                    elif answer == 't':
+                        signal = 'TERM'
+                    elif answer == 'k':
+                        signal = 'KILL'
+                    else:
+                        signal = 'INT'
+                    for pid in ps_pids:
+                        kill_cmd = f'{ssh_cmd} kill -{signal} {pid}'
+                        self.LOG.info(f'Kill {pid} on {hostname}')
+                        subprocess.run(kill_cmd, shell=True)
+
+                    ps_pids = self.get_remote_pids(hostname=hostname, cmd=self.get_resolved_value())
+            except subprocess.CalledProcessError:
+                self.LOG.warning('Could not check for remaining remote processes.')
+
             self.LOG.info('Keystroke interrupt handled.\n')
 
         if self.imports:
