@@ -8,15 +8,21 @@ from .constants import CONSTANTS
 
 
 class Command:
-    def __init__(self, config: dict, pipeline_cmd: dict, index: int, systems: dict, variables: dict, imports: []):
-        self.config = config
+    config: dict = {}
+    systems: dict = {}
+    vars: dict = {}
+    imports: list = []
+    LOG = logging.getLogger()
+
+    def __init__(self, pipeline_cmd: dict, index: int):
         self.pipeline_cmd = pipeline_cmd
         self.index = index
-        self.systems = systems
-        self.vars = variables
-        self.imports = imports
 
-        self.LOG = logging.getLogger(config['logger'])
+        self.config = self.__class__.config
+        self.systems = self.__class__.systems
+        self.vars = self.__class__.vars
+        self.imports = self.__class__.imports
+        self.LOG = self.__class__.LOG
 
         for key, value in pipeline_cmd.items():
             self.orig_key = key
@@ -87,19 +93,19 @@ class Command:
             self.LOG.info('Abort command by user key stroke. Exit code is set to 130.')
             return 130
 
-    def _prepare_python_action(self, scope: dict):
-        pass
+    def _generate_python_vars(self):
+        return {'vars': self.vars}
 
     def _python_action(self) -> int:
         cmd = self.get_resolved_value()
-        self._prepare_python_action(scope=locals())
+        locale_vars = self._generate_python_vars()
         try:
             self.LOG.debug(f'Run python command: {cmd}')
             if self.assignment_var:
-                exec(f'self.vars[self.assignment_var] = {cmd}')
+                exec(f'vars["{self.assignment_var}"] = {cmd}', globals(), locale_vars)
                 self.LOG.info(f'Variable {self.assignment_var} = {self.vars[self.assignment_var]}')
             else:
-                exec(cmd)
+                exec(cmd, globals(), locale_vars)
             return 0
         except KeyboardInterrupt:
             self.LOG.info('Abort command by user key stroke. Exit code is set to 130.')
