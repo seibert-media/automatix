@@ -6,16 +6,19 @@ Automation wrapper for bash and python commands
 
 **automatix** is a wrapper for scripted sysadmin tasks. It offers some useful functionality for easier scripting and having full control over the automated process.
 
-**automatix** is originally designed for internal //SEIBERT/MEDIA use. It comes therefore with bundlewrap and teamvault support as well as the possibility to use your own logging library.
-
-Beware that this tool cannot substitute the system administrators brain and it needs a responsible handling, since you can do (and destroy) almost everything with it.
+The idea of **automatix** is to write down all the commands you would normally type to your commandline or python console into a YAML file.
+Then use **automatix** to execute these commands. 
 
 There are different modes for **automatix** to work. Without any parameters automatix will try to execute the specified command pipeline from the script file until an error occurs or the pipeline is done.
 The interactive mode (**-i**) asks for every single commandline step whether to execute, skip or abort. Forced mode (**-f**) will also proceed if errors occur.
 
+**automatix** is originally designed for internal //SEIBERT/MEDIA use. It comes therefore with bundlewrap and teamvault support as well as the possibility to use your own logging library.
+
 ## Warning:
 
-Automatix evaluates YAML files and executes defined commands as shell or python commands.
+Beware that this tool cannot substitute the system administrators brain and it needs a responsible handling, since you can do (and destroy) almost everything with it.
+
+**Automatix** evaluates YAML files and executes defined commands as shell or python commands.
 There is no check for harmful commands. Be aware that this can cause critical damage to your system.
 
 Please use the interactive mode and doublecheck commands before executing.
@@ -102,7 +105,7 @@ Example:
 **--secrets** _SECRET1=SECRETID_
 : Use this to set secrets without adding them to the
   config or to overwrite them. You can specify multiple
-  secrets like: --secrets v1=string1 v2=string2 v3=string3
+  secrets like: --secrets v1=string1 v2=string2 v3=string3 *(only if teamvault is enabled)*
     
 **--print-overview**, **-p**
 : Just print command pipeline overview with indices then exit without executing the commandline. Note that the *always pipeline* will be executed anyway.
@@ -189,7 +192,7 @@ You can refer to these systems in the command pipeline in multiple ways:
 
 **secrets** _(associative array)_
 : Define teamvault secrets. Value has to be in this format: _SECRETID_FIELD_. _FIELD_ must be one of username, password or file.
-The resolved secret values are accessible in command line via {secretname}.
+The resolved secret values are accessible in command line via {secretname}. *(only if teamvault is enabled)*
 
 **imports** _(list)_
 : Listed shell files (see **CONFIGURATION** section) will be sourced before every local or remote command execution.
@@ -214,7 +217,7 @@ Here you define the commands automatix shall execute.
 
 3) **remote@systemname**: Remote shell command to execute. Systemname has to be a defined system. The command will be run via SSH (without pseudo-terminal allocation). It uses the standard SSH command. Therefore your .ssh/config should be respected.
 
-4) **python**: Python code to execute. System node objects are avaiable via systemname_node.
+4) **python**: Python code to execute. If bundlewrap is enabled, system node objects are avaiable via systemname_node.
 
 **ASSIGNMENT**: For **local**, **remote** and **python** action you can also define a variable to which the output will be assigned.
  To do this prefix the desired variablename and = before the action key, e.g. `myvar=python: system_node.hostname`.
@@ -267,8 +270,8 @@ For **python** action you can import libraries globally, e.g. `global pb; import
 _**BUT CAUTION: Choosing already existing (Python) variable names may lead to unexpected behaviour!!!**_ Maybe you want to check the source code (commands.py).  
 (Explanation: automatix is written in Python and uses 'exec' to execute the command in function context. If you declare variables globally they remain across commands.)
 
-For **python** action besides the node objects (_SYSTEMNAME_ _node) there are some modules, constants and functions which are already imported:   
-`os, re, subprocess, quote(from shlex), LOG, BW_REPO, CONSTANTS, ENCODING`
+For **python** action besides the Bundlewrap node objects (_SYSTEMNAME_ _node) there are some modules, constants and functions which are already imported:   
+`re, subprocess, quote(from shlex)`
 
 
 # BEST PRACTISES
