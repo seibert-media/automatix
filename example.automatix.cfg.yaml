@@ -2,6 +2,13 @@
 
 script_dir: ~/automatix_script_files
 
+# Global constants for use in pipeline scripts
+
+constants:
+  apt_update: 'apt-get -qy update'
+  apt_upgrade: 'DEBIAN_FRONTEND=noninteractive apt-get -qy -o Dpkg::Options::=--force-confold --no-install-recommends upgrade'
+  apt_full_upgrade: 'DEBIAN_FRONTEND=noninteractive apt-get -qy -o Dpkg::Options::=--force-confold --no-install-recommends full-upgrade'
+
 # Encoding
 
 encoding: utf-8
@@ -33,4 +40,3 @@ bundlewrap: true
 # Teamvault / Secret support, bundlewrap-teamvault has to be installed (default: false)
 
 teamvault: true
-
