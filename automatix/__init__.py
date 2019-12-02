@@ -7,6 +7,7 @@ from collections import OrderedDict
 from importlib import import_module
 
 from .command import Command, AbortException
+from .environment import PipelineEnvironment
 
 yaml.warnings({'YAMLLoadWarning': False})
 
@@ -150,21 +151,20 @@ def collect_vars(script: dict) -> dict:
     return var_dict
 
 
-def _set_cmdClass_attrs(script: dict, variables: dict):
-    cmdClass.config = CONFIG
-    cmdClass.systems = script.get('systems', {})
-    cmdClass.vars = variables
-    cmdClass.imports = script.get('imports', [])
-
-    cmdClass.LOG = LOG
-
-
 def build_command_list(script: dict, variables: dict, pipeline: str) -> [Command]:
+    env = PipelineEnvironment(
+        config=CONFIG,
+        systems=script.get('systems', {}),
+        vars=variables,
+        imports=script.get('imports', []),
+        LOG=LOG,
+    )
     command_list = []
     for index, cmd in enumerate(script[pipeline]):
         new_cmd = cmdClass(
             pipeline_cmd=cmd,
             index=index,
+            env=env,
         )
         command_list.append(new_cmd)
         if new_cmd.assignment:
@@ -219,7 +219,6 @@ def main():
 
     variables = collect_vars(script)
 
-    _set_cmdClass_attrs(script=script, variables=variables)
     command_list = build_command_list(script=script, variables=variables, pipeline='pipeline')
 
     execute_extra_pipeline(script=script, variables=variables, pipeline='always')
