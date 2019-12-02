@@ -1,15 +1,11 @@
 import logging
 
 from argparse import Namespace
-from collections import OrderedDict
+
 from typing import List
 
 from .command import Command, AbortException
 from .environment import PipelineEnvironment
-
-SCRIPT_FIELDS = OrderedDict()
-SCRIPT_FIELDS['systems'] = 'Systems'
-SCRIPT_FIELDS['vars'] = 'Variables'
 
 
 class Automatix:
@@ -39,7 +35,7 @@ class Automatix:
 
     def print_main_data(self):
         self.env.LOG.info(f"\nName: {self.script['name']}")
-        for fieldkey, fieldvalue in SCRIPT_FIELDS.items():
+        for fieldkey, fieldvalue in self.env.config['script_fields'].items():
             self.env.LOG.info(f'\n{fieldvalue}:')
             for key, value in self.script.get(fieldkey, {}).items():
                 self.env.LOG.info(f" {key}: {value}")

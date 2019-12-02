@@ -1,11 +1,12 @@
 import argparse
 import logging
 import os
+from collections import OrderedDict
 from importlib import import_module
 
 import yaml
 
-from .automatix import Automatix, SCRIPT_FIELDS
+from .automatix import Automatix
 from .command import Command
 
 yaml.warnings({'YAMLLoadWarning': False})
@@ -16,6 +17,10 @@ def read_yaml(yamlfile: str) -> dict:
         return yaml.load(file.read())
 
 
+SCRIPT_FIELDS = OrderedDict()
+SCRIPT_FIELDS['systems'] = 'Systems'
+SCRIPT_FIELDS['vars'] = 'Variables'
+
 CONFIG = {
     'script_dir': '~/automatix-config',
     'encoding': os.getenv('ENCODING', 'utf-8'),
@@ -25,6 +30,7 @@ CONFIG = {
     'logger': 'automatix',
     'bundlewrap': False,
     'teamvault': False,
+    'script_fields': SCRIPT_FIELDS,
 }
 
 configfile = os.getenv('AUTOMATIX_CONFIG', '~/.automatix.cfg.yaml')
