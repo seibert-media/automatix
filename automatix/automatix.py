@@ -2,6 +2,7 @@ import logging
 
 from argparse import Namespace
 from collections import OrderedDict
+from typing import List
 
 from .command import Command, AbortException
 from .environment import PipelineEnvironment
@@ -23,7 +24,7 @@ class Automatix:
             LOG=logging.getLogger(config['logger']),
         )
 
-    def build_command_list(self, pipeline: str) -> [Command]:
+    def build_command_list(self, pipeline: str) -> List[Command]:
         command_list = []
         for index, cmd in enumerate(self.script[pipeline]):
             new_cmd = self.cmdClass(
@@ -43,12 +44,12 @@ class Automatix:
             for key, value in self.script.get(fieldkey, {}).items():
                 self.env.LOG.info(f" {key}: {value}")
 
-    def print_command_line_steps(self, command_list: [Command]):
+    def print_command_line_steps(self, command_list: List[Command]):
         self.env.LOG.info('\nCommandline Steps:')
         for cmd in command_list:
             self.env.LOG.info(f"({cmd.index}) [{cmd.orig_key}]: {cmd.get_resolved_value()}")
 
-    def execute_pipeline(self, command_list: [Command], args: Namespace, start_index: int = 0):
+    def execute_pipeline(self, command_list: List[Command], args: Namespace, start_index: int = 0):
         for cmd in command_list[start_index:]:
             cmd.execute(interactive=args.interactive, force=args.force)
 
