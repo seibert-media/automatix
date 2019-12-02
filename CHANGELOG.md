@@ -1,5 +1,10 @@
 # Changelog
 
+# 0.1.0
+
+- Refactor main functions
+- Add documentation
+
 # 0.0.5
 
 - Add warning to README
