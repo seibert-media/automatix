@@ -1,7 +1,7 @@
 import logging
 
 from argparse import Namespace
-
+from collections import OrderedDict
 from typing import List
 
 from .command import Command, AbortException
@@ -9,8 +9,9 @@ from .environment import PipelineEnvironment
 
 
 class Automatix:
-    def __init__(self, script: dict, variables: dict, config: dict, cmd_class: type):
+    def __init__(self, script: dict, variables: dict, config: dict, cmd_class: type, script_fields: OrderedDict):
         self.script = script
+        self.script_fields = script_fields
         self.cmdClass = cmd_class
         self.env = PipelineEnvironment(
             config=config,
@@ -35,9 +36,9 @@ class Automatix:
 
     def print_main_data(self):
         self.env.LOG.info(f"\nName: {self.script['name']}")
-        for fieldkey, fieldvalue in self.env.config['script_fields'].items():
-            self.env.LOG.info(f'\n{fieldvalue}:')
-            for key, value in self.script.get(fieldkey, {}).items():
+        for field_key, field_value in self.script_fields.items():
+            self.env.LOG.info(f'\n{field_value}:')
+            for key, value in self.script.get(field_key, {}).items():
                 self.env.LOG.info(f" {key}: {value}")
 
     def print_command_line_steps(self, command_list: List[Command]):

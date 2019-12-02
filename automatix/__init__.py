@@ -31,7 +31,6 @@ CONFIG = {
     'logger': 'automatix',
     'bundlewrap': False,
     'teamvault': False,
-    'script_fields': SCRIPT_FIELDS,
 }
 
 configfile = os.getenv('AUTOMATIX_CONFIG', '~/.automatix.cfg.yaml')
@@ -171,6 +170,7 @@ def main():
         variables=variables,
         config=CONFIG,
         cmd_class=cmdClass,
+        script_fields=SCRIPT_FIELDS,
     )
 
     auto.run(args=args)
