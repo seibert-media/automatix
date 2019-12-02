@@ -15,7 +15,7 @@ class Automatix:
         self.env = PipelineEnvironment(
             config=config,
             systems=script.get('systems', {}),
-            vars=variables,
+            variables=variables,
             imports=script.get('imports', []),
             LOG=logging.getLogger(config['logger']),
         )

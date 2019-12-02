@@ -23,6 +23,7 @@ SCRIPT_FIELDS['vars'] = 'Variables'
 
 CONFIG = {
     'script_dir': '~/automatix-config',
+    'constants': {},
     'encoding': os.getenv('ENCODING', 'utf-8'),
     'import_path': '.',
     'ssh_cmd': 'ssh {hostname} sudo ',

@@ -3,7 +3,6 @@ import subprocess
 
 from shlex import quote
 
-from .constants import CONSTANTS
 from .environment import PipelineEnvironment
 
 
@@ -42,7 +41,7 @@ class Command:
 
     def get_resolved_value(self):
         variables = self.env.vars.copy()
-        for key, value in CONSTANTS.items():
+        for key, value in self.env.config['constants'].items():
             variables[f'const_{key}'] = value
         return self.value.format(**variables)
 
