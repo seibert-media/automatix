@@ -14,7 +14,7 @@ class Command:
 
         for key, value in pipeline_cmd.items():
             self.orig_key = key
-            self.assignment, self.assignment_var, self.key = get_assignment_var(key=key)
+            self.assignment, self.assignment_var, self.key = parse_key(key=key)
             if isinstance(value, dict):
                 # We need this workaround because the yaml lib returns a dictionary instead of a string,
                 # if there is nothing but a variable in the command. Alternative is to use quotes in the script yaml.
@@ -54,7 +54,7 @@ class Command:
             if answer == 's':
                 return
             if answer == 'a':
-                raise AbortException(str(1))
+                raise AbortException(1)
 
         if self.get_type() == 'local':
             return_code = self._local_action()
@@ -71,7 +71,7 @@ class Command:
             if err_answer == 'r':
                 return self.execute(interactive)
             if err_answer == 'a':
-                raise AbortException(str(return_code))
+                raise AbortException(return_code)
 
     def _local_action(self) -> int:
         cmd = self._build_command(path=self.env.config['import_path'])
@@ -128,7 +128,9 @@ class Command:
             try:
                 ps_pids = self.get_remote_pids(hostname=hostname, cmd=self.get_resolved_value())
                 while ps_pids:
-                    self.env.LOG.notice('Remote command seems still to be running! Found PIDs: {}'.format(','.join(ps_pids)))
+                    self.env.LOG.notice(
+                        'Remote command seems still to be running! Found PIDs: {}'.format(','.join(ps_pids))
+                    )
                     answer = input(
                         'What should I do? '
                         '(i: send SIGINT (default), t: send SIGTERM, k: send SIGKILL, p: do nothing and proceed) ')
@@ -157,7 +159,12 @@ class Command:
             self.env.LOG.debug(f'Executing: {cleanup_cmd}')
             proc = subprocess.run(cleanup_cmd, shell=True, executable='/bin/bash')
             if proc.returncode != 0:
-                self.env.LOG.warning(f'Failed to remove {self.env.config["remote_tmp_dir"]}, exitcode: {proc.returncode}')
+                self.env.LOG.warning(
+                    'Failed to remove {tmp_dir}, exitcode: {return_code}'.format(
+                        tmp_dir=self.env.config["remote_tmp_dir"],
+                        return_code=proc.returncode,
+                    )
+                )
 
         return exitcode
 
@@ -180,19 +187,33 @@ class Command:
     def get_remote_pids(self, hostname, cmd) -> []:
         ps_cmd = f"ps axu | grep {quote(cmd)} | grep -v 'grep' | awk '{{print $2}}'"
         cmd = f'ssh {hostname} {quote(ps_cmd)} 2>&1'
-        pids = subprocess.check_output(cmd, shell=True, executable='/bin/bash').decode(self.env.config["encoding"]).split()
+        pids = subprocess.check_output(
+            cmd,
+            shell=True,
+            executable='/bin/bash'
+        ).decode(self.env.config["encoding"]).split()
 
         return pids
 
 
-def get_assignment_var(key) -> (bool, str, str):
+def parse_key(key) -> list:
+    """
+    parses the key
+
+    returns a list containing:
+    whether there is an assignment var, how it is called, and the command type
+    """
     if not re.search('=', key):
-        return False, '', key
-    return (True,) + re.search('(.*)=(.*)', key).group(1, 2)
+        return [False, '', key]
+    return [True, *re.search('(.*)=(.*)', key).group(1, 2)]
 
 
 class AbortException(Exception):
-    pass
+    def __init__(self, return_code: int):
+        self.return_code = return_code
+
+    def __int__(self):
+        return self.return_code
 
 
 class UnknownCommandException(Exception):

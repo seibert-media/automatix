@@ -60,7 +60,7 @@ class Automatix:
                 self.env.LOG.info(f'\n --- End {pipeline.upper()} pipeline ---')
                 self.env.LOG.info('------------------------------\n')
         except AbortException as exc:
-            exit(int(str(exc)))
+            exit(int(exc))
         except KeyboardInterrupt:
             self.env.LOG.warning('\nAborted by user. Exiting.')
             exit(130)
@@ -82,7 +82,7 @@ class Automatix:
             self.env.LOG.debug('Abort requested. Cleaning up.')
             self.execute_extra_pipeline(pipeline='cleanup')
             self.env.LOG.debug('Clean up done. Exiting.')
-            exit(int(str(exc)))
+            exit(int(exc))
         except KeyboardInterrupt:
             self.env.LOG.warning('\nAborted by user. Exiting.')
             exit(130)
