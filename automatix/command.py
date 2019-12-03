@@ -14,7 +14,7 @@ class Command:
 
         for key, value in pipeline_cmd.items():
             self.orig_key = key
-            self.assignment, self.assignment_var, self.key = get_assignment_var(key=key)
+            self.assignment, self.assignment_var, self.key = parse_key(key=key)
             if isinstance(value, dict):
                 # We need this workaround because the yaml lib returns a dictionary instead of a string,
                 # if there is nothing but a variable in the command. Alternative is to use quotes in the script yaml.
@@ -185,10 +185,16 @@ class Command:
         return pids
 
 
-def get_assignment_var(key) -> (bool, str, str):
+def parse_key(key) -> list:
+    """
+    parses the key
+
+    returns a list containing:
+    whether there is an assignment var, how it is called, and the command type
+    """
     if not re.search('=', key):
-        return False, '', key
-    return (True,) + re.search('(.*)=(.*)', key).group(1, 2)
+        return [False, '', key]
+    return [True, *re.search('(.*)=(.*)', key).group(1, 2)]
 
 
 class AbortException(Exception):
