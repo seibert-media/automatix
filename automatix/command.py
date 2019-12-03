@@ -54,7 +54,7 @@ class Command:
             if answer == 's':
                 return
             if answer == 'a':
-                raise AbortException(str(1))
+                raise AbortException(1)
 
         if self.get_type() == 'local':
             return_code = self._local_action()
@@ -71,7 +71,7 @@ class Command:
             if err_answer == 'r':
                 return self.execute(interactive)
             if err_answer == 'a':
-                raise AbortException(str(return_code))
+                raise AbortException(return_code)
 
     def _local_action(self) -> int:
         cmd = self._build_command(path=self.env.config['import_path'])
@@ -209,7 +209,11 @@ def parse_key(key) -> list:
 
 
 class AbortException(Exception):
-    pass
+    def __init__(self, return_code: int):
+        self.return_code = return_code
+
+    def __int__(self):
+        return self.return_code
 
 
 class UnknownCommandException(Exception):
