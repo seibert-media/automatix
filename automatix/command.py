@@ -128,7 +128,9 @@ class Command:
             try:
                 ps_pids = self.get_remote_pids(hostname=hostname, cmd=self.get_resolved_value())
                 while ps_pids:
-                    self.env.LOG.notice('Remote command seems still to be running! Found PIDs: {}'.format(','.join(ps_pids)))
+                    self.env.LOG.notice(
+                        'Remote command seems still to be running! Found PIDs: {}'.format(','.join(ps_pids))
+                    )
                     answer = input(
                         'What should I do? '
                         '(i: send SIGINT (default), t: send SIGTERM, k: send SIGKILL, p: do nothing and proceed) ')
@@ -157,7 +159,12 @@ class Command:
             self.env.LOG.debug(f'Executing: {cleanup_cmd}')
             proc = subprocess.run(cleanup_cmd, shell=True, executable='/bin/bash')
             if proc.returncode != 0:
-                self.env.LOG.warning(f'Failed to remove {self.env.config["remote_tmp_dir"]}, exitcode: {proc.returncode}')
+                self.env.LOG.warning(
+                    'Failed to remove {tmp_dir}, exitcode: {return_code}'.format(
+                        tmp_dir=self.env.config["remote_tmp_dir"],
+                        return_code=proc.returncode,
+                    )
+                )
 
         return exitcode
 
@@ -180,7 +187,11 @@ class Command:
     def get_remote_pids(self, hostname, cmd) -> []:
         ps_cmd = f"ps axu | grep {quote(cmd)} | grep -v 'grep' | awk '{{print $2}}'"
         cmd = f'ssh {hostname} {quote(ps_cmd)} 2>&1'
-        pids = subprocess.check_output(cmd, shell=True, executable='/bin/bash').decode(self.env.config["encoding"]).split()
+        pids = subprocess.check_output(
+            cmd,
+            shell=True,
+            executable='/bin/bash'
+        ).decode(self.env.config["encoding"]).split()
 
         return pids
 
