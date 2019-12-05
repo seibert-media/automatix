@@ -21,7 +21,7 @@ class Command:
                 self.value = f'{{{next(iter(value))}}}'
             else:
                 self.value = value
-            break
+            break  # There should be only one entry in pipeline_cmd
 
     def get_type(self):
         if self.key == 'local':
