@@ -159,10 +159,6 @@ def main():
 
     script = get_script(args=args)
 
-    for field in SCRIPT_FIELDS.keys():
-        if vars(args).get(field):
-            _overwrite(script=script, key=field, data=vars(args)[field])
-
     variables = collect_vars(script)
 
     auto = Automatix(
