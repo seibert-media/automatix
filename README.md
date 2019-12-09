@@ -38,7 +38,7 @@ pip install automatix
 You can specify a path to a configuration YAML file via the environment variable **AUTOMATIX_CONFIG**.
 Default location is "~/.automatix.cfg.yaml".
 
-Example:
+### Example: .automatix.cfg.yaml
 
     # Path to scripts directory
     script_dir: ~/automatix_script_files
@@ -123,6 +123,9 @@ Example:
 : Activate debug log level.
 
 
+### EXAMPLE: Usage
+
+    automatix -i --systems source=sourcesystem.com target=targetsystem.org -- scriptfile.yaml
 
 
 ## SCRIPTFILE
