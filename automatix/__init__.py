@@ -71,7 +71,8 @@ if CONFIG['teamvault']:
 
 def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description='Process automation tool',
+        description='Automation wrapper for bash and python commands.',
+        epilog='Explanations and README at https://github.com/seibert-media/automatix',
     )
     parser.add_argument(
         'scriptfile',
