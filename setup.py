@@ -7,6 +7,7 @@ setup(
     name='automatix',
     version='0.1.0',
     description='Automation wrapper for bash and python commands',
+    keywords=['bash', 'shell', 'command', 'automation', 'process', 'wrapper', 'devops', 'system administration'],
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/seibert-media/automatix',
