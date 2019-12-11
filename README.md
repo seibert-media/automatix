@@ -191,7 +191,7 @@ You can refer to these systems in the command pipeline in multiple ways:
 3) via systemname_node in python actions to use the bw node object
 
 **vars** _(associative array)_
-: Define some vars. These are accessible in the command pipeline via {varname}.
+: Define some vars. These are accessible in the command pipeline via {varname}. Note: Only valid Python variable names are allowed.
 
 **secrets** _(associative array)_
 : Define teamvault secrets. Value has to be in this format: _SECRETID_FIELD_. _FIELD_ must be one of username, password or file.
