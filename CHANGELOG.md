@@ -1,5 +1,12 @@
 # Changelog
 
+# 0.1.1
+
+- Improve README: Add Usage Example
+- Fix redundant code
+- Add stack traces in error case
+- Minor refactorings
+
 # 0.1.0
 
 - Refactor main functions
