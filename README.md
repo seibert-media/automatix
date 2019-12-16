@@ -132,7 +132,7 @@ Default location is "~/.automatix.cfg.yaml".
 
 The **scriptfile** describes your automated process. Therefore it contains information about systems, variables, secrets and the command pipeline.
 
-You can provide a path to your **scriptfile** or place your scriptfile in the predefined directory (see **CONFIGURATION** section). The path has precedence over the predefined directory, if the file exists at both locations.
+You can provide a path to your **scriptfile** or place your scriptfile in the predefined directory (see **CONFIGURATION** section, _script_dir_). The path has precedence over the predefined directory, if the file exists at both locations.
 
 The **scriptfile** has to contain valid YAML.
 
@@ -198,7 +198,7 @@ You can refer to these systems in the command pipeline in multiple ways:
 The resolved secret values are accessible in command line via {secretname}. *(only if teamvault is enabled)*
 
 **imports** _(list)_
-: Listed shell files (see **CONFIGURATION** section) will be sourced before every local or remote command execution.
+: Listed shell files (see **CONFIGURATION** section, _import_path_) will be sourced before every local or remote command execution.
 For remote commands, these files are transferred via tar and ssh to your home directory on the remote system beforehand and deleted afterwards.
 This is meant to define some functions you may need.
 
@@ -229,7 +229,7 @@ Here you define the commands automatix shall execute.
 
 **VALUE**: Your command. Variables will be replaced with Python format function. Therefore use curly brackets to refer to variables, systems, secrets and constants.
 
-Constants are available via const_KEY, where KEY is the dictionary key in tools/automatix/constants.py. There you can define some widely used constants.
+Constants are available via const_KEY, where KEY is the key of your constants in your **CONFIGURATION** file. There you can define some widely used constants.
 
 In most cases its a good idea to define your command in quotes to avoid parsing errors, but it is not always necessary.
 Another way is to use '|' to indicate a _literal scalar block_. There you can even define whole program structures for python (see example).
