@@ -71,7 +71,8 @@ if CONFIG['teamvault']:
 
 def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description='Process automation tool',
+        description='Automation wrapper for bash and python commands.',
+        epilog='Explanations and README at https://github.com/seibert-media/automatix',
     )
     parser.add_argument(
         'scriptfile',
@@ -158,10 +159,6 @@ def main():
     init_logger(name=CONFIG['logger'], debug=args.debug)
 
     script = get_script(args=args)
-
-    for field in SCRIPT_FIELDS.keys():
-        if vars(args).get(field):
-            _overwrite(script=script, key=field, data=vars(args)[field])
 
     variables = collect_vars(script)
 

@@ -1,5 +1,6 @@
 import re
 import subprocess
+import traceback
 
 from shlex import quote
 
@@ -21,7 +22,7 @@ class Command:
                 self.value = f'{{{next(iter(value))}}}'
             else:
                 self.value = value
-            break
+            break  # There should be only one entry in pipeline_cmd
 
     def get_type(self):
         if self.key == 'local':
@@ -98,8 +99,8 @@ class Command:
         except KeyboardInterrupt:
             self.env.LOG.info('Abort command by user key stroke. Exit code is set to 130.')
             return 130
-        except Exception as exc:
-            self.env.LOG.error(exc)
+        except Exception:
+            self.env.LOG.error(traceback.format_exc())
             return 1
 
     def _get_remote_hostname(self):
