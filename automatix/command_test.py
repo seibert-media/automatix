@@ -1,25 +1,17 @@
+from subprocess import CalledProcessError
+
 import pytest
-import subprocess
-import time
 
 from .command import Command
-from .testdata import environment
+from .testdata import environment, run_command_and_check, ssh_up
 
 pytest_plugins = ["docker_compose"]
 
 
-@pytest.fixture(scope='function')
-def ssh_up(function_scoped_container_getter):
-    for i in range(100):
-        time.sleep(1)
-        try:
-            subprocess.run('ssh docker-test /bin/true', shell=True).check_returncode()
-        except subprocess.CalledProcessError:
-            continue
-        return
-
-
-def test__simple_remote_cmd(ssh_up):
-    cmd = Command(pipeline_cmd={'remote@testsystem': 'uptime'}, index=2, env=environment)
+def test__execute_remote_cmd(ssh_up):
+    cmd = Command(pipeline_cmd={'remote@testsystem': 'touch /test_remote_cmd'}, index=2, env=environment)
     cmd.execute()
-    assert True
+    try:
+        run_command_and_check('ssh docker-test ls /test_remote_cmd')
+    except CalledProcessError:
+        pytest.fail('Check for remote file not successful')
