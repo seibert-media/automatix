@@ -1,6 +1,6 @@
 name: Automatix Test
 systems:
-  mysystem: docker-test
+  testsystem: docker-test
 vars:
   myvar: huhu
 pipeline:
@@ -8,6 +8,6 @@ pipeline:
   - python: print(locals())
   - local: sleep 20
   - a=local: uptime
-  - remote@mysystem: whoami
+  - remote@testsystem: whoami
   - python: print('{myvar}')
   - python: raise Exception('moin')

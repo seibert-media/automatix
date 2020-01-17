@@ -10,7 +10,8 @@
     Host docker-test
     Hostname localhost
     Port 2222
-    IdentityFile id_rsa_tests
+    IdentityFile tests/id_rsa_tests
+    StrictHostKeyChecking no
     
 
 * Run `make test` in the automatix root directory.
