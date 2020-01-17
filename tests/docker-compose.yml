@@ -1,0 +1,22 @@
+version: "2"
+services:
+  openssh-server:
+    image: linuxserver/openssh-server
+    container_name: openssh-server
+    hostname: openssh-server #optional
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+      - PUBLIC_KEY=ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC8vgOBy90otzopBuPW+uzEdhC6xSwK7JxQ9SjZ3ntyYwrDez/wQzQ8dmJzmzpwEjPJkh4oeM58JbAW/1huu/lndOsYmsFaA6iz3xYH5H6Y8RUMMUXD0bSx6ZSoDLMlxO+5tqFTBZjChhLwJ1Zf05yCNKgM4ICMimqyUnZL1/nwuwrkuI4h4KBO69QknOoRRR4UUYlCfbkbhFtCI61t8QmoGXlPfkKe4sjNsfmtWRVwqOqxmIjXkGusamBu8P4rXzyXAOBAMRodj0k8Gn93fU2/2CAVnUW1CFsnm0nNBJUlpB9crXU0ZsiO7E9DVZRNEX3lK01Eo2wzGT0lQcemMeh6D6WKc/XN4xL9K4FAkn7ZJwg+Epx1s7HTm3RQOrq6yoolOxx8gR3jWNB6UzZDnSMJLzD3OZl6oBQGlMakdtUJoNySQfmFGrpXdn0DjXUczLNHAQgGO8dJig1OOcN0JQTVuzAApIH1zrWm75vRoAunsyT76EbD9Utg+/FX+VQsv6E= #optional
+#      - PUBLIC_KEY_FILE=./id_rsa_tests.pub #optional
+      - SUDO_ACCESS=true #optional
+      - PASSWORD_ACCESS=false #optional
+#      - USER_PASSWORD=geheim #optional
+#      - USER_PASSWORD_FILE=/path/to/file #optional
+      - USER_NAME=${USER} #optional
+#    volumes:
+#      - /path/to/appdata/config:/config
+    ports:
+      - 2222:2222
+    restart: unless-stopped
