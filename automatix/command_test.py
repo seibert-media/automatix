@@ -2,8 +2,8 @@ from subprocess import CalledProcessError
 
 import pytest
 
-from .command import Command
-from .test_environment import environment, run_command_and_check, ssh_up
+from automatix.command import Command
+from tests.test_environment import environment, run_command_and_check, ssh_up
 
 pytest_plugins = ["docker_compose"]
 

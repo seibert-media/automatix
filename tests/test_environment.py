@@ -1,16 +1,19 @@
 import subprocess
 from argparse import Namespace
+from os.path import abspath, dirname
 from time import sleep
 
 import pytest
 
-from . import get_script, collect_vars, CONFIG, cmdClass, SCRIPT_FIELDS
-from .automatix import Automatix
+from automatix import get_script, collect_vars, CONFIG, cmdClass, SCRIPT_FIELDS
+from automatix.automatix import Automatix
+
+SELFDIR = dirname(abspath(__file__))
 
 pytest_plugins = ["docker_compose"]
 
 default_args = Namespace(
-    scriptfile='tests/test.yaml',
+    scriptfile=f'{SELFDIR}/test.yaml',
     systems=None,
     vars=None,
     secrets=None,
