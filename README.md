@@ -273,9 +273,15 @@ For **python** action you can import libraries globally, e.g. `global pb; import
 _**BUT CAUTION: Choosing already existing (Python) variable names may lead to unexpected behaviour!!!**_ Maybe you want to check the source code (commands.py).  
 (Explanation: automatix is written in Python and uses 'exec' to execute the command in function context. If you declare variables globally they remain across commands.)
 
-For **python** action besides the Bundlewrap node objects (_SYSTEMNAME_ _node) there are some modules, constants and functions which are already imported:   
-`re, subprocess, quote(from shlex)`
+An alternative and maybe better way is to use the **PERSISTENT_VARS** dictionary to make variables persistent over **python** commands.
+This is added to the local scope of **python** actions.
+Examples:
+- To make all local variables of the actual command persistent use `PERSISTENT_VARS.update(locals())`.
+- To delete one persistent variable named "myvar" use `del PERSISTENT_VARS['myvar']`
+- To make variable "v2" persistent use `PERSISTENT_VARS['v2'] = v2`
 
+For **python** action there are some modules, constants and functions which are already imported:   
+`re, subprocess, quote(from shlex)`
 
 # BEST PRACTISES
 
