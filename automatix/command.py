@@ -6,6 +6,8 @@ from shlex import quote
 
 from .environment import PipelineEnvironment
 
+PERSISTENT_VARS = {}
+
 
 class Command:
     def __init__(self, pipeline_cmd: dict, index: int, env: PipelineEnvironment):
@@ -88,6 +90,8 @@ class Command:
     def _python_action(self) -> int:
         cmd = self.get_resolved_value()
         locale_vars = self._generate_python_vars()
+        locale_vars.update(PERSISTENT_VARS)
+        self.env.LOG.debug(f'locals:\n {locale_vars}')
         try:
             self.env.LOG.debug(f'Run python command: {cmd}')
             if self.assignment_var:
