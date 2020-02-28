@@ -53,7 +53,7 @@ class Command:
         return_code = 0
 
         if self.get_type() == 'manual' or interactive:
-            answer = input(f'Proceed? (p: proceed (default), s: skip, a: abort)')
+            answer = input(f'[MS] Proceed? (p: proceed (default), s: skip, a: abort)\n')
             if answer == 's':
                 return
             if answer == 'a':
@@ -70,7 +70,7 @@ class Command:
             self.env.LOG.error(f'Command ({self.index}) failed with return code {return_code}.')
             if force:
                 return
-            err_answer = input('What should I do? (p: proceed (default), r: retry, a: abort)')
+            err_answer = input('[CF] What should I do? (p: proceed (default), r: retry, a: abort)\n')
             if err_answer == 'r':
                 return self.execute(interactive)
             if err_answer == 'a':
@@ -119,8 +119,8 @@ class Command:
         if self.env.imports:
             prefix = f'tar -C {self.env.config["import_path"]} -cf - ' + ' '.join(self.env.imports) + ' | '
             remote_cmd = f'mkdir {self.env.config["remote_tmp_dir"]};' \
-                f' tar -C {self.env.config["remote_tmp_dir"]} -xf -;' \
-                f' {self._build_command(path=self.env.config["remote_tmp_dir"])}'
+                         f' tar -C {self.env.config["remote_tmp_dir"]} -xf -;' \
+                         f' {self._build_command(path=self.env.config["remote_tmp_dir"])}'
 
         cmd = f'{prefix}{ssh_cmd}{quote("bash -c " + quote(remote_cmd))}'
 
@@ -137,8 +137,8 @@ class Command:
                         'Remote command seems still to be running! Found PIDs: {}'.format(','.join(ps_pids))
                     )
                     answer = input(
-                        'What should I do? '
-                        '(i: send SIGINT (default), t: send SIGTERM, k: send SIGKILL, p: do nothing and proceed) ')
+                        '[RR] What should I do? '
+                        '(i: send SIGINT (default), t: send SIGTERM, k: send SIGKILL, p: do nothing and proceed) \n')
 
                     if answer == 'p':
                         break
