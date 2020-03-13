@@ -6,6 +6,13 @@ vars:
 pipeline:
   - python: print(globals())
   - python: print(locals())
+  - python: |
+      from uuid import uuid4
+      from pprint import pprint
+      PERSISTENT_VARS.update(locals())
+  - python: print(uuid4())
+  - python: del PERSISTENT_VARS['uuid4']
+  - python: pprint(locals())
   - local: sleep 20
   - a=local: uptime
   - remote@testsystem: whoami

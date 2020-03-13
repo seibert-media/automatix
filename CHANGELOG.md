@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.0.0
+
+- First major release since Automatix seems to be stable
+- Add PERSISTENT_VARS
+- Newlines for input prompts, which simplifies automatic testing with automatix scripts
+
 # 0.1.1
 
 - Improve README: Add Usage Example
