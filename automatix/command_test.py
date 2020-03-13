@@ -12,6 +12,6 @@ def test__execute_remote_cmd(ssh_up):
     cmd = Command(pipeline_cmd={'remote@testsystem': 'touch /test_remote_cmd'}, index=2, env=environment)
     cmd.execute()
     try:
-        run_command_and_check('ssh docker-test ls /test_remote_cmd')
+        run_command_and_check('ssh docker-test ls /test_remote_cmd >/dev/null')
     except CalledProcessError:
         pytest.fail('Check for remote file not successful')
