@@ -62,4 +62,4 @@ def ssh_up(function_scoped_container_getter):
         run_command_and_check(cmd=f'ssh-keygen -R localhost:2222 >/dev/null 2>&1')
         run_command_and_check(cmd=f'ssh-keyscan -t ecdsa -p 2222 localhost 2>/dev/null >> ~/.ssh/known_hosts')
         return
-    Exception('Maximum retries exceeded: SSH test setup could not be created.')
+    raise Exception('Maximum retries exceeded: SSH test setup could not be created.')
