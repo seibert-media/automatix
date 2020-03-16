@@ -2,3 +2,4 @@ build/
 dist/
 .automatix.cfg.yaml
 *.egg-info/
+*id_rsa_tests*
