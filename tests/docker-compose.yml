@@ -1,4 +1,4 @@
-version: "2"
+version: "3.7"
 services:
   openssh-server:
     image: linuxserver/openssh-server
@@ -8,8 +8,8 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Europe/Berlin
-      - PUBLIC_KEY=ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC8vgOBy90otzopBuPW+uzEdhC6xSwK7JxQ9SjZ3ntyYwrDez/wQzQ8dmJzmzpwEjPJkh4oeM58JbAW/1huu/lndOsYmsFaA6iz3xYH5H6Y8RUMMUXD0bSx6ZSoDLMlxO+5tqFTBZjChhLwJ1Zf05yCNKgM4ICMimqyUnZL1/nwuwrkuI4h4KBO69QknOoRRR4UUYlCfbkbhFtCI61t8QmoGXlPfkKe4sjNsfmtWRVwqOqxmIjXkGusamBu8P4rXzyXAOBAMRodj0k8Gn93fU2/2CAVnUW1CFsnm0nNBJUlpB9crXU0ZsiO7E9DVZRNEX3lK01Eo2wzGT0lQcemMeh6D6WKc/XN4xL9K4FAkn7ZJwg+Epx1s7HTm3RQOrq6yoolOxx8gR3jWNB6UzZDnSMJLzD3OZl6oBQGlMakdtUJoNySQfmFGrpXdn0DjXUczLNHAQgGO8dJig1OOcN0JQTVuzAApIH1zrWm75vRoAunsyT76EbD9Utg+/FX+VQsv6E= #optional
-#      - PUBLIC_KEY_FILE=./id_rsa_tests.pub #optional
+      - PUBLIC_KEY=ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC0MaZSBXhB/xL6kx0teX4twfHWfEOK+ByniWHBPAanJ/YMXNBDG0wNpIuwnlakQ0anlwWBm1d+Iconwue7EJEdkaAou3uwQj6PT+IyMTMjK+WXy0GcoEoPRhP7PmqhHOHX8myFsi8mz6LzhC9Hr5TuIVkMZfBM71jFEU3ONMDktpdb75xHNy2NBGyTdwqErXCylykxARpgLRm4fhE4jV1ckpqNCGU2Rx/F5rsrmRdmCv/4kTkLdlinw/4cxZb9YhpOpQbM6/zxvpDOpOuM18dJyWkjwQeoMiVEkMwzWTbwsfRHlUy2TOREYQhWMejXfuWKmUNc3VJAaVW1XQXurSlpXqyHPLCuABehSPWEphLSA7+tEvNQYdw2WL3/k6Qr6YwztN7Z19tSqvXEKfUD5+yBJopIsE0/nQ/5M5FKjf/2L4zVNp2kkAimunNdXiZR5T8er18aLZl48MjEhhE9AeDM2+QoOvsf+QLM6PPno/yJIL+5YI7iKJNQTMBe+i0+GF8=
+#      - PUBLIC_KEY_FILE=tests/id_rsa_tests.pub #optional, apparently not working ...
       - SUDO_ACCESS=true #optional
       - PASSWORD_ACCESS=false #optional
 #      - USER_PASSWORD=geheim #optional
