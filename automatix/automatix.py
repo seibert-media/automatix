@@ -30,7 +30,7 @@ class Automatix:
                 env=self.env,
             )
             command_list.append(new_cmd)
-            if new_cmd.assignment:
+            if new_cmd.assignment and not self.env.vars.get(new_cmd.assignment_var):
                 self.env.vars[new_cmd.assignment_var] = f'{{{new_cmd.assignment_var}}}'
         return command_list
 
