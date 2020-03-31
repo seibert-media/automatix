@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.0.1
+- Fix command-line assignment of variables
+
 # 1.0.0
 
 - First major release since Automatix seems to be stable
