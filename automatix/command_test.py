@@ -31,6 +31,27 @@ def test__execute_local_cmd(capfd):
     assert err == ''
 
 
+def test__execute_local_with_condition(capfd):
+    condition_tests = {
+        'false_var': False,
+        'true_var': True,
+        'none_var': False,
+        'empty_var': False,
+        'example_string': True,
+    }
+
+    for condition_var, condition_out in condition_tests.items():
+        # empty captured stdin and stderr
+        _ = capfd.readouterr()
+
+        cmd = Command(pipeline_cmd={f'{condition_var}?local': 'pwd'}, index=2, env=environment)
+        cmd.execute()
+
+        out, err = capfd.readouterr()
+        assert condition_out == ('automatix' in out)
+        assert err == ''
+
+
 def test__execute_python_cmd():
     test_cmd = """
 from uuid import uuid4
