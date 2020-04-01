@@ -3,3 +3,4 @@ dist/
 .automatix.cfg.yaml
 *.egg-info/
 *id_rsa_tests*
+tests/docker-compose.yml
