@@ -2,7 +2,7 @@ from subprocess import CalledProcessError
 
 import pytest
 
-from automatix.command import Command
+from automatix.command import Command, parse_key
 from tests.test_environment import environment, run_command_and_check, ssh_up
 
 pytest_plugins = ["docker_compose"]
@@ -43,3 +43,11 @@ PERSISTENT_VARS.update(locals())
 
     cmd = Command(pipeline_cmd={'python': 'print(uuid4())'}, index=2, env=environment)
     cmd.execute()
+
+
+def test__parse_key():
+    assert parse_key('python') == (None, None, 'python')
+    assert parse_key('remote@v1') == (None, None, 'remote@v1')
+    assert parse_key('host=remote@v1') == (None, 'host', 'remote@v1')
+    assert parse_key('is_jira?host=remote@v1') == ('is_jira', 'host', 'remote@v1')
+    assert parse_key('is_jira?python') == ('is_jira', None, 'python')
