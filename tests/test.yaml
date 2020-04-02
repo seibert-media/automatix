@@ -17,4 +17,8 @@ pipeline:
   - a=local: uptime
   - remote@testsystem: whoami
   - python: print('{myvar}')
+  - cond=python: 'None'
+  - cond?python: print('Das ging wohl daneben')
+  - cond2=local: test "confluence" == "jira" && echo -n "True"; exit 0
+  - cond2?python: print('Das ging wohl daneben 2')
   - python: raise Exception('moin')
