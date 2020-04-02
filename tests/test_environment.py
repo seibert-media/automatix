@@ -36,6 +36,14 @@ testauto = Automatix(
     script_fields=SCRIPT_FIELDS,
 )
 
+testauto.env.vars.update({
+    'false_var': False,
+    'true_var': True,
+    'empty_var': '',
+    'none_var': None,
+    'example_string': 'example',
+})
+
 environment = testauto.env
 
 

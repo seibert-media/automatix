@@ -3,6 +3,7 @@ import subprocess
 import traceback
 
 from shlex import quote
+from typing import Tuple
 
 from .environment import PipelineEnvironment
 
@@ -17,7 +18,7 @@ class Command:
 
         for key, value in pipeline_cmd.items():
             self.orig_key = key
-            self.assignment, self.assignment_var, self.key = parse_key(key=key)
+            self.condition_var, self.assignment_var, self.key = parse_key(key=key)
             if isinstance(value, dict):
                 # We need this workaround because the yaml lib returns a dictionary instead of a string,
                 # if there is nothing but a variable in the command. Alternative is to use quotes in the script yaml.
@@ -51,6 +52,10 @@ class Command:
     def execute(self, interactive: bool = False, force: bool = False):
         self.env.LOG.notice(f'\n({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
         return_code = 0
+
+        if self.condition_var is not None and not bool(self.env.vars[self.condition_var]):
+            self.env.LOG.info(f'Skip command, because condition variable "{self.condition_var}" evolves to False')
+            return
 
         if self.get_type() == 'manual' or interactive:
             answer = input(f'[MS] Proceed? (p: proceed (default), s: skip, a: abort)\n')
@@ -180,7 +185,7 @@ class Command:
 
     def _run_local_command(self, cmd: str) -> int:
         self.env.LOG.debug(f'Executing: {cmd}')
-        if self.assignment:
+        if self.assignment_var:
             proc = subprocess.run(cmd, shell=True, executable='/bin/bash', stdout=subprocess.PIPE)
             output = proc.stdout.decode(self.env.config["encoding"])
             self.env.vars[self.assignment_var] = output
@@ -201,16 +206,17 @@ class Command:
         return pids
 
 
-def parse_key(key) -> list:
+def parse_key(key) -> Tuple[str, ...]:
     """
     parses the key
 
     returns a list containing:
-    whether there is an assignment var, how it is called, and the command type
+    - condition_var: if this evolves to False, the command is not executed
+    - assignment_var: name of a variable, to which the command output is assigned
+    - command_type
     """
-    if not re.search('=', key):
-        return [False, '', key]
-    return [True, *re.search('(.*)=(.*)', key).group(1, 2)]
+
+    return re.search(r'((.*)\?)?((.*)=)?(.*)', key).group(2, 4, 5)
 
 
 class AbortException(Exception):
