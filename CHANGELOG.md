@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.1.0
+- Add conditions
+
 # 1.0.1
 - Fix command-line assignment of variables
 
