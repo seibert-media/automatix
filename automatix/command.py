@@ -1,3 +1,4 @@
+import os
 import re
 import subprocess
 import traceback
@@ -45,6 +46,12 @@ class Command:
 
     def get_resolved_value(self):
         variables = self.env.vars.copy()
+        for key, value in variables.items():
+            file_match = re.match(r'FILE_(.*)', value)
+            if file_match:
+                with open(os.path.expanduser(file_match.group(1))) as file:
+                    variables[key] = file.read()
+
         for key, value in self.env.config['constants'].items():
             variables[f'const_{key}'] = value
         return self.value.format(**variables)
