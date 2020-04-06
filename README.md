@@ -226,6 +226,8 @@ You can refer to these systems in the command pipeline in multiple ways:
 **vars** _(associative array)_
 : Define some vars. These are accessible in the command pipeline via
  {varname}. Note: Only valid Python variable names are allowed.
+ You can use "*FILE_*" prefix followed by a file path to assign the file
+ content to the variable.
 
 **secrets** _(associative array)_
 : Define teamvault secrets. Value has to be in this format:
@@ -329,7 +331,8 @@ Intended use case for **cleanup**: Remove temporary files or artifacts.
 
 **ENCODING**: Specify output encoding. Default is "UTF-8".  
 
-Additionally you can modify the environment to adjust things to your needs.
+Additionally you can modify the environment to adjust things to your
+ needs.
 
 
 # TIPS & TRICKS
