@@ -4,6 +4,7 @@ import subprocess
 import traceback
 
 from shlex import quote
+from time import time
 from typing import Tuple
 
 from .environment import PipelineEnvironment
@@ -73,12 +74,17 @@ class Command:
             if answer == 'a':
                 raise AbortException(1)
 
+        steptime = time()
+
         if self.get_type() == 'local':
             return_code = self._local_action()
         if self.get_type() == 'python':
             return_code = self._python_action()
         if self.get_type() == 'remote':
             return_code = self._remote_action()
+
+        if 'AUTOMATIX_TIME' in os.environ:
+            self.env.LOG.info(f'(command execution time: {round(time()-steptime)}s)')
 
         if return_code != 0:
             self.env.LOG.error(f'Command ({self.index}) failed with return code {return_code}.')

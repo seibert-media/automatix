@@ -66,7 +66,6 @@ class Automatix:
             exit(130)
 
     def run(self, args: Namespace):
-
         command_list = self.build_command_list(pipeline='pipeline')
 
         self.execute_extra_pipeline(pipeline='always')

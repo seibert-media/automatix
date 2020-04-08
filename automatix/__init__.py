@@ -3,6 +3,7 @@ import logging
 import os
 from collections import OrderedDict
 from importlib import import_module
+from time import time
 
 import yaml
 
@@ -155,6 +156,7 @@ def collect_vars(script: dict) -> dict:
 
 
 def main():
+    starttime = time()
     args = _arguments()
     init_logger(name=CONFIG['logger'], debug=args.debug)
 
@@ -171,3 +173,5 @@ def main():
     )
 
     auto.run(args=args)
+    if 'AUTOMATIX_TIME' in os.environ:
+        auto.env.LOG.info(f'The Automatix script took {round(time()-starttime)}s!')
