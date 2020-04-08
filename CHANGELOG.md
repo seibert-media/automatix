@@ -1,5 +1,10 @@
 # Changelog
 
+# 1.2.0
+
+- Add FILE_ feature for variables
+- Add time printing feature
+
 # 1.1.0
 - Add conditions
 
