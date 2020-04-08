@@ -1,3 +1,4 @@
+import os
 import re
 import subprocess
 import traceback
@@ -40,11 +41,19 @@ class Command:
 
     def get_system(self):
         if self.get_type() == 'remote':
-            return self.env.systems[re.search('remote@(.*)', self.key).group(1)]
+            return self.env.systems[re.search(r'remote@(.*)', self.key).group(1)]
         return 'localhost'
 
     def get_resolved_value(self):
         variables = self.env.vars.copy()
+        for key, value in variables.items():
+            if not isinstance(value, str):
+                continue
+            file_match = re.match(r'FILE_(.*)', value)
+            if file_match:
+                with open(os.path.expanduser(file_match.group(1))) as file:
+                    variables[key] = file.read().strip()
+
         for key, value in self.env.config['constants'].items():
             variables[f'const_{key}'] = value
         return self.value.format(**variables)
