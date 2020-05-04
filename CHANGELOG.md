@@ -1,5 +1,9 @@
 # Changelog
 
+# 1.2.1
+
+- Bug fix: Expand user for file paths
+
 # 1.2.0
 
 - Add FILE_ feature for variables
