@@ -266,7 +266,7 @@ Here you define the commands automatix shall execute.
   Therefore your .ssh/config should be respected.
 
 4) **python**: Python code to execute. If bundlewrap is enabled,
- system node objects are avaiable via systemname_node.
+ system node objects are available via systemname_node.
 
 **ASSIGNMENT**: For **local**, **remote** and **python** action you
  can also define a variable to which the output will be assigned.
