@@ -1,5 +1,9 @@
 # Changelog
 
+# 1.2.2
+
+- Treat empty condition_var as False
+
 # 1.2.1
 
 - Bug fix: Expand user for file paths
