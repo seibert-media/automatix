@@ -63,7 +63,7 @@ class Command:
         self.env.LOG.notice(f'\n({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
         return_code = 0
 
-        if self.condition_var is not None and not bool(self.env.vars[self.condition_var]):
+        if self.condition_var is not None and not bool(self.env.vars.get(self.condition_var, False)):
             self.env.LOG.info(f'Skip command, because condition variable "{self.condition_var}" evolves to False')
             return
 
