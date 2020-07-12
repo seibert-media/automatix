@@ -68,6 +68,7 @@ class Command:
             return
 
         if self.get_type() == 'manual' or interactive:
+            self.env.LOG.debug('Ask for user interaction.')
             answer = input(f'[MS] Proceed? (p: proceed (default), s: skip, a: abort)\n')
             if answer == 's':
                 return
