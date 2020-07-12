@@ -2,8 +2,11 @@ import argparse
 import logging
 import os
 from collections import OrderedDict
+from copy import deepcopy
+from csv import DictReader
 from importlib import import_module
 from time import time
+from typing import List
 
 import yaml
 
@@ -84,8 +87,12 @@ def _arguments() -> argparse.Namespace:
             f'--{field}',
             nargs='*',
             help=f'Use this to set {field} without adding them to the script or to overwrite them. '
-            f'You can specify multiple {field} like: --{field} v1=string1 v2=string2 v3=string3',
+                 f'You can specify multiple {field} like: --{field} v1=string1 v2=string2 v3=string3',
         )
+    parser.add_argument(
+        '--vars-file',
+        help='Path to a CSV file containing variables for batch processing',
+    )
     parser.add_argument(
         '--print-overview', '-p',
         action='store_true',
@@ -155,6 +162,19 @@ def collect_vars(script: dict) -> dict:
     return var_dict
 
 
+def _update_script_from_row(row: dict, script: dict):
+    if not row:
+        return
+    for key, value in row.items():
+        assert len(key.split(':')) == 2, \
+            'First row in CSV must contain the field name and key seperated by colons' \
+            ' like "systems:mysystem,vars:myvar".'
+        key_type, key_name = key.split(':')
+        assert key_type in SCRIPT_FIELDS.keys(), \
+            f'First row in CSV: Field name is \'{key_type}\', but has to be one of {list(SCRIPT_FIELDS.keys())}.'
+        script[key_type][key_name] = value
+
+
 def main():
     starttime = time()
     args = _arguments()
@@ -162,16 +182,27 @@ def main():
 
     script = get_script(args=args)
 
-    variables = collect_vars(script)
+    batch_items: List[dict] = [{}]
+    if args.vars_file:
+        with open(args.vars_file) as csvfile:
+            batch_items = list(DictReader(csvfile))
+        LOG.notice('Detected batch processing from CSV file.')
 
-    auto = Automatix(
-        script=script,
-        variables=variables,
-        config=CONFIG,
-        cmd_class=cmdClass,
-        script_fields=SCRIPT_FIELDS,
-    )
+    for row in batch_items:
+        script_copy = deepcopy(script)
+        _update_script_from_row(row=row, script=script_copy)
 
-    auto.run(args=args)
+        variables = collect_vars(script_copy)
+
+        auto = Automatix(
+            script=script_copy,
+            variables=variables,
+            config=CONFIG,
+            cmd_class=cmdClass,
+            script_fields=SCRIPT_FIELDS,
+        )
+
+        auto.run(args=args)
+
     if 'AUTOMATIX_TIME' in os.environ:
-        auto.env.LOG.info(f'The Automatix script took {round(time()-starttime)}s!')
+        LOG.info(f'The Automatix script took {round(time() - starttime)}s!')
