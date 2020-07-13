@@ -91,6 +91,7 @@ Default location is "~/.automatix.cfg.yaml".
 **automatix** \[**--help**|**-h**\] \[**--systems** \[_SYSTEM1=NODENAME_ ...\]\]
                  \[**--vars** \[_VAR1=VALUE1_ ...\]\]
                  \[**--secrets** \[_SECRET1=SECRETID_ ...\]\]
+                 \[**--vars-file** _VARS_FILE_PATH_ \]
                  \[**--print-overview**|**-p**\]
                  \[**--jump-to**|**-j** _JUMP_TO_\]
                  \[**--interactive**|**-i**\] \[**--force**|**-f**\] \[**--debug**|**-d**\]
@@ -122,7 +123,14 @@ Default location is "~/.automatix.cfg.yaml".
   scriptfile or to overwrite them. You can specify multiple
   secrets like: --secrets v1=string1 v2=string2 v3=string3 *(only if
   teamvault is enabled)*
-    
+  
+**--vars-file** _VARS_FILE_PATH_
+: Use this to specify a CSV file from where **automatix** reads
+  systems, variables and secrets. First row must contain the field
+  types and names. You may also specify an ID field.
+  Example: `ID,systems:mysystem,vars:myvar`. The automatix script will
+  be processed for each row sequentially.
+  
 **--print-overview**, **-p**
 : Just print command pipeline overview with indices then exit without
  executing the commandline. Note that the *always pipeline* will be
