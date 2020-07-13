@@ -166,6 +166,10 @@ def _update_script_from_row(row: dict, script: dict):
     if not row:
         return
     for key, value in row.items():
+        if key == 'ID':
+            script['name'] += f' ({value})'
+            continue
+
         assert len(key.split(':')) == 2, \
             'First row in CSV must contain the field name and key seperated by colons' \
             ' like "systems:mysystem,vars:myvar".'

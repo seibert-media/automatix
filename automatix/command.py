@@ -88,7 +88,7 @@ class Command:
             self.env.LOG.info(f'(command execution time: {round(time()-steptime)}s)')
 
         if return_code != 0:
-            self.env.LOG.error(f'Command ({self.index}) failed with return code {return_code}.')
+            self.env.LOG.error(f'>> {self.env.name} << Command ({self.index}) failed with return code {return_code}.')
             if force:
                 return
             err_answer = input('[CF] What should I do? (p: proceed (default), r: retry, a: abort)\n')
