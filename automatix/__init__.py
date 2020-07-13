@@ -166,13 +166,13 @@ def _update_script_from_row(row: dict, script: dict):
     if not row:
         return
     for key, value in row.items():
-        if key == 'ID':
+        if key == 'label':
             script['name'] += f' ({value})'
             continue
 
         assert len(key.split(':')) == 2, \
-            'First row in CSV must contain the field name and key seperated by colons' \
-            ' like "systems:mysystem,vars:myvar".'
+            'First row in CSV must contain "label" or the field name and key seperated by colons' \
+            ' like "label,systems:mysystem,vars:myvar".'
         key_type, key_name = key.split(':')
         assert key_type in SCRIPT_FIELDS.keys(), \
             f'First row in CSV: Field name is \'{key_type}\', but has to be one of {list(SCRIPT_FIELDS.keys())}.'

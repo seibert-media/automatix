@@ -127,8 +127,8 @@ Default location is "~/.automatix.cfg.yaml".
 **--vars-file** _VARS_FILE_PATH_
 : Use this to specify a CSV file from where **automatix** reads
   systems, variables and secrets. First row must contain the field
-  types and names. You may also specify an ID field.
-  Example: `ID,systems:mysystem,vars:myvar`. The automatix script will
+  types and names. You may also specify an `label` field.
+  Example: `label,systems:mysystem,vars:myvar`. The automatix script will
   be processed for each row sequentially.
   
 **--print-overview**, **-p**
