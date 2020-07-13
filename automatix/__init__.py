@@ -162,14 +162,14 @@ def collect_vars(script: dict) -> dict:
     return var_dict
 
 
-def _update_script_from_row(row: dict, script: dict):
+def _update_script_from_row(row: dict, script: dict, index: int):
     if not row:
         return
+    try:
+        script['name'] += f" ({index} {row.pop('label')})"
+    except KeyError:
+        script['name'] += f" ({index})"
     for key, value in row.items():
-        if key == 'label':
-            script['name'] += f' ({value})'
-            continue
-
         assert len(key.split(':')) == 2, \
             'First row in CSV must contain "label" or the field name and key seperated by colons' \
             ' like "label,systems:mysystem,vars:myvar".'
@@ -192,9 +192,12 @@ def main():
             batch_items = list(DictReader(csvfile))
         LOG.notice('Detected batch processing from CSV file.')
 
+    i = 0
     for row in batch_items:
+        i += 1
+
         script_copy = deepcopy(script)
-        _update_script_from_row(row=row, script=script_copy)
+        _update_script_from_row(row=row, script=script_copy, index=i)
 
         variables = collect_vars(script_copy)
 
