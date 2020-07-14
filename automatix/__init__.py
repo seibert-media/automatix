@@ -38,10 +38,7 @@ def main():
             batch_items = list(DictReader(csvfile))
         LOG.notice('Detected batch processing from CSV file.')
 
-    i = 0
-    for row in batch_items:
-        i += 1
-
+    for i, row in enumerate(batch_items, start=1):
         script_copy = deepcopy(script)
         update_script_from_row(row=row, script=script_copy, index=i)
 
