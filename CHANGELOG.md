@@ -1,5 +1,10 @@
 # Changelog
 
+# 1.3.0
+
+- Introduce batch processing via CSV files
+- Restructure internal code
+
 # 1.2.2
 
 - Treat empty condition_var as False

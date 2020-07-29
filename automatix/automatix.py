@@ -14,6 +14,7 @@ class Automatix:
         self.script_fields = script_fields
         self.cmdClass = cmd_class
         self.env = PipelineEnvironment(
+            name=script['name'],
             config=config,
             systems=script.get('systems', {}),
             variables=variables,
@@ -35,7 +36,10 @@ class Automatix:
         return command_list
 
     def print_main_data(self):
-        self.env.LOG.info(f"\nName: {self.script['name']}")
+        self.env.LOG.info('\n\n')
+        self.env.LOG.info('//////////////////////////////////////////////////////////////////////')
+        self.env.LOG.info(f"---- {self.script['name']} ----")
+        self.env.LOG.info('//////////////////////////////////////////////////////////////////////')
         for field_key, field_value in self.script_fields.items():
             self.env.LOG.info(f'\n{field_value}:')
             for key, value in self.script.get(field_key, {}).items():

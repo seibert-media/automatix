@@ -68,6 +68,7 @@ class Command:
             return
 
         if self.get_type() == 'manual' or interactive:
+            self.env.LOG.debug('Ask for user interaction.')
             answer = input(f'[MS] Proceed? (p: proceed (default), s: skip, a: abort)\n')
             if answer == 's':
                 return
@@ -87,7 +88,7 @@ class Command:
             self.env.LOG.info(f'(command execution time: {round(time()-steptime)}s)')
 
         if return_code != 0:
-            self.env.LOG.error(f'Command ({self.index}) failed with return code {return_code}.')
+            self.env.LOG.error(f'>> {self.env.name} << Command ({self.index}) failed with return code {return_code}.')
             if force:
                 return
             err_answer = input('[CF] What should I do? (p: proceed (default), r: retry, a: abort)\n')
