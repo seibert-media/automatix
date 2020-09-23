@@ -55,7 +55,7 @@ def main():
         try:
             auto.run(args=args)
         except SkipBatchItemException:
-            LOG.notice('Jumping to next batch item.')
+            LOG.notice('=====> Jumping to next batch item.')
             continue
         except AbortException as exc:
             exit(int(exc))
