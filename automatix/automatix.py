@@ -4,7 +4,7 @@ from argparse import Namespace
 from collections import OrderedDict
 from typing import List
 
-from .command import Command, AbortException
+from .command import Command, AbortException, SkipBatchItemException
 from .environment import PipelineEnvironment
 
 
@@ -86,6 +86,11 @@ class Automatix:
             self.execute_extra_pipeline(pipeline='cleanup')
             self.env.LOG.debug('Clean up done. Exiting.')
             exit(int(exc))
+        except SkipBatchItemException:
+            self.env.LOG.debug('Abort requested. Cleaning up.')
+            self.execute_extra_pipeline(pipeline='cleanup')
+            self.env.LOG.debug('Clean up done.')
+            raise
         except KeyboardInterrupt:
             self.env.LOG.warning('\nAborted by user. Exiting.')
             exit(130)
