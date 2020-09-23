@@ -128,6 +128,11 @@ class Command:
         cmd = self.get_resolved_value()
         locale_vars = self._generate_python_vars()
         locale_vars.update(PERSISTENT_VARS)
+        locale_vars.update({
+            'AbortException': AbortException,
+            'SkipBatchItemException': SkipBatchItemException,
+        })
+
         self.env.LOG.debug(f'locals:\n {locale_vars}')
         try:
             self.env.LOG.debug(f'Run python command: {cmd}')
@@ -137,6 +142,8 @@ class Command:
             else:
                 exec(cmd, globals(), locale_vars)
             return 0
+        except (AbortException, SkipBatchItemException):
+            raise
         except KeyboardInterrupt:
             self.env.LOG.info('Abort command by user key stroke. Exit code is set to 130.')
             return 130
