@@ -36,9 +36,7 @@ class Automatix:
 
     def print_main_data(self):
         self.env.LOG.info('\n\n')
-        self.env.LOG.info('//////////////////////////////////////////////////////////////////////')
-        self.env.LOG.info(f"---- {self.script['name']} ----")
-        self.env.LOG.info('//////////////////////////////////////////////////////////////////////')
+        self.env.LOG.info(f' ------ Overview ------')
         for field_key, field_value in self.script_fields.items():
             self.env.LOG.info(f'\n{field_value}:')
             for key, value in self.script.get(field_key, {}).items():
@@ -63,6 +61,11 @@ class Automatix:
             self.env.LOG.info('------------------------------\n')
 
     def run(self, args: Namespace):
+        self.env.LOG.info('\n\n')
+        self.env.LOG.info('//////////////////////////////////////////////////////////////////////')
+        self.env.LOG.info(f"---- {self.script['name']} ----")
+        self.env.LOG.info('//////////////////////////////////////////////////////////////////////')
+
         command_list = self.build_command_list(pipeline='pipeline')
 
         self.execute_extra_pipeline(pipeline='always')
@@ -73,7 +76,11 @@ class Automatix:
             exit()
 
         try:
+            self.env.LOG.info('\n------------------------------')
+            self.env.LOG.info(' --- Start MAIN pipeline ---')
             self.execute_pipeline(command_list=command_list, args=args, start_index=int(args.jump_to))
+            self.env.LOG.info('\n --- End MAIN pipeline ---')
+            self.env.LOG.info('------------------------------\n')
         except (AbortException, SkipBatchItemException):
             self.env.LOG.debug('Abort requested. Cleaning up.')
             self.execute_extra_pipeline(pipeline='cleanup')
