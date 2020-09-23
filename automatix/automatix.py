@@ -3,7 +3,7 @@ from argparse import Namespace
 from collections import OrderedDict
 from typing import List
 
-from .command import Command, AbortException, SkipBatchItemException
+from .command import Command, AbortException, SkipBatchItemException, PERSISTENT_VARS
 from .environment import PipelineEnvironment
 
 
@@ -65,6 +65,8 @@ class Automatix:
         self.env.LOG.info('//////////////////////////////////////////////////////////////////////')
         self.env.LOG.info(f"---- {self.script['name']} ----")
         self.env.LOG.info('//////////////////////////////////////////////////////////////////////')
+
+        PERSISTENT_VARS.clear()
 
         command_list = self.build_command_list(pipeline='pipeline')
 
