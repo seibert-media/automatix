@@ -1,5 +1,4 @@
 import logging
-
 from argparse import Namespace
 from collections import OrderedDict
 from typing import List
@@ -55,19 +54,13 @@ class Automatix:
             cmd.execute(interactive=args.interactive, force=args.force)
 
     def execute_extra_pipeline(self, pipeline: str):
-        try:
-            if self.script.get(pipeline):
-                pipeline_list = self.build_command_list(pipeline=pipeline)
-                self.env.LOG.info('\n------------------------------')
-                self.env.LOG.info(f' --- Start {pipeline.upper()} pipeline ---')
-                self.execute_pipeline(command_list=pipeline_list, args=Namespace(interactive=False, force=False))
-                self.env.LOG.info(f'\n --- End {pipeline.upper()} pipeline ---')
-                self.env.LOG.info('------------------------------\n')
-        except AbortException as exc:
-            exit(int(exc))
-        except KeyboardInterrupt:
-            self.env.LOG.warning('\nAborted by user. Exiting.')
-            exit(130)
+        if self.script.get(pipeline):
+            pipeline_list = self.build_command_list(pipeline=pipeline)
+            self.env.LOG.info('\n------------------------------')
+            self.env.LOG.info(f' --- Start {pipeline.upper()} pipeline ---')
+            self.execute_pipeline(command_list=pipeline_list, args=Namespace(interactive=False, force=False))
+            self.env.LOG.info(f'\n --- End {pipeline.upper()} pipeline ---')
+            self.env.LOG.info('------------------------------\n')
 
     def run(self, args: Namespace):
         command_list = self.build_command_list(pipeline='pipeline')
@@ -81,19 +74,11 @@ class Automatix:
 
         try:
             self.execute_pipeline(command_list=command_list, args=args, start_index=int(args.jump_to))
-        except AbortException as exc:
+        except (AbortException, SkipBatchItemException):
             self.env.LOG.debug('Abort requested. Cleaning up.')
             self.execute_extra_pipeline(pipeline='cleanup')
             self.env.LOG.debug('Clean up done. Exiting.')
-            exit(int(exc))
-        except SkipBatchItemException:
-            self.env.LOG.debug('Abort requested. Cleaning up.')
-            self.execute_extra_pipeline(pipeline='cleanup')
-            self.env.LOG.debug('Clean up done.')
             raise
-        except KeyboardInterrupt:
-            self.env.LOG.warning('\nAborted by user. Exiting.')
-            exit(130)
 
         self.execute_extra_pipeline(pipeline='cleanup')
 

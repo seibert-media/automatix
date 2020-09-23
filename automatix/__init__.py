@@ -6,7 +6,7 @@ from time import time
 from typing import List
 
 from .automatix import Automatix
-from .command import Command, SkipBatchItemException
+from .command import Command, SkipBatchItemException, AbortException
 from .config import arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS
 
 if CONFIG.get('logging_lib'):
@@ -57,6 +57,11 @@ def main():
         except SkipBatchItemException:
             LOG.notice('Jumping to next batch item.')
             continue
+        except AbortException as exc:
+            exit(int(exc))
+        except KeyboardInterrupt:
+            LOG.warning('\nAborted by user. Exiting.')
+            exit(130)
 
     if 'AUTOMATIX_TIME' in os.environ:
         LOG.info(f'The Automatix script took {round(time() - starttime)}s!')
