@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.4.0
+
+- Introduce SkipBatchItemException
+- Python: SkipBatchItemException and AbortException available
+- Bugfix: Clear PERSISTENT_VARS for batch processing
+
 # 1.3.0
 
 - Introduce batch processing via CSV files

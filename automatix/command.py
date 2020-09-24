@@ -69,11 +69,19 @@ class Command:
 
         if self.get_type() == 'manual' or interactive:
             self.env.LOG.debug('Ask for user interaction.')
-            answer = input(f'[MS] Proceed? (p: proceed (default), s: skip, a: abort)\n')
+            answer = input(
+                '[MS] Proceed?\n'
+                ' p: proceed (default)\n'
+                ' s: skip\n'
+                ' a: abort and execute cleanup pipeline\n'
+                ' c: abort this batch item and continue with next from CSV\n'
+            )
             if answer == 's':
                 return
             if answer == 'a':
                 raise AbortException(1)
+            if answer == 'c':
+                raise SkipBatchItemException()
 
         steptime = time()
 
@@ -85,17 +93,25 @@ class Command:
             return_code = self._remote_action()
 
         if 'AUTOMATIX_TIME' in os.environ:
-            self.env.LOG.info(f'(command execution time: {round(time()-steptime)}s)')
+            self.env.LOG.info(f'(command execution time: {round(time() - steptime)}s)')
 
         if return_code != 0:
             self.env.LOG.error(f'>> {self.env.name} << Command ({self.index}) failed with return code {return_code}.')
             if force:
                 return
-            err_answer = input('[CF] What should I do? (p: proceed (default), r: retry, a: abort)\n')
+            err_answer = input(
+                '[CF] What should I do?\n'
+                ' p: proceed (default)\n'
+                ' r: retry\n'
+                ' a: abort and execute cleanup pipeline\n'
+                ' c: abort this batch item and continue with next from CSV\n'
+            )
             if err_answer == 'r':
                 return self.execute(interactive)
             if err_answer == 'a':
                 raise AbortException(return_code)
+            if err_answer == 'c':
+                raise SkipBatchItemException()
 
     def _local_action(self) -> int:
         cmd = self._build_command(path=self.env.config['import_path'])
@@ -112,6 +128,11 @@ class Command:
         cmd = self.get_resolved_value()
         locale_vars = self._generate_python_vars()
         locale_vars.update(PERSISTENT_VARS)
+        locale_vars.update({
+            'AbortException': AbortException,
+            'SkipBatchItemException': SkipBatchItemException,
+        })
+
         self.env.LOG.debug(f'locals:\n {locale_vars}')
         try:
             self.env.LOG.debug(f'Run python command: {cmd}')
@@ -121,6 +142,8 @@ class Command:
             else:
                 exec(cmd, globals(), locale_vars)
             return 0
+        except (AbortException, SkipBatchItemException):
+            raise
         except KeyboardInterrupt:
             self.env.LOG.info('Abort command by user key stroke. Exit code is set to 130.')
             return 130
@@ -241,6 +264,10 @@ class AbortException(Exception):
 
     def __int__(self):
         return self.return_code
+
+
+class SkipBatchItemException(Exception):
+    pass
 
 
 class UnknownCommandException(Exception):

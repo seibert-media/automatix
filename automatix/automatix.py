@@ -1,10 +1,9 @@
 import logging
-
 from argparse import Namespace
 from collections import OrderedDict
 from typing import List
 
-from .command import Command, AbortException
+from .command import Command, AbortException, SkipBatchItemException, PERSISTENT_VARS
 from .environment import PipelineEnvironment
 
 
@@ -37,9 +36,7 @@ class Automatix:
 
     def print_main_data(self):
         self.env.LOG.info('\n\n')
-        self.env.LOG.info('//////////////////////////////////////////////////////////////////////')
-        self.env.LOG.info(f"---- {self.script['name']} ----")
-        self.env.LOG.info('//////////////////////////////////////////////////////////////////////')
+        self.env.LOG.info(f' ------ Overview ------')
         for field_key, field_value in self.script_fields.items():
             self.env.LOG.info(f'\n{field_value}:')
             for key, value in self.script.get(field_key, {}).items():
@@ -55,21 +52,22 @@ class Automatix:
             cmd.execute(interactive=args.interactive, force=args.force)
 
     def execute_extra_pipeline(self, pipeline: str):
-        try:
-            if self.script.get(pipeline):
-                pipeline_list = self.build_command_list(pipeline=pipeline)
-                self.env.LOG.info('\n------------------------------')
-                self.env.LOG.info(f' --- Start {pipeline.upper()} pipeline ---')
-                self.execute_pipeline(command_list=pipeline_list, args=Namespace(interactive=False, force=False))
-                self.env.LOG.info(f'\n --- End {pipeline.upper()} pipeline ---')
-                self.env.LOG.info('------------------------------\n')
-        except AbortException as exc:
-            exit(int(exc))
-        except KeyboardInterrupt:
-            self.env.LOG.warning('\nAborted by user. Exiting.')
-            exit(130)
+        if self.script.get(pipeline):
+            pipeline_list = self.build_command_list(pipeline=pipeline)
+            self.env.LOG.info('\n------------------------------')
+            self.env.LOG.info(f' --- Start {pipeline.upper()} pipeline ---')
+            self.execute_pipeline(command_list=pipeline_list, args=Namespace(interactive=False, force=False))
+            self.env.LOG.info(f'\n --- End {pipeline.upper()} pipeline ---')
+            self.env.LOG.info('------------------------------\n')
 
     def run(self, args: Namespace):
+        self.env.LOG.info('\n\n')
+        self.env.LOG.info('//////////////////////////////////////////////////////////////////////')
+        self.env.LOG.info(f"---- {self.script['name']} ----")
+        self.env.LOG.info('//////////////////////////////////////////////////////////////////////')
+
+        PERSISTENT_VARS.clear()
+
         command_list = self.build_command_list(pipeline='pipeline')
 
         self.execute_extra_pipeline(pipeline='always')
@@ -80,15 +78,16 @@ class Automatix:
             exit()
 
         try:
+            self.env.LOG.info('\n------------------------------')
+            self.env.LOG.info(' --- Start MAIN pipeline ---')
             self.execute_pipeline(command_list=command_list, args=args, start_index=int(args.jump_to))
-        except AbortException as exc:
+            self.env.LOG.info('\n --- End MAIN pipeline ---')
+            self.env.LOG.info('------------------------------\n')
+        except (AbortException, SkipBatchItemException):
             self.env.LOG.debug('Abort requested. Cleaning up.')
             self.execute_extra_pipeline(pipeline='cleanup')
             self.env.LOG.debug('Clean up done. Exiting.')
-            exit(int(exc))
-        except KeyboardInterrupt:
-            self.env.LOG.warning('\nAborted by user. Exiting.')
-            exit(130)
+            raise
 
         self.execute_extra_pipeline(pipeline='cleanup')
 
