@@ -348,18 +348,9 @@ Additionally you can modify the environment to adjust things to your
 
 # TIPS & TRICKS
 
-For **python** action you can import libraries globally, e.g. `global
- pb; import isaclib.ionos as pb`. This allows you to assign output of
- library functions to (automatix) variables. _**BUT CAUTION: Choosing
- already existing (Python) variable names may lead to unexpected
- behaviour!!!**_ Maybe you want to check the source code (commands.py).  
-Explanation: automatix is written in Python and uses 'exec' to
- execute the command in function context. If you declare variables
- globally they remain across commands.
-
-An alternative and maybe better way is to use the **PERSISTENT_VARS**
- dictionary to make variables persistent over **python** commands.
- This is added to the local scope of **python** actions.
+If you want to access variables in **python** action you defined in
+preceeding command, you can use the **PERSISTENT_VARS** dictionary.
+This is added to the local scope of **python** actions.
  Examples:
 - To make all local variables of the actual command persistent use
  `PERSISTENT_VARS.update(locals())`.
@@ -367,9 +358,24 @@ An alternative and maybe better way is to use the **PERSISTENT_VARS**
  `del PERSISTENT_VARS['myvar']`
 - To make variable "v2" persistent use `PERSISTENT_VARS['v2'] = v2`
 
+You can use all variables in PERSISTENT_VARS 
+
+An alternative is to make variables global, but in most cases using
+ PERSISTENT_VARS is more clean. _**CAUTION: Choosing already existing
+ (Python) variable names may lead to unexpected behaviour!!!**_ Maybe
+  you want to check the source code (command.py).  
+Explanation: automatix is written in Python and uses 'exec' to
+ execute the command in function context. If you declare variables
+ globally they remain across commands.
+
 For **python** action there are some modules, constants and functions
- which are already imported:   
+ which are already imported (check command.py): e.g. 
 `re, subprocess, quote(from shlex)`
+
+To abort the current automatix and jump to the next batch item you can
+ raise the `SkipBatchItemException`. For aborting the whole automatix
+ process raise `AbortException`. In both cases the cleanup pipeline is
+ executed.
 
 # BEST PRACTISES
 
