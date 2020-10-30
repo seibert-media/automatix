@@ -36,6 +36,7 @@ def main():
     if args.vars_file:
         with open(args.vars_file) as csvfile:
             batch_items = list(DictReader(csvfile))
+        script['batch_mode'] = True
         LOG.notice('Detected batch processing from CSV file.')
 
     for i, row in enumerate(batch_items, start=1):
