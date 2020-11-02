@@ -1,5 +1,10 @@
 # Changelog
 
+# 1.4.2
+
+- Only offer c:continue in batch_mode
+- Avoid multiline questions
+
 # 1.4.0 / 1.4.1
 
 - Introduce SkipBatchItemException

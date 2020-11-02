@@ -18,6 +18,7 @@ class Automatix:
             systems=script.get('systems', {}),
             variables=variables,
             imports=script.get('imports', []),
+            batch_mode=script.get('batch_mode', False),
             LOG=logging.getLogger(config['logger']),
         )
 

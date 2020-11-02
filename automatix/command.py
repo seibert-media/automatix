@@ -69,18 +69,17 @@ class Command:
 
         if self.get_type() == 'manual' or interactive:
             self.env.LOG.debug('Ask for user interaction.')
-            answer = input(
-                '[MS] Proceed?\n'
-                ' p: proceed (default)\n'
-                ' s: skip\n'
-                ' a: abort and execute cleanup pipeline\n'
-                ' c: abort this batch item and continue with next from CSV\n'
-            )
+
+            options = 'p: proceed (default), s: skip, a: abort'
+            if self.env.batch_mode:
+                options += ', c: abort & continue to next (CSV processing)'
+
+            answer = input(f'[MS] Proceed? ({options})')
             if answer == 's':
                 return
             if answer == 'a':
                 raise AbortException(1)
-            if answer == 'c':
+            if self.env.batch_mode and answer == 'c':
                 raise SkipBatchItemException()
 
         steptime = time()
@@ -99,18 +98,17 @@ class Command:
             self.env.LOG.error(f'>> {self.env.name} << Command ({self.index}) failed with return code {return_code}.')
             if force:
                 return
-            err_answer = input(
-                '[CF] What should I do?\n'
-                ' p: proceed (default)\n'
-                ' r: retry\n'
-                ' a: abort and execute cleanup pipeline\n'
-                ' c: abort this batch item and continue with next from CSV\n'
-            )
+
+            err_options = 'p: proceed (default), r: retry, a: abort'
+            if self.env.batch_mode:
+                err_options += ', c: abort & continue to next (CSV processing)'
+
+            err_answer = input(f'[CF] What should I do? ({err_options})')
             if err_answer == 'r':
                 return self.execute(interactive)
             if err_answer == 'a':
                 raise AbortException(return_code)
-            if err_answer == 'c':
+            if self.env.batch_mode and err_answer == 'c':
                 raise SkipBatchItemException()
 
     def _local_action(self) -> int:

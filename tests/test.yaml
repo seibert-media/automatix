@@ -3,17 +3,18 @@ systems:
   testsystem: docker-test
 vars:
   myvar: huhu
+
+always:
+  - local: echo 'Print this always :-)'
 pipeline:
-  - python: print(globals())
-  - python: print(locals())
+  - a=python: re.match('\d*', '12345')
+  - nonexistent?local: echo 'Hups ...'
   - python: |
       from uuid import uuid4
       from pprint import pprint
       PERSISTENT_VARS.update(locals())
   - python: print(uuid4())
   - python: del PERSISTENT_VARS['uuid4']
-  - python: pprint(locals())
-  - local: sleep 20
   - a=local: uptime
   - remote@testsystem: whoami
   - python: print('{myvar}')
@@ -22,3 +23,5 @@ pipeline:
   - cond2=local: test "confluence" == "jira" && echo -n "True"; exit 0
   - cond2?python: print('Das ging wohl daneben 2')
   - python: raise Exception('moin')
+cleanup:
+  - local: echo 'Cleaning up.'
