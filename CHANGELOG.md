@@ -1,5 +1,9 @@
 # Changelog
 
+# 1.5.0
+
+- Make Bundlewrap repository avaiable in Python commands (AUTOMATIX_BW_REPO)
+
 # 1.4.2
 
 - Only offer c:continue in batch_mode

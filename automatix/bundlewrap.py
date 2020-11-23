@@ -3,7 +3,7 @@ from .command import Command
 
 class BWCommand(Command):
     def _generate_python_vars(self):
-        locale_vars = {}
+        locale_vars = {'AUTOMATIX_BW_REPO': self.env.config["bw_repo"]}
         for key, value in self.env.systems.items():
             locale_vars[f'{key}_node'] = self.env.config["bw_repo"].get_node(value)
         locale_vars['vars'] = self.env.vars

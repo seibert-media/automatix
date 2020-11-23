@@ -273,7 +273,8 @@ Here you define the commands automatix shall execute.
   pseudo-terminal allocation). It uses the standard SSH command.
   Therefore your .ssh/config should be respected.
 
-4) **python**: Python code to execute. If bundlewrap is enabled,
+4) **python**: Python code to execute. If bundlewrap is enabled, the
+ Bundlewrap repository object is avaiable via AUTOMATIX_BW_REPO and 
  system node objects are available via systemname_node.
 
 **ASSIGNMENT**: For **local**, **remote** and **python** action you
