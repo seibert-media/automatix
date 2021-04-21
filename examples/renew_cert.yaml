@@ -1,0 +1,31 @@
+name: Script to renew certificate with acme-tiny
+# Usage: automatix renew_cert.yaml --systems server=ip-or-hostname.com --vars port_handling='' domain=mydomain.org services='nginx postfix dovecot'
+systems:
+  server: ip-or-hostname.com
+vars:
+  port_handling: True
+  acme_dir: /var/www/html/.well-known/acme-challenge
+  services: 'nginx postfix dovecot'
+  certfile: /etc/ssl/private/server-lets.crt
+  certbak: /etc/ssl/private/server-lets.crt.old
+  intermediate: /etc/ssl/private/intermediate-lets.pem
+  priv_key: /etc/ssl/private/server.pem
+  chained: /etc/ssl/private/chained.pem
+always:
+  - port_handling?ip=local: dig +short {system_server} | tr -d '\n'
+pipeline:
+  - tempdir=remote@server: mktemp -d | tr -d '\n'
+  - local: rsync -Pa --rsync-path="sudo rsync" account.key {domain}.csr {system_server}:{tempdir}/
+  - port_handling?remote@server: upnpc -a {ip} 80 80 TCP 120
+  - remote@server: acme-tiny --account-key {tempdir}/account.key --csr {tempdir}/{domain}.csr --acme-dir {acme_dir} > {tempdir}/new_chain.pem
+  - remote@server: sed -i '/^$/d' {tempdir}/new_chain.pem
+  - remote@server: awk 'split_after == 1 {{n++;split_after=0}} /-----END CERTIFICATE-----/ {{split_after=1}} {{print > "{tempdir}/new_cert" n ".pem"}}' < {tempdir}/new_chain.pem
+  - remote@server: cp {certfile} {certbak}
+  - remote@server: cp {tempdir}/new_cert.pem {certfile}
+  - new_inter=remote@server: diff {tempdir}/new_cert1.pem {intermediate} | tr -d '\n'
+  - new_inter?remote@server: cp {tempdir}/new_cert1.pem {intermediate}
+  - remote@server: cat {certfile} {intermediate} {priv_key} > {chained}
+  - remote@server: systemctl restart {services}
+  - port_handling?remote@server: upnpc -d 80 TCP
+cleanup:
+  - remote@server: rm -rf {tempdir}

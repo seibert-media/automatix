@@ -1,0 +1,31 @@
+name: Script to renew certificate via DNS (netcup) with lego
+# Usage: automatix renew_cert.yaml --systems server=ip-or-hostname.com services='nginx postfix dovecot' domain=mydomain.org email=me@example.com
+systems:
+  server: ip-or-hostname.com
+vars:
+  port_handling: True
+  services: 'nginx postfix dovecot'
+  certfile: /etc/ssl/private/server.crt
+  certbak: /etc/ssl/private/server.crt.old
+  intermediate: /etc/ssl/private/intermediate-lets.crt
+  priv_key: /etc/ssl/private/server.key
+  chained_key: /etc/ssl/private/server-chain-key.pem
+  chained: /etc/ssl/private/server-chain.crt
+imports:
+  - netcup.creds
+pipeline:
+  - tempdir=remote@server: mktemp -d | tr -d '\n'
+  - local: rsync -Pa --rsync-path="sudo rsync" {domain}.csr {system_server}:{tempdir}/
+  - remote@server: go/bin/lego -c {tempdir}/{domain}.csr -m {email} --path .lego --dns netcup -a run
+  - remote@server: sed -i '/^$/d' .lego/certificates/_.{domain}.crt
+  - remote@server: awk 'split_after == 1 {{n++;split_after=0}} /-----END CERTIFICATE-----/ {{split_after=1}} {{print > "{tempdir}/new_cert" n ".pem"}}' < .lego/certificates/_.{domain}.crt
+  - remote@server: cp {certfile} {certbak}
+  - remote@server: cp {tempdir}/new_cert.pem {certfile}
+  - new_inter=remote@server: diff {tempdir}/new_cert1.pem {intermediate} | tr -d '\n'
+  - new_inter?remote@server: cp {tempdir}/new_cert1.pem {intermediate}
+  - remote@server: cat {certfile} {intermediate} {priv_key} > {chained_key}
+  - remote@server: cat {certfile} {intermediate} > {chained}
+  - remote@server: systemctl restart {services}
+cleanup:
+  - manual: Manual stop before we delete the temporary directory. Your chance to check if everthing is alright.
+  - remote@server: rm -rf {tempdir}
