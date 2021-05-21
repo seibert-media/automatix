@@ -1,6 +1,12 @@
 from bundlewrap.exceptions import NoSuchNode
+from bundlewrap.repo import Repository
 
 from .command import Command
+
+
+class AutomatixBwRepo(Repository):
+    def reload(self):
+        self.__init__(repo_path=self.path)
 
 
 class BWCommand(Command):
