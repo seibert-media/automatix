@@ -1,5 +1,9 @@
 # Changelog
 
+# 1.6.0
+
+- Allow Bundlewrap nodes to be defined at runtime (only fail, if undefined node is used)
+
 # 1.5.0
 
 - Make Bundlewrap repository avaiable in Python commands (AUTOMATIX_BW_REPO)
