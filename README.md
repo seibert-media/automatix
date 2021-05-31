@@ -289,12 +289,12 @@ Here you define the commands automatix shall execute.
  strings when used to build commands in following steps.
  
 **CONDITIONS**: You can define the command only to be executed if
- your condition variable evolves to "True" in Python. To achieve this
+ your condition variable evaluates to "True" in Python. To achieve this
  write the variable name followed by a question mark at the very
  beginning like `cond?python: destroy_system()`. Be aware that all
  output from **local** or **remote** commands will lead to an
- non-empty string which evolves to "True" in Python, but empty output
- will evolve to "False".
+ non-empty string which evaluates to "True" in Python, but empty output
+ will evaluate to "False".
 
 **VALUE**: Your command. Variables will be replaced with Python
  format function. Therefore use curly brackets to refer to variables,

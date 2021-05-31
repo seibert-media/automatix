@@ -64,7 +64,7 @@ class Command:
         return_code = 0
 
         if self.condition_var is not None and not bool(self.env.vars.get(self.condition_var, False)):
-            self.env.LOG.info(f'Skip command, because condition variable "{self.condition_var}" evolves to False')
+            self.env.LOG.info(f'Skip command, because condition variable "{self.condition_var}" evaluates to False')
             return
 
         if self.get_type() == 'manual' or interactive:
@@ -248,7 +248,7 @@ def parse_key(key) -> Tuple[str, ...]:
     parses the key
 
     returns a list containing:
-    - condition_var: if this evolves to False, the command is not executed
+    - condition_var: if this evaluates to False, the command is not executed
     - assignment_var: name of a variable, to which the command output is assigned
     - command_type
     """
