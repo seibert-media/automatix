@@ -16,10 +16,9 @@ else:
     from .logger import init_logger
 
 if CONFIG.get('bundlewrap'):
-    from bundlewrap.repo import Repository
-    from .bundlewrap import BWCommand
+    from .bundlewrap import BWCommand, AutomatixBwRepo
 
-    CONFIG['bw_repo'] = Repository(repo_path=os.environ.get('BW_REPO_PATH'))
+    CONFIG['bw_repo'] = AutomatixBwRepo(repo_path=os.environ.get('BW_REPO_PATH'))
     cmdClass = BWCommand
 else:
     cmdClass = Command

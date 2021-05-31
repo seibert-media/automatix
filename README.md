@@ -276,6 +276,9 @@ Here you define the commands automatix shall execute.
 4) **python**: Python code to execute. If bundlewrap is enabled, the
  Bundlewrap repository object is avaiable via AUTOMATIX_BW_REPO and 
  system node objects are available via systemname_node.
+ Use `AUTOMATIX_BW_REPO.reload()` to reinitialize the Bundlewrap 
+ repository from file system. This can be useful for using newly
+ created nodes (e.g. remote commands).
 
 **ASSIGNMENT**: For **local**, **remote** and **python** action you
  can also define a variable to which the output will be assigned.
