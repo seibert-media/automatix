@@ -13,10 +13,11 @@ class BWCommand(Command):
     def _generate_python_vars(self):
         locale_vars = {'AUTOMATIX_BW_REPO': self.env.config["bw_repo"]}
         for key, value in self.env.systems.items():
-            try:
-                locale_vars[f'{key}_node'] = self.env.config["bw_repo"].get_node(value)
-            except NoSuchNode:
-                self.env.LOG.warning(f'bw node "{value}" does not exist, "{key}_node" not set')
+            if not value.startswith('hostname!'):
+                try:
+                    locale_vars[f'{key}_node'] = self.env.config["bw_repo"].get_node(value)
+                except NoSuchNode:
+                    self.env.LOG.warning(f'bw node "{value}" does not exist, "{key}_node" not set')
         locale_vars['vars'] = self.env.vars
         return locale_vars
 
