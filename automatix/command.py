@@ -150,7 +150,7 @@ class Command:
             return 1
 
     def _get_remote_hostname(self):
-        return self.get_system()
+        return self.get_system().replace('hostname!', '')
 
     def _remote_action(self) -> int:
         hostname = self._get_remote_hostname()

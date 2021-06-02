@@ -21,5 +21,8 @@ class BWCommand(Command):
         return locale_vars
 
     def _get_remote_hostname(self):
-        node = self.env.config['bw_repo'].get_node(self.get_system())
+        system = self.get_system()
+        if system.startswith('hostname!'):
+            return system.replace('hostname!', '')
+        node = self.env.config['bw_repo'].get_node(system)
         return node.hostname
