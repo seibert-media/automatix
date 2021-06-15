@@ -135,7 +135,7 @@ def collect_vars(script: dict) -> dict:
             else:
                 raise UnknownSecretTypeException(field)
     for syskey, system in script.get('systems', {}).items():
-        var_dict[f'system_{syskey}'] = system
+        var_dict[f'system_{syskey}'] = system.replace('hostname!', '')
     return var_dict
 
 

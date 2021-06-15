@@ -88,14 +88,18 @@ Default location is "~/.automatix.cfg.yaml".
 
 # SYNOPSIS
 
-**automatix** \[**--help**|**-h**\] \[**--systems** \[_SYSTEM1=NODENAME_ ...\]\]
-                 \[**--vars** \[_VAR1=VALUE1_ ...\]\]
-                 \[**--secrets** \[_SECRET1=SECRETID_ ...\]\]
-                 \[**--vars-file** _VARS_FILE_PATH_ \]
-                 \[**--print-overview**|**-p**\]
-                 \[**--jump-to**|**-j** _JUMP_TO_\]
-                 \[**--interactive**|**-i**\] \[**--force**|**-f**\] \[**--debug**|**-d**\]
-                 \[**--**\] **scriptfile**
+**automatix**
+      \[**--help**|**-h**\]
+      \[**--systems** \[_SYSTEM1=ADDRESS_OR_NODENAME_ ...\]\]
+      \[**--vars** \[_VAR1=VALUE1_ ...\]\]
+      \[**--secrets** \[_SECRET1=SECRETID_ ...\]\]
+      \[**--vars-file** _VARS_FILE_PATH_ \]
+      \[**--print-overview**|**-p**\]
+      \[**--jump-to**|**-j** _JUMP_TO_\]
+      \[**--interactive**|**-i**\]
+      \[**--force**|**-f**\]
+      \[**--debug**|**-d**\]
+      \[**--**\] **scriptfile**
 
 
 ## OPTIONS
@@ -108,7 +112,7 @@ Default location is "~/.automatix.cfg.yaml".
 **-h**, **--help**
 : View help message and exit.
 
-**--systems** _SYSTEM1=NODENAME_
+**--systems** _SYSTEM1=ADDRESS_OR_NODENAME_
 : Use this to set systems without adding them to the
   scriptfile or to overwrite them. You can specify multiple
   systems like: --systems v1=string1 v2=string2 v3=string3
@@ -221,15 +225,18 @@ The **scriptfile** has to contain valid YAML.
 : Just a name for the process. Does not do anything.
 
 **systems** _(associative array)_
-: Define some systems. Value has to be an valid and existing
- bundlewrap nodename.
+: Define some systems. Value has to be a valid SSH destination like an
+ IP address or hostname. If Bundlewrap support is enabled, it has to
+ be a valid and existing Bundlewrap nodename or you can preceed your
+ IP or hostname with `hostname!` to define a non-Bundlewrap system.
 You can refer to these systems in the command pipeline in multiple ways:
 
 1) remote@systemname as your command action (see below)
 
 2) via {system_systemname} which will be replaced with the value
 
-3) via systemname_node in python actions to use the bw node object
+3) via systemname_node in python actions to use the Bundlewrap node
+   object (Bundlewrap systems only)
 
 **vars** _(associative array)_
 : Define some vars. These are accessible in the command pipeline via
@@ -292,12 +299,12 @@ Here you define the commands automatix shall execute.
  your condition variable evaluates to "True" in Python. To achieve this
  write the variable name followed by a question mark at the very
  beginning like `cond?python: destroy_system()`. Be aware that all
- output from **local** or **remote** commands will lead to an
+ output from **local** or **remote** commands will lead to a
  non-empty string which evaluates to "True" in Python, but empty output
  will evaluate to "False".
 
 **VALUE**: Your command. Variables will be replaced with Python
- format function. Therefore use curly brackets to refer to variables,
+ format function. Therefore, use curly brackets to refer to variables,
  systems, secrets and constants.
 
 Constants are available via const_KEY, where KEY is the key of your
