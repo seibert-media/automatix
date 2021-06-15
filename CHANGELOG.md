@@ -1,5 +1,9 @@
 # Changelog
 
+# 1.7.0
+
+- Add `hostname!` option to define non-Bundlewrap systems
+
 # 1.6.0
 
 - Allow Bundlewrap nodes to be defined at runtime (only fail, if undefined node is used)
