@@ -123,7 +123,7 @@ def get_script(args: argparse.Namespace) -> dict:
 def collect_vars(script: dict) -> dict:
     var_dict = script.get('vars', {})
     if var_dict is None:
-        LOG.error('Vars section defined, but empty!\nThis is illegal, either remove the section or add variables.')
+        LOG.warning('Vars section defined, but empty!\nThis is illegal, either remove the section or add variables.')
         var_dict = {}
     script['vars'] = var_dict  # just for the case it was empty
     if CONFIG['teamvault']:
