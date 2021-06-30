@@ -74,6 +74,7 @@ class Command:
             if self.env.batch_mode:
                 options += ', c: abort & continue to next (CSV processing)'
 
+            print('\a', end='')
             answer = input(f'[MS] Proceed? ({options})')
             if answer == 's':
                 return
