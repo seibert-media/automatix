@@ -178,7 +178,7 @@ The **scriptfile** has to contain valid YAML.
 ### EXAMPLE: scriptfile
     
     name: Migration Server XY
-    # Systems you like to refer to in pipeline (accessible via 'system_source')
+    # Systems you like to refer to in pipeline (accessible via 'SYSTEMS.source')
     # If Bundlewrap support is activated use node names instead of hostnames.
     systems:
       source: sourcesystem.com
@@ -205,7 +205,7 @@ The **scriptfile** has to contain valid YAML.
       - manual: Please trigger preparing tasks via webinterface
       - myvar=local: curl -L -vvv -k https://{domain}/
       - local: echo "1.1.1.1 {domain}" >> /etc/hosts
-      - sla=python: source_node.metadata.get('sla')
+      - sla=python: NODES.source.metadata.get('sla')
       - python: |
             sla = '{sla}'
             if sla == 'gold':
@@ -233,9 +233,9 @@ You can refer to these systems in the command pipeline in multiple ways:
 
 1) remote@systemname as your command action (see below)
 
-2) via {system_systemname} which will be replaced with the value
+2) via {SYSTEMS.systemname} which will be replaced with the value
 
-3) via systemname_node in python actions to use the Bundlewrap node
+3) via NODES.systemname in python actions to use the Bundlewrap node
    object (Bundlewrap systems only)
 
 **vars** _(associative array)_
@@ -282,7 +282,7 @@ Here you define the commands automatix shall execute.
 
 4) **python**: Python code to execute. If bundlewrap is enabled, the
  Bundlewrap repository object is avaiable via AUTOMATIX_BW_REPO and 
- system node objects are available via systemname_node.
+ system node objects are available via NODES.systemname.
  Use `AUTOMATIX_BW_REPO.reload()` to reinitialize the Bundlewrap 
  repository from file system. This can be useful for using newly
  created nodes (e.g. remote commands).
@@ -290,7 +290,7 @@ Here you define the commands automatix shall execute.
 **ASSIGNMENT**: For **local**, **remote** and **python** action you
  can also define a variable to which the output will be assigned.
  To do this prefix the desired variablename and = before the action
- key, e.g. `myvar=python: system_node.hostname`. Be careful when
+ key, e.g. `myvar=python: NODES.system.hostname`. Be careful when
  working with multiline statements. In **python** the first line is
  likely to set the variable. All variables will be converted to
  strings when used to build commands in following steps.
@@ -307,7 +307,7 @@ Here you define the commands automatix shall execute.
  format function. Therefore, use curly brackets to refer to variables,
  systems, secrets and constants.
 
-Constants are available via const_KEY, where KEY is the key of your
+Constants are available via CONST.KEY, where KEY is the key of your
  constants in your **CONFIGURATION** file. There you can define some
  widely used constants.
 
