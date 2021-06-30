@@ -11,14 +11,16 @@ class AutomatixBwRepo(Repository):
 
 class BWCommand(Command):
     def _generate_python_vars(self):
-        locale_vars = {'AUTOMATIX_BW_REPO': self.env.config["bw_repo"]}
+        locale_vars = {'AUTOMATIX_BW_REPO': self.env.config['bw_repo']}
         for key, value in self.env.systems.items():
             if not value.startswith('hostname!'):
                 try:
-                    locale_vars[f'{key}_node'] = self.env.config["bw_repo"].get_node(value)
+                    # DEPRECATED, use NODES instead
+                    locale_vars[f'{key}_node'] = self.env.config['bw_repo'].get_node(value)
                 except NoSuchNode:
                     self.env.LOG.warning(f'bw node "{value}" does not exist, "{key}_node" not set')
         locale_vars['vars'] = self.env.vars
+        locale_vars['NODES'] = BWNodesWrapper(self.env.config['bw_repo'])
         return locale_vars
 
     def _get_remote_hostname(self):
@@ -27,3 +29,11 @@ class BWCommand(Command):
             return system.replace('hostname!', '')
         node = self.env.config['bw_repo'].get_node(system)
         return node.hostname
+
+
+class BWNodesWrapper:
+    def __init__(self, repo: Repository):
+        self.repo = repo
+
+    def __getattr__(self, node_name):
+        return self.repo.get_node(node_name)
