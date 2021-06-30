@@ -179,7 +179,7 @@ The **scriptfile** has to contain valid YAML.
     
     name: Migration Server XY
     # Systems you like to refer to in pipeline (accessible via 'SYSTEMS.source')
-    # If Bundlewrap support is activated use node names instead of hostnames.
+    # If Bundlewrap support is activated use node names instead of hostnames or add preceeding 'hostname!'.
     systems:
       source: sourcesystem.com
       target: targetsystem.org
