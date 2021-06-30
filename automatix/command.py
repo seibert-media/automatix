@@ -74,7 +74,7 @@ class Command:
             if self.env.batch_mode:
                 options += ', c: abort & continue to next (CSV processing)'
 
-            answer = input(f'[MS] Proceed? ({options})')
+            answer = input(f'[MS] Proceed? ({options})\a')
             if answer == 's':
                 return
             if answer == 'a':
@@ -103,7 +103,7 @@ class Command:
             if self.env.batch_mode:
                 err_options += ', c: abort & continue to next (CSV processing)'
 
-            err_answer = input(f'[CF] What should I do? ({err_options})')
+            err_answer = input(f'[CF] What should I do? ({err_options})\a')
             if err_answer == 'r':
                 return self.execute(interactive)
             if err_answer == 'a':
@@ -180,7 +180,7 @@ class Command:
                     )
                     answer = input(
                         '[RR] What should I do? '
-                        '(i: send SIGINT (default), t: send SIGTERM, k: send SIGKILL, p: do nothing and proceed) \n')
+                        '(i: send SIGINT (default), t: send SIGTERM, k: send SIGKILL, p: do nothing and proceed) \n\a')
 
                     if answer == 'p':
                         break
