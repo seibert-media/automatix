@@ -1,6 +1,8 @@
 import argparse
 import logging
 import os
+import re
+from time import sleep
 from collections import OrderedDict
 
 import yaml
@@ -112,12 +114,29 @@ def get_script(args: argparse.Namespace) -> dict:
         file = f'{SCRIPT_PATH}/{args.scriptfile}'
 
     script = read_yaml(file)
+    validate_script(script)
 
     for field in SCRIPT_FIELDS.keys():
         if vars(args).get(field):
             _overwrite(script=script, key=field, data=vars(args)[field])
 
     return script
+
+
+def validate_script(script: dict):
+    for pipeline in ['always', 'pipeline', 'cleanup']:
+        for index, command in enumerate(script.get(pipeline, [])):
+            for entry in command.values():
+                prefix = f'[{pipeline}:{index}]'
+                if re.search(r'\S*_node', entry):
+                    LOG.warning(f'{prefix} Using "something_node" is deprecated. Use NODES.something instead.')
+                if re.search(r'system_\S*', entry):
+                    LOG.warning(f'{prefix} Using "system_something" is deprecated. Use SYSTEMS.something instead.')
+                if re.search(r'const_\S*', entry):
+                    LOG.warning(f'{prefix} Using "const_something" is deprecated. Use CONST.something instead.')
+                break  # there always should be only one entry
+    # To give people a chance to see warnings before the following output happens.
+    sleep(1)
 
 
 def collect_vars(script: dict) -> dict:
