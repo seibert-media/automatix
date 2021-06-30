@@ -20,7 +20,7 @@ class BWCommand(Command):
                 except NoSuchNode:
                     self.env.LOG.warning(f'bw node "{value}" does not exist, "{key}_node" not set')
         locale_vars['vars'] = self.env.vars
-        locale_vars['NODES'] = BWNodesWrapper(self.env.config['bw_repo'])
+        locale_vars['NODES'] = BWNodesWrapper(repo=self.env.config['bw_repo'], systems=self.env.systems)
         return locale_vars
 
     def _get_remote_hostname(self):
@@ -32,8 +32,9 @@ class BWCommand(Command):
 
 
 class BWNodesWrapper:
-    def __init__(self, repo: Repository):
+    def __init__(self, repo: Repository, systems: dict):
         self.repo = repo
+        self.systems = systems
 
-    def __getattr__(self, node_name):
-        return self.repo.get_node(node_name)
+    def __getattr__(self, name):
+        return self.repo.get_node(self.systems[name])
