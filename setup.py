@@ -14,7 +14,7 @@ setup(
     author='Johannes Paul, //SEIBERT/MEDIA GmbH',
     author_email='jpaul@seibert-media.net',
     license='MIT',
-    python_requires='>=3.7',
+    python_requires='>=3.6',
     install_requires=[
         'pyyaml>=5.1',
     ],
