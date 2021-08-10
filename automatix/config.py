@@ -15,6 +15,14 @@ def read_yaml(yamlfile: str) -> dict:
         return yaml.load(file.read())
 
 
+DEPRECATED_SYNTAX = {
+    # 0: REGEX pattern
+    # 1: replacement, formatted with group = re.Match.groups(), e.g. 'something {group[0]} foo'
+    (r'(?<=\W)(\w*)_node(?=\W)', 'NODES.{group[0]}'),
+    (r'{\s*system_(\w*)\s*}', '{{SYSTEMS.{group[0]}}}'),
+    (r'{\s*const_(\w*)\s*}', '{{CONST.{group[0]}}}'),
+}
+
 SCRIPT_FIELDS = OrderedDict()
 SCRIPT_FIELDS['systems'] = 'Systems'
 SCRIPT_FIELDS['vars'] = 'Variables'
@@ -124,19 +132,35 @@ def get_script(args: argparse.Namespace) -> dict:
 
 
 def validate_script(script: dict):
+    warn = False
     for pipeline in ['always', 'pipeline', 'cleanup']:
         for index, command in enumerate(script.get(pipeline, [])):
             for entry in command.values():
                 prefix = f'[{pipeline}:{index}]'
-                if re.search(r'\S*_node', entry):
-                    LOG.warning(f'{prefix} Using "something_node" is deprecated. Use NODES.something instead.')
-                if re.search(r'system_\S*', entry):
-                    LOG.warning(f'{prefix} Using "system_something" is deprecated. Use SYSTEMS.something instead.')
-                if re.search(r'const_\S*', entry):
-                    LOG.warning(f'{prefix} Using "const_something" is deprecated. Use CONST.something instead.')
+
+                if isinstance(entry, dict):
+                    warn = True
+                    LOG.warning(
+                        f'{prefix} Command is not a string! Please use quotes!'
+                    )
+                    entry = f'{{{next(iter(entry))}}}'
+
+                for pattern, replacement in DEPRECATED_SYNTAX:
+                    match = re.search(pattern, entry)
+                    if match:
+                        warn = True
+                        LOG.warning(
+                            '{prefix} Using "{match}" is deprecated. Use "{repl}" instead.'.format(
+                                prefix=prefix,
+                                match=match.group(0),
+                                repl=replacement.format(group=match.groups())
+                            )
+                        )
+
                 break  # there always should be only one entry
-    # To give people a chance to see warnings before the following output happens.
-    sleep(1)
+    if warn:
+        # To give people a chance to see warnings before the following output happens.
+        sleep(5)
 
 
 def collect_vars(script: dict) -> dict:
