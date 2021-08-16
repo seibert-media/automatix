@@ -1,5 +1,10 @@
 # Changelog
 
+# 1.8.0
+
+- Introduce SYSTEMS, CONST and NODES as replacement for system_, const_ and _node
+- Validator and warnings for deprecated syntax
+
 # 1.7.0
 
 - Add `hostname!` option to define non-Bundlewrap systems
