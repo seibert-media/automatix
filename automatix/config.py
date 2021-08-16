@@ -1,6 +1,8 @@
 import argparse
 import logging
 import os
+import re
+from time import sleep
 from collections import OrderedDict
 
 import yaml
@@ -12,6 +14,16 @@ def read_yaml(yamlfile: str) -> dict:
     with open(yamlfile) as file:
         return yaml.load(file.read())
 
+
+DEPRECATED_SYNTAX = {
+    # 0: REGEX pattern
+    # 1: replacement, formatted with group = re.Match.groups(), e.g. 'something {group[0]} foo'
+    # 2: special flags (p: python, b: Bundlewrap)
+    (r'(\w*)_node(?!\w)', 'NODES.{group[0]}', 'bp'),
+    (r'{\s*system_(\w*)\s*}', '{{SYSTEMS.{group[0]}}}', ''),
+    (r'{\s*const_(\w*)\s*}', '{{CONST.{group[0]}}}', ''),
+    (r'(?<!\w)global\s+(\w*)', 'PERSISTENT_VARS[\'{group[0]}\'] = {group[0]}', 'p'),
+}
 
 SCRIPT_FIELDS = OrderedDict()
 SCRIPT_FIELDS['systems'] = 'Systems'
@@ -112,12 +124,50 @@ def get_script(args: argparse.Namespace) -> dict:
         file = f'{SCRIPT_PATH}/{args.scriptfile}'
 
     script = read_yaml(file)
+    validate_script(script)
 
     for field in SCRIPT_FIELDS.keys():
         if vars(args).get(field):
             _overwrite(script=script, key=field, data=vars(args)[field])
 
     return script
+
+
+def validate_script(script: dict):
+    warn = False
+    for pipeline in ['always', 'pipeline', 'cleanup']:
+        for index, command in enumerate(script.get(pipeline, [])):
+            for ckey, entry in command.items():
+                prefix = f'[{pipeline}:{index}]'
+
+                if isinstance(entry, dict):
+                    warn = True
+                    LOG.warning(
+                        f'{prefix} Command is not a string! Please use quotes!'
+                    )
+                    entry = f'{{{next(iter(entry))}}}'
+
+                for pattern, replacement, flags in DEPRECATED_SYNTAX:
+                    if 'b' in flags and not CONFIG['bundlewrap']:
+                        continue
+                    if 'p' in flags and 'python' not in ckey:
+                        continue
+
+                    match = re.search(pattern, entry)
+                    if match:
+                        warn = True
+                        LOG.warning(
+                            '{prefix} Using "{match}" is deprecated. Use "{repl}" instead.'.format(
+                                prefix=prefix,
+                                match=match.group(0),
+                                repl=replacement.format(group=match.groups())
+                            )
+                        )
+
+                break  # there always should be only one entry
+    if warn:
+        # To give people a chance to see warnings before the following output happens.
+        sleep(5)
 
 
 def collect_vars(script: dict) -> dict:
@@ -138,6 +188,7 @@ def collect_vars(script: dict) -> dict:
             else:
                 raise UnknownSecretTypeException(field)
     for syskey, system in script.get('systems', {}).items():
+        # DEPRECATED, use SYSTEMS instead
         var_dict[f'system_{syskey}'] = system.replace('hostname!', '')
     return var_dict
 

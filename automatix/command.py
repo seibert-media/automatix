@@ -56,7 +56,11 @@ class Command:
                     variables[key] = file.read().strip()
 
         for key, value in self.env.config['constants'].items():
+            # DEPRECATED, use CONST instead
             variables[f'const_{key}'] = value
+
+        variables['CONST'] = ConstantsWrapper(self.env.config['constants'])
+        variables['SYSTEMS'] = SystemsWrapper(self.env.systems)
         return self.value.format(**variables)
 
     def execute(self, interactive: bool = False, force: bool = False):
@@ -254,6 +258,22 @@ def parse_key(key) -> Tuple[str, ...]:
     """
 
     return re.search(r'((.*)\?)?((.*)=)?(.*)', key).group(2, 4, 5)
+
+
+class SystemsWrapper:
+    def __init__(self, systems: dict):
+        self.systems = systems
+
+    def __getattr__(self, name):
+        return self.systems[name].replace('hostname!', '')
+
+
+class ConstantsWrapper:
+    def __init__(self, constants: dict):
+        self.constants = constants
+
+    def __getattr__(self, name):
+        return self.constants[name]
 
 
 class AbortException(Exception):

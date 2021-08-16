@@ -12,10 +12,10 @@ vars:
   priv_key: /etc/ssl/private/server.pem
   chained: /etc/ssl/private/chained.pem
 always:
-  - port_handling?ip=local: dig +short {system_server} | tr -d '\n'
+  - port_handling?ip=local: dig +short {SYSTEMS.server} | tr -d '\n'
 pipeline:
   - tempdir=remote@server: mktemp -d | tr -d '\n'
-  - local: rsync -Pa --rsync-path="sudo rsync" account.key {domain}.csr {system_server}:{tempdir}/
+  - local: rsync -Pa --rsync-path="sudo rsync" account.key {domain}.csr {SYSTEMS.server}:{tempdir}/
   - port_handling?remote@server: upnpc -a {ip} 80 80 TCP 120
   - remote@server: acme-tiny --account-key {tempdir}/account.key --csr {tempdir}/{domain}.csr --acme-dir {acme_dir} > {tempdir}/new_chain.pem
   - remote@server: sed -i '/^$/d' {tempdir}/new_chain.pem
