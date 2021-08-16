@@ -7,8 +7,8 @@ pipeline:
   - files?backup=local: mktemp -d | tr -d '\n'
   - files?local: rsync -zaXAP "{directory}" {backup}/
   - files?commands=local: echo "{files}" | awk -F . 'NF {{print "ffmpeg -y -i \""$0"\" \""$0".mp3\""}}'
-  - files?local: {commands}
+  - files?local: '{commands}'
   - files?commands=local: echo "{files}" | awk -F . 'NF {{print "rm \""$0"\""}}'
-  - files?local: {commands}
+  - files?local: '{commands}'
 cleanup:
   - files?manual: You can remove the backup folder at {backup}.
