@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.8.1
+- Make compatible with PyYAML6
+
 # 1.8.0
 
 - Introduce SYSTEMS, CONST and NODES as replacement for system_, const_ and _node
