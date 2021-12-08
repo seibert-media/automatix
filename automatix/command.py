@@ -78,13 +78,17 @@ class Command:
             if self.env.batch_mode:
                 options += ', c: abort & continue to next (CSV processing)'
 
-            answer = input(f'[MS] Proceed? ({options})\a')
-            if answer == 's':
-                return
-            if answer == 'a':
-                raise AbortException(1)
-            if self.env.batch_mode and answer == 'c':
-                raise SkipBatchItemException()
+            while True:
+                answer = input(f'[MS] Proceed? ({options})\a')
+                if answer == 's':
+                    return
+                if answer == 'a':
+                    raise AbortException(1)
+                if self.env.batch_mode and answer == 'c':
+                    raise SkipBatchItemException()
+                if answer in ['p', '']:
+                    break
+                self.env.LOG.info('Invalid input. Try again.')
 
         steptime = time()
 
@@ -107,13 +111,17 @@ class Command:
             if self.env.batch_mode:
                 err_options += ', c: abort & continue to next (CSV processing)'
 
-            err_answer = input(f'[CF] What should I do? ({err_options})\a')
-            if err_answer == 'r':
-                return self.execute(interactive)
-            if err_answer == 'a':
-                raise AbortException(return_code)
-            if self.env.batch_mode and err_answer == 'c':
-                raise SkipBatchItemException()
+            while True:
+                err_answer = input(f'[CF] What should I do? ({err_options})\a')
+                if err_answer == 'r':
+                    return self.execute(interactive)
+                if err_answer == 'a':
+                    raise AbortException(return_code)
+                if self.env.batch_mode and err_answer == 'c':
+                    raise SkipBatchItemException()
+                if err_answer in ['p', '']:
+                    break
+                self.env.LOG.info('Invalid input. Try again.')
 
     def _local_action(self) -> int:
         cmd = self._build_command(path=self.env.config['import_path'])
