@@ -1,4 +1,5 @@
 import os
+import sys
 from copy import deepcopy
 from csv import DictReader
 from importlib import import_module
@@ -7,7 +8,7 @@ from typing import List
 
 from .automatix import Automatix
 from .command import Command, SkipBatchItemException, AbortException
-from .config import arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS
+from .config import arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION
 
 if CONFIG.get('logging_lib'):
     log_lib = import_module(CONFIG.get('logging_lib'))
@@ -28,6 +29,14 @@ def main():
     starttime = time()
     args = arguments()
     init_logger(name=CONFIG['logger'], debug=args.debug)
+
+    LOG.info(f'Automatix Version {VERSION}')
+
+    configfile = CONFIG.get('config_file')
+    if configfile:
+        LOG.info(f'Using configuration from: {configfile}')
+    else:
+        LOG.warning('Configuration file not found or not configured. Using defaults.')
 
     script = get_script(args=args)
 

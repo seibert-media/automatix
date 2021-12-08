@@ -2,8 +2,9 @@ import argparse
 import logging
 import os
 import re
-from time import sleep
+import sys
 from collections import OrderedDict
+from time import sleep
 
 import yaml
 
@@ -14,6 +15,13 @@ def read_yaml(yamlfile: str) -> dict:
     with open(yamlfile) as file:
         return yaml.load(file.read(), Loader=yaml.SafeLoader)
 
+
+if sys.version_info >= (3, 8):
+    from importlib import metadata
+else:
+    import importlib_metadata as metadata
+
+VERSION = metadata.version('automatix')
 
 DEPRECATED_SYNTAX = {
     # 0: REGEX pattern
@@ -44,6 +52,7 @@ CONFIG = {
 configfile = os.path.expanduser(os.getenv('AUTOMATIX_CONFIG', '~/.automatix.cfg.yaml'))
 if os.path.isfile(configfile):
     CONFIG.update(read_yaml(configfile))
+    CONFIG['config_file'] = configfile
 
 if os.getenv('AUTOMATIX_SCRIPT_DIR'):
     CONFIG['script_dir'] = os.getenv('AUTOMATIX_SCRIPT_DIR')
