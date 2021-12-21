@@ -109,21 +109,26 @@ class Command:
             if err_answer == 'r':
                 return self.execute(interactive)
 
-    def _ask_user(self, question: str, allowed_options: list):
+    def _ask_user(self, question: str, allowed_options: list) -> str:
         if self.env.batch_mode:
             allowed_options.append('c')
 
         options = ', '.join([f'{k}: {POSSIBLE_ANSWERS[k]}' for k in allowed_options])
-        answer = input(f'{question} ({options})')
-        if answer == '':  # default
-            answer = 'p'
-        if answer not in allowed_options:
-            self.env.LOG.info('Invalid input. Try again.')
-            return self._ask_user(question=question, allowed_options=allowed_options)
-        if answer == 'a':
-            raise AbortException(1)
-        if self.env.batch_mode and answer == 'c':
-            raise SkipBatchItemException()
+
+        answer = None
+        while answer not in allowed_options:
+            if answer is not None:
+                self.env.LOG.info('Invalid input. Try again.')
+
+            answer = input(f'{question} ({options})')
+
+            if answer == '':  # default
+                answer = 'p'
+            if answer == 'a':
+                raise AbortException(1)
+            if self.env.batch_mode and answer == 'c':
+                raise SkipBatchItemException()
+
         return answer
 
     def _local_action(self) -> int:
