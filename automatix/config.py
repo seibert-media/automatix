@@ -26,8 +26,8 @@ VERSION = metadata.version('automatix')
 DEPRECATED_SYNTAX = {
     # 0: REGEX pattern
     # 1: replacement, formatted with group = re.Match.groups(), e.g. 'something {group[0]} foo'
-    # 2: special flags (p: python, b: Bundlewrap)
-    (r'(\w*)_node(?!\w)', 'NODES.{group[0]}', 'bp'),
+    # 2: special flags (p: python, b: Bundlewrap, s: replace '{s}' with pipe separated system names)
+    (r'({s})_node(?!\w)', 'NODES.{group[0]}', 'bps'),
     (r'{\s*system_(\w*)\s*}', '{{SYSTEMS.{group[0]}}}', ''),
     (r'{\s*const_(\w*)\s*}', '{{CONST.{group[0]}}}', ''),
     (r'(?<!\w)global\s+(\w*)', 'PERSISTENT_VARS[\'{group[0]}\'] = {group[0]}', 'p'),
@@ -161,8 +161,10 @@ def validate_script(script: dict):
                         continue
                     if 'p' in flags and 'python' not in ckey:
                         continue
-
-                    match = re.search(pattern, entry)
+                    if 's' in flags:
+                        match = re.search(pattern.format(s='|'.join(script.get('systems', {}).keys())), entry)
+                    else:
+                        match = re.search(pattern, entry)
                     if match:
                         warn = True
                         LOG.warning(
