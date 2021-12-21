@@ -11,6 +11,14 @@ from .environment import PipelineEnvironment
 
 PERSISTENT_VARS = {}
 
+POSSIBLE_ANSWERS = {
+    'p': 'proceed (default)',
+    'r': 'retry',
+    's': 'skip',
+    'a': 'abort',
+    'c': 'abort & continue to next (CSV processing)',
+}
+
 
 class Command:
     def __init__(self, pipeline_cmd: dict, index: int, env: PipelineEnvironment):
@@ -74,17 +82,10 @@ class Command:
         if self.get_type() == 'manual' or interactive:
             self.env.LOG.debug('Ask for user interaction.')
 
-            options = 'p: proceed (default), s: skip, a: abort'
-            if self.env.batch_mode:
-                options += ', c: abort & continue to next (CSV processing)'
-
-            answer = input(f'[MS] Proceed? ({options})\a')
+            answer = self._ask_user(question='[MS] Proceed?', allowed_options=['p', 's', 'a'])
+            # answers 'a' and 'c' are handled by _ask_user, 'p' means just pass
             if answer == 's':
                 return
-            if answer == 'a':
-                raise AbortException(1)
-            if self.env.batch_mode and answer == 'c':
-                raise SkipBatchItemException()
 
         steptime = time()
 
@@ -103,17 +104,32 @@ class Command:
             if force:
                 return
 
-            err_options = 'p: proceed (default), r: retry, a: abort'
-            if self.env.batch_mode:
-                err_options += ', c: abort & continue to next (CSV processing)'
-
-            err_answer = input(f'[CF] What should I do? ({err_options})\a')
+            err_answer = self._ask_user(question='[CF] What should I do?', allowed_options=['p', 'r', 'a'])
+            # answers 'a' and 'c' are handled by _ask_user, 'p' means just pass
             if err_answer == 'r':
                 return self.execute(interactive)
-            if err_answer == 'a':
-                raise AbortException(return_code)
-            if self.env.batch_mode and err_answer == 'c':
+
+    def _ask_user(self, question: str, allowed_options: list) -> str:
+        if self.env.batch_mode:
+            allowed_options.append('c')
+
+        options = ', '.join([f'{k}: {POSSIBLE_ANSWERS[k]}' for k in allowed_options])
+
+        answer = None
+        while answer not in allowed_options:
+            if answer is not None:
+                self.env.LOG.info('Invalid input. Try again.')
+
+            answer = input(f'{question} ({options})')
+
+            if answer == '':  # default
+                answer = 'p'
+            if answer == 'a':
+                raise AbortException(1)
+            if self.env.batch_mode and answer == 'c':
                 raise SkipBatchItemException()
+
+        return answer
 
     def _local_action(self) -> int:
         cmd = self._build_command(path=self.env.config['import_path'])
