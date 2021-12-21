@@ -1,5 +1,10 @@
 # Changelog
 
+# 1.8.2
+- Inform user about Bundlewrap related Errors
+- Fix syntax validation for Bundlewrap nodes
+- Only allow listed answers and re-ask if invalid
+
 # 1.8.1
 - Make compatible with PyYAML6
 
