@@ -17,6 +17,7 @@ setup(
     python_requires='>=3.6',
     install_requires=[
         'pyyaml>=5.1',
+        'importlib-metadata >= 1.0 ; python_version < "3.8"',
     ],
     packages=find_packages(),
     entry_points={

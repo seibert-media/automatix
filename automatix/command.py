@@ -149,8 +149,17 @@ class Command:
         except KeyboardInterrupt:
             self.env.LOG.info('Abort command by user key stroke. Exit code is set to 130.')
             return 130
-        except Exception:
-            self.env.LOG.error(traceback.format_exc())
+        except Exception as exc:
+            if isinstance(exc, NameError) and not self.env.config.get('bundlewrap') and str(exc) in [
+                'name \'NODES\' is not defined',
+                'name \'AUTOMATIX_BW_REPO\' is not defined',
+            ]:
+                self.env.LOG.exception(
+                    'Seems you are trying to use bundlewrap functions without having bundlewrap support enabled.'
+                    ' Please check your configuration.')
+                return 1
+
+            self.env.LOG.exception('Unknown error occured:')
             return 1
 
     def _get_remote_hostname(self):
