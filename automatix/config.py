@@ -21,6 +21,14 @@ if sys.version_info >= (3, 8):
 else:
     import importlib_metadata as metadata
 
+try:
+    from argcomplete import autocomplete
+    from .bash_completion import ScriptFileCompleter
+
+    bash_completion = True
+except ImportError:
+    bash_completion = False
+
 VERSION = metadata.version('automatix')
 
 DEPRECATED_SYNTAX = {
@@ -76,10 +84,13 @@ def arguments() -> argparse.Namespace:
         description='Automation wrapper for bash and python commands.',
         epilog='Explanations and README at https://github.com/seibert-media/automatix',
     )
-    parser.add_argument(
+    scriptfile_action = parser.add_argument(
         'scriptfile',
         help='Path to scriptfile (yaml), use " -- " if needed to delimit this from argument fields',
     )
+    if bash_completion:
+        scriptfile_action.completer = ScriptFileCompleter(script_path=SCRIPT_PATH)
+
     for field in SCRIPT_FIELDS.keys():
         parser.add_argument(
             f'--{field}',
@@ -117,6 +128,8 @@ def arguments() -> argparse.Namespace:
         action='store_true',
         help='activate debug log level',
     )
+    if bash_completion:
+        autocomplete(parser)
     return parser.parse_args()
 
 
@@ -219,3 +232,4 @@ def update_script_from_row(row: dict, script: dict, index: int):
         assert key_type in SCRIPT_FIELDS.keys(), \
             f'First row in CSV: Field name is \'{key_type}\', but has to be one of {list(SCRIPT_FIELDS.keys())}.'
         script[key_type][key_name] = value
+
