@@ -439,3 +439,22 @@ While **aborting remote functions** (via imports), automatix is not
  able to determine still running processes invoked by the function,
  because it only checks the processes for the commands (in this case
  the function name) which is called in the pipeline.
+
+# EXTRAS
+
+## Bash completion (experimental)
+Automatix supports bash completion for parameters and the script directory via [argcomplete](https://github.com/kislyuk/argcomplete).
+
+Therefor follow the installation instructions for argcomplete, which is at the current time
+
+    pip install argcomplete
+
+and either global activation via executing
+
+    activate-global-python-argcomplete
+
+or activation for automatix (e.g. in `.bashrc`)
+
+    eval "$(register-python-argcomplete automatix)"
+
+Automatix will recognize the installed module and offer the completion automatically.
