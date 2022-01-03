@@ -1,7 +1,5 @@
-import subprocess
 import locale
-
-from argcomplete import warn
+import subprocess
 
 
 def _call(*args, **kwargs):
