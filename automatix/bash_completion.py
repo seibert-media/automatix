@@ -18,6 +18,7 @@ class ScriptFileCompleter(object):
 
     def __call__(self, prefix, **kwargs):
         completion = []
+        pre_len = len(self.script_path)+1
         directories = _call(["bash", "-c", f"compgen -A directory -- '{self.script_path}/{prefix}'"])
         completion += [f'{d}/' for d in directories]
         for ext in ['yaml', 'yml']:
