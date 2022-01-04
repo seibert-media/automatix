@@ -10,25 +10,26 @@ from .automatix import Automatix
 from .command import Command, SkipBatchItemException, AbortException
 from .config import arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION
 
-if CONFIG.get('logging_lib'):
-    log_lib = import_module(CONFIG.get('logging_lib'))
-    init_logger = log_lib.init_logger
-else:
-    from .logger import init_logger
-
-if CONFIG.get('bundlewrap'):
-    from .bundlewrap import BWCommand, AutomatixBwRepo
-
-    CONFIG['bw_repo'] = AutomatixBwRepo(repo_path=os.environ.get('BW_REPO_PATH'))
-    cmdClass = BWCommand
-else:
-    cmdClass = Command
-
 
 def main():
     starttime = time()
     args = arguments()
+
+    if CONFIG.get('logging_lib'):
+        log_lib = import_module(CONFIG.get('logging_lib'))
+        init_logger = log_lib.init_logger
+    else:
+        from .logger import init_logger
+
     init_logger(name=CONFIG['logger'], debug=args.debug)
+
+    if CONFIG.get('bundlewrap'):
+        from .bundlewrap import BWCommand, AutomatixBwRepo
+
+        CONFIG['bw_repo'] = AutomatixBwRepo(repo_path=os.environ.get('BW_REPO_PATH'))
+        cmdClass = BWCommand
+    else:
+        cmdClass = Command
 
     LOG.info(f'Automatix Version {VERSION}')
 
