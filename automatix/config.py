@@ -49,7 +49,7 @@ CONFIG = {
     'teamvault': False,
 }
 
-configfile = os.path.expanduser(os.getenv('AUTOMATIX_CONFIG', '~/.automatix.cfg.yaml'))
+configfile = os.path.expanduser(os.path.expandvars(os.getenv('AUTOMATIX_CONFIG', '~/.automatix.cfg.yaml')))
 if os.path.isfile(configfile):
     CONFIG.update(read_yaml(configfile))
     CONFIG['config_file'] = configfile
@@ -59,7 +59,7 @@ if os.getenv('AUTOMATIX_SCRIPT_DIR'):
 
 LOG = logging.getLogger(CONFIG['logger'])
 
-SCRIPT_PATH = os.path.expanduser(CONFIG['script_dir'])
+SCRIPT_PATH = os.path.expanduser(os.path.expandvars(CONFIG['script_dir']))
 
 if CONFIG['teamvault']:
     import bwtv

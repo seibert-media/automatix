@@ -1,5 +1,4 @@
 import os
-import sys
 from copy import deepcopy
 from csv import DictReader
 from importlib import import_module
