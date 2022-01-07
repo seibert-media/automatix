@@ -1,5 +1,9 @@
 # Changelog
 
+# 1.9.0
+- Feature: Tab completion for bash (and other shells)
+- Expand environment variables in config and script paths
+
 # 1.8.2
 - Inform user about Bundlewrap related Errors
 - Fix syntax validation for Bundlewrap nodes
