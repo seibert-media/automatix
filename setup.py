@@ -19,6 +19,9 @@ setup(
         'pyyaml>=5.1',
         'importlib-metadata >= 1.0 ; python_version < "3.8"',
     ],
+    extras_require={
+        'bash completion': 'argcomplete',
+    },
     packages=find_packages(),
     entry_points={
         'console_scripts': [

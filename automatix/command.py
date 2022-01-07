@@ -1,8 +1,6 @@
 import os
 import re
 import subprocess
-import traceback
-
 from shlex import quote
 from time import time
 from typing import Tuple
