@@ -379,6 +379,11 @@ Explanation: automatix is written in Python and uses 'exec' to
  execute the command in function context. If you declare variables
  globally they remain across commands.
 
+If you need to have access to the content of these variables in
+ non-python steps, you can use the PYVARS variable. You can set and read
+ attributes in python (like in PERSISTENT_VARS), but you can also use
+ these attributes in all other pipeline steps and even for conditions.
+
 For **python** action there are some modules, constants and functions
  which are already imported (check command.py): e.g. 
 `re, subprocess, quote(from shlex)`

@@ -67,15 +67,22 @@ class Command:
 
         variables['CONST'] = ConstantsWrapper(self.env.config['constants'])
         variables['SYSTEMS'] = SystemsWrapper(self.env.systems)
+        variables['PYVARS'] = self.env.pyvars
         return self.value.format(**variables)
 
     def execute(self, interactive: bool = False, force: bool = False):
         self.env.LOG.notice(f'\n({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
         return_code = 0
 
-        if self.condition_var is not None and not bool(self.env.vars.get(self.condition_var, False)):
-            self.env.LOG.info(f'Skip command, because condition variable "{self.condition_var}" evaluates to False')
-            return
+        if self.condition_var is not None:
+            if self.condition_var.startswith('PYVARS.'):
+                condition = getattr(self.env.pyvars, self.condition_var[7:])
+            else:
+                condition = self.env.vars.get(self.condition_var, False)
+
+            if not bool(condition):
+                self.env.LOG.info(f'Skip command, because condition variable "{self.condition_var}" evaluates to False')
+                return
 
         if self.get_type() == 'manual' or interactive:
             self.env.LOG.debug('Ask for user interaction.')
@@ -147,6 +154,7 @@ class Command:
         locale_vars.update({
             'AbortException': AbortException,
             'SkipBatchItemException': SkipBatchItemException,
+            'PYVARS': self.env.pyvars,
         })
 
         self.env.LOG.debug(f'locals:\n {locale_vars}')
