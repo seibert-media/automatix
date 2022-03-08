@@ -7,7 +7,19 @@ from typing import Tuple
 
 from .environment import PipelineEnvironment
 
-PERSISTENT_VARS = {}
+
+class PersistentDict(dict):
+    def __getattr__(self, key: str):
+        return self[key]
+
+    def __hasattr__(self, key: str):
+        return key in self
+
+    def __setattr__(self, key: str, value):
+        self[key] = value
+
+
+PERSISTENT_VARS = PVARS = PersistentDict()
 
 POSSIBLE_ANSWERS = {
     'p': 'proceed (default)',
@@ -67,7 +79,6 @@ class Command:
 
         variables['CONST'] = ConstantsWrapper(self.env.config['constants'])
         variables['SYSTEMS'] = SystemsWrapper(self.env.systems)
-        variables['PYVARS'] = self.env.pyvars
         return self.value.format(**variables)
 
     def execute(self, interactive: bool = False, force: bool = False):
@@ -75,8 +86,8 @@ class Command:
         return_code = 0
 
         if self.condition_var is not None:
-            if self.condition_var.startswith('PYVARS.'):
-                condition = getattr(self.env.pyvars, self.condition_var[7:])
+            if self.condition_var.startswith('PVARS.'):
+                condition = PERSISTENT_VARS[self.condition_var[6:]]
             else:
                 condition = self.env.vars.get(self.condition_var, False)
 
@@ -154,7 +165,6 @@ class Command:
         locale_vars.update({
             'AbortException': AbortException,
             'SkipBatchItemException': SkipBatchItemException,
-            'PYVARS': self.env.pyvars,
         })
 
         self.env.LOG.debug(f'locals:\n {locale_vars}')

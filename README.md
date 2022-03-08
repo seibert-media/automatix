@@ -360,16 +360,24 @@ Additionally you can modify the environment to adjust things to your
 # TIPS & TRICKS
 
 If you want to access variables in **python** action you defined in
-preceeding command, you can use the **PERSISTENT_VARS** dictionary.
-This is added to the local scope of **python** actions.
+preceeding command, you can use the **PERSISTENT_VARS** dictionary
+(shortcut: **PVARS**).
+This is added to the local scope of **python** actions and the
+dictonary keys are also available as attributes.
  Examples:
 - To make all local variables of the actual command persistent use
  `PERSISTENT_VARS.update(locals())`.
 - To delete one persistent variable named "myvar" use
  `del PERSISTENT_VARS['myvar']`
 - To make variable "v2" persistent use `PERSISTENT_VARS['v2'] = v2`
+  or `PERSISTENT_VARS.v2 = v2`
+- Use the shortcut like `PVARS.v2 = v2`
 
-You can use all variables in PERSISTENT_VARS 
+You can use variables in PERSISTENT_VARS also as condition by
+using the shortcut and the attribute notation:
+    
+      - python: PVARS.cond = some_function()
+      - PVARS.cond?local: echo 'This is only printed if "some_function" evaluates to "True"'
 
 An alternative is to make variables global, but in most cases using
  PERSISTENT_VARS is more clean. _**CAUTION: Choosing already existing
@@ -378,11 +386,6 @@ An alternative is to make variables global, but in most cases using
 Explanation: automatix is written in Python and uses 'exec' to
  execute the command in function context. If you declare variables
  globally they remain across commands.
-
-If you need to have access to the content of these variables in
- non-python steps, you can use the PYVARS variable. You can set and read
- attributes in python (like in PERSISTENT_VARS), but you can also use
- these attributes in all other pipeline steps and even for conditions.
 
 For **python** action there are some modules, constants and functions
  which are already imported (check command.py): e.g. 

@@ -7,6 +7,10 @@ vars:
 always:
   - local: echo 'Print this always :-)'
 pipeline:
+  - python: PVARS.moin = False
+  - PVARS.moin?local: echo 'Moin'
+  - python: PVARS.moin = True
+  - PVARS.moin?local: echo 'Moin Moin :-)'
   - a=python: re.match('\d*', '12345')
   - nonexistent?local: echo 'Hups ...'
   - python: |
