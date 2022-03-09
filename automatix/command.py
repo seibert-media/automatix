@@ -7,7 +7,19 @@ from typing import Tuple
 
 from .environment import PipelineEnvironment
 
-PERSISTENT_VARS = {}
+
+class PersistentDict(dict):
+    def __getattr__(self, key: str):
+        return self[key]
+
+    def __hasattr__(self, key: str):
+        return key in self
+
+    def __setattr__(self, key: str, value):
+        self[key] = value
+
+
+PERSISTENT_VARS = PVARS = PersistentDict()
 
 POSSIBLE_ANSWERS = {
     'p': 'proceed (default)',
@@ -73,9 +85,15 @@ class Command:
         self.env.LOG.notice(f'\n({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
         return_code = 0
 
-        if self.condition_var is not None and not bool(self.env.vars.get(self.condition_var, False)):
-            self.env.LOG.info(f'Skip command, because condition variable "{self.condition_var}" evaluates to False')
-            return
+        if self.condition_var is not None:
+            if self.condition_var.startswith('PVARS.'):
+                condition = PERSISTENT_VARS[self.condition_var[6:]]
+            else:
+                condition = self.env.vars.get(self.condition_var, False)
+
+            if not bool(condition):
+                self.env.LOG.info(f'Skip command, because condition variable "{self.condition_var}" evaluates to False')
+                return
 
         if self.get_type() == 'manual' or interactive:
             self.env.LOG.debug('Ask for user interaction.')

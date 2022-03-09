@@ -360,16 +360,24 @@ Additionally you can modify the environment to adjust things to your
 # TIPS & TRICKS
 
 If you want to access variables in **python** action you defined in
-preceeding command, you can use the **PERSISTENT_VARS** dictionary.
-This is added to the local scope of **python** actions.
+preceeding command, you can use the **PERSISTENT_VARS** dictionary
+(shortcut: **PVARS**).
+This is added to the local scope of **python** actions and the
+dictonary keys are also available as attributes.
  Examples:
 - To make all local variables of the actual command persistent use
  `PERSISTENT_VARS.update(locals())`.
 - To delete one persistent variable named "myvar" use
  `del PERSISTENT_VARS['myvar']`
 - To make variable "v2" persistent use `PERSISTENT_VARS['v2'] = v2`
+  or `PERSISTENT_VARS.v2 = v2`
+- Use the shortcut like `PVARS.v2 = v2`
 
-You can use all variables in PERSISTENT_VARS 
+You can use variables in PERSISTENT_VARS also as condition by
+using the shortcut and the attribute notation:
+    
+      - python: PVARS.cond = some_function()
+      - PVARS.cond?local: echo 'This is only printed if "some_function" evaluates to "True"'
 
 An alternative is to make variables global, but in most cases using
  PERSISTENT_VARS is more clean. _**CAUTION: Choosing already existing
