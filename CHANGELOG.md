@@ -1,5 +1,10 @@
 # Changelog
 
+# 1.10.0
+- Feature PERSISTENT_VARS:
+  - attribute notation and PVARS as shortcut
+  - conditional use with PVARS and attribute notation
+
 # 1.9.0
 - Feature: Tab completion for bash (and other shells)
 - Expand environment variables in config and script paths
