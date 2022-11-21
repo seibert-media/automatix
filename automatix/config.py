@@ -140,6 +140,10 @@ def _overwrite(script: dict, key: str, data: str):
         script[key][k] = v
 
 
+def _tupelize(string) -> tuple:
+    return tuple([int(i) for i in string.split('.')])
+
+
 def get_script(args: argparse.Namespace) -> dict:
     file = args.scriptfile
     if not os.path.isfile(args.scriptfile):
@@ -155,39 +159,42 @@ def get_script(args: argparse.Namespace) -> dict:
     return script
 
 
+def check_deprecated_syntax(ckey: str, entry: str, script: dict, prefix: str) -> int:
+    warn = 0
+    if isinstance(entry, dict):
+        warn += 1
+        LOG.warning(f'{prefix} Command is not a string! Please use quotes!')
+        entry = f'{{{next(iter(entry))}}}'
+
+    for pattern, replacement, flags in DEPRECATED_SYNTAX:
+        if 'b' in flags and not CONFIG['bundlewrap']:
+            continue
+        if 'p' in flags and 'python' not in ckey:
+            continue
+        if 's' in flags:
+            match = re.search(pattern.format(s='|'.join(script.get('systems', {}).keys())), entry)
+        else:
+            match = re.search(pattern, entry)
+        if match:
+            warn += 1
+            LOG.warning('{prefix} Using "{match}" is deprecated. Use "{repl}" instead.'.format(
+                prefix=prefix,
+                match=match.group(0),
+                repl=replacement.format(group=match.groups())
+            ))
+    return warn
+
+
 def validate_script(script: dict):
-    warn = False
+    script_required_version = script.get('require_version', '0.0.0')
+    if _tupelize(VERSION) < _tupelize(script_required_version):
+        LOG.error(f'The script requires minimum version {script_required_version}. We have {VERSION}.')
+        exit(1)
+    warn = 0
     for pipeline in ['always', 'pipeline', 'cleanup']:
         for index, command in enumerate(script.get(pipeline, [])):
             for ckey, entry in command.items():
-                prefix = f'[{pipeline}:{index}]'
-
-                if isinstance(entry, dict):
-                    warn = True
-                    LOG.warning(
-                        f'{prefix} Command is not a string! Please use quotes!'
-                    )
-                    entry = f'{{{next(iter(entry))}}}'
-
-                for pattern, replacement, flags in DEPRECATED_SYNTAX:
-                    if 'b' in flags and not CONFIG['bundlewrap']:
-                        continue
-                    if 'p' in flags and 'python' not in ckey:
-                        continue
-                    if 's' in flags:
-                        match = re.search(pattern.format(s='|'.join(script.get('systems', {}).keys())), entry)
-                    else:
-                        match = re.search(pattern, entry)
-                    if match:
-                        warn = True
-                        LOG.warning(
-                            '{prefix} Using "{match}" is deprecated. Use "{repl}" instead.'.format(
-                                prefix=prefix,
-                                match=match.group(0),
-                                repl=replacement.format(group=match.groups())
-                            )
-                        )
-
+                warn += check_deprecated_syntax(ckey=ckey, entry=entry, script=script, prefix=f'[{pipeline}:{index}]')
                 break  # there always should be only one entry
     if warn:
         # To give people a chance to see warnings before the following output happens.
@@ -232,4 +239,3 @@ def update_script_from_row(row: dict, script: dict, index: int):
         assert key_type in SCRIPT_FIELDS.keys(), \
             f'First row in CSV: Field name is \'{key_type}\', but has to be one of {list(SCRIPT_FIELDS.keys())}.'
         script[key_type][key_name] = value
-

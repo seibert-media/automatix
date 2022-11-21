@@ -180,6 +180,7 @@ The **scriptfile** has to contain valid YAML.
     name: Migration Server XY
     # Systems you like to refer to in pipeline (accessible via 'SYSTEMS.source')
     # If Bundlewrap support is activated use node names instead of hostnames or add preceeding 'hostname!'.
+    require_version: '1.5.0'
     systems:
       source: sourcesystem.com
       target: targetsystem.org
@@ -223,6 +224,9 @@ The **scriptfile** has to contain valid YAML.
 
 **name** _(string)_
 : Just a name for the process. Does not do anything.
+
+**require_version** _(string)_
+: Minimum required Automatix version for this script to run.
 
 **systems** _(associative array)_
 : Define some systems. Value has to be a valid SSH destination like an
