@@ -393,9 +393,9 @@ For **python** action there are some modules, constants and functions
 
 To abort the current automatix and jump to the next batch item you can
  raise the `SkipBatchItemException`. For aborting the whole automatix
- process raise `AbortException`. In both cases the cleanup pipeline is
- executed. Same is the case for selecting `a`:abort or `c`:continue
- when asked (interactive or error).
+ process raise `AbortException(return_code: int)`. In both cases the
+ cleanup pipeline is executed. Same is the case for selecting
+ `a`:abort or `c`:continue when asked (interactive or error).
  
 
 # BEST PRACTISES
