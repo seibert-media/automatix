@@ -280,12 +280,19 @@ Here you define the commands automatix shall execute.
   pseudo-terminal allocation). It uses the standard SSH command.
   Therefore your .ssh/config should be respected.
 
-4) **python**: Python code to execute. If bundlewrap is enabled, the
- Bundlewrap repository object is avaiable via AUTOMATIX_BW_REPO and 
- system node objects are available via NODES.systemname.
- Use `AUTOMATIX_BW_REPO.reload()` to reinitialize the Bundlewrap 
- repository from file system. This can be useful for using newly
- created nodes (e.g. remote commands).
+4) **python**: Python code to execute.
+   * Notice that there are some modules, constants and functions which
+     are already imported (check command.py): e.g.
+     `re, subprocess, quote(from shlex)`. The variable `vars` is used
+     to store the Automatix variables as dictionary. You can use it to
+     access or change the variables directly.
+   * If bundlewrap is enabled, the Bundlewrap repository object is
+     avaiable via AUTOMATIX_BW_REPO and system node objects are
+     available via NODES.systemname.
+     Use `AUTOMATIX_BW_REPO.reload()` to reinitialize the Bundlewrap 
+     repository from file system. This can be useful for using newly
+     created nodes (e.g. remote commands).  
+   
 
 **ASSIGNMENT**: For **local**, **remote** and **python** action you
  can also define a variable to which the output will be assigned.
@@ -386,10 +393,6 @@ An alternative is to make variables global, but in most cases using
 Explanation: automatix is written in Python and uses 'exec' to
  execute the command in function context. If you declare variables
  globally they remain across commands.
-
-For **python** action there are some modules, constants and functions
- which are already imported (check command.py): e.g. 
-`re, subprocess, quote(from shlex)`
 
 To abort the current automatix and jump to the next batch item you can
  raise the `SkipBatchItemException`. For aborting the whole automatix
