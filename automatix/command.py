@@ -136,7 +136,7 @@ class Command:
             if answer is not None:
                 self.env.LOG.info('Invalid input. Try again.')
 
-            answer = input(f'{question} ({options})')
+            answer = input(f'{question} ({options})\a')
 
             if answer == '':  # default
                 answer = 'p'
