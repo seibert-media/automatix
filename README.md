@@ -284,14 +284,14 @@ Here you define the commands automatix shall execute.
    * Notice that there are some modules, constants and functions which
      are already imported (check command.py): e.g.
      `re, subprocess, quote(from shlex)`. The variable `vars` is used
-     to store the Automatix variables as dictionary. You can use it to
-     access or change the variables directly.
+     to store the Automatix variables as a dictionary. You can use it 
+     to access or change the variables directly.
    * If bundlewrap is enabled, the Bundlewrap repository object is
-     avaiable via AUTOMATIX_BW_REPO and system node objects are
+     available via AUTOMATIX_BW_REPO and system node objects are
      available via NODES.systemname.
      Use `AUTOMATIX_BW_REPO.reload()` to reinitialize the Bundlewrap 
-     repository from file system. This can be useful for using newly
-     created nodes (e.g. remote commands).  
+     repository from the file system. This can be useful for using
+     newly created nodes (e.g. remote commands).  
    
 
 **ASSIGNMENT**: For **local**, **remote** and **python** action you
