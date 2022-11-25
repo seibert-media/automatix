@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.11.0
+- require_version to specify minimum required Automatix version for a script
+
 # 1.10.0
 - Feature PERSISTENT_VARS:
   - attribute notation and PVARS as shortcut
