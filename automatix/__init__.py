@@ -25,7 +25,7 @@ def main():
     if CONFIG.get('bundlewrap'):
         from .bundlewrap import BWCommand, AutomatixBwRepo
 
-        CONFIG['bw_repo'] = AutomatixBwRepo(repo_path=os.environ.get('BW_REPO_PATH'))
+        CONFIG['bw_repo'] = AutomatixBwRepo(repo_path=os.environ.get('BW_REPO_PATH', '.'))
         cmdClass = BWCommand
     else:
         cmdClass = Command
