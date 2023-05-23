@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.11.1
+- Fix default value for BW_REPO_PATH
+
 # 1.11.0
 - require_version to specify minimum required Automatix version for a script
 
