@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.11.2
+- No changes, just to test auto deployment
+
 # 1.11.1
 - Fix default value for BW_REPO_PATH
 
