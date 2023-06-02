@@ -126,6 +126,17 @@ class Command:
                 return self.execute(interactive)
 
     def _ask_user(self, question: str, allowed_options: list) -> str:
+        """
+        User-Interactive handling of different scenarios.
+        Questions should be prefixed with:
+        [CF] Command Failure
+        [PF] Partial command Failure (BW groups)
+        [MS] Manual Step
+
+        :param question:
+        :param allowed_options: character list of POSSIBLE_ANSWERS
+        :return: answer character
+        """
         if self.env.batch_mode:
             allowed_options.append('c')
 
@@ -156,6 +167,7 @@ class Command:
             return 130
 
     def _generate_python_vars(self):
+        # For BWCommand this method is overridden
         return {'vars': self.env.vars}
 
     def _python_action(self) -> int:
@@ -194,12 +206,11 @@ class Command:
             self.env.LOG.exception('Unknown error occured:')
             return 1
 
-    def _get_remote_hostname(self):
-        return self.get_system().replace('hostname!', '')
-
     def _remote_action(self) -> int:
-        hostname = self._get_remote_hostname()
+        # For BWCommand this method is overridden
+        self._remote_action_on_hostname(hostname=self.get_system().replace('hostname!', ''))
 
+    def _remote_action_on_hostname(self, hostname: str) -> int:
         ssh_cmd = self.env.config["ssh_cmd"].format(hostname=hostname)
         remote_cmd = self.get_resolved_value()
         prefix = ''

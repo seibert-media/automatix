@@ -1,4 +1,6 @@
-from bundlewrap.exceptions import NoSuchNode
+from bundlewrap.exceptions import NoSuchNode, NoSuchGroup
+from bundlewrap.group import Group
+from bundlewrap.node import Node
 from bundlewrap.repo import Repository
 
 from .command import Command
@@ -23,12 +25,34 @@ class BWCommand(Command):
         locale_vars['NODES'] = BWNodesWrapper(repo=self.env.config['bw_repo'], systems=self.env.systems)
         return locale_vars
 
-    def _get_remote_hostname(self):
+    def _remote_action(self) -> int:
+        bw_repo: Repository = self.env.config['bw_repo']
         system = self.get_system()
         if system.startswith('hostname!'):
-            return system.replace('hostname!', '')
-        node = self.env.config['bw_repo'].get_node(system)
-        return node.hostname
+            return self._remote_action_on_hostname(hostname=system.replace('hostname!', ''))
+        try:
+            node: Node = bw_repo.get_node(system)
+            return self._remote_action_on_hostname(hostname=node.hostname)
+        except NoSuchNode as exc:
+            try:
+                group: Group = bw_repo.get_group(system)
+            except NoSuchGroup:
+                raise exc
+            for node in group.nodes:
+                self._remote_bw_group_action(node=node)
+            return 0
+
+    def _remote_bw_group_action(self, node: Node):
+        return_code = self._remote_action_on_hostname(hostname=node.hostname)
+        if return_code != 0:
+            self.env.LOG.error(f'Command ({self.index}) on {node.name} failed with return code {return_code}.')
+            if force:
+                return
+
+            err_answer = self._ask_user(question='[PF] What should I do?', allowed_options=['p', 'r', 'a'])
+            # answers 'a' and 'c' are handled by _ask_user, 'p' means just pass
+            if err_answer == 'r':
+                return self._remote_bw_group_action(node=node)
 
 
 class BWNodesWrapper:
