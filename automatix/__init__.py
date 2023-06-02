@@ -59,6 +59,7 @@ def main():
             config=CONFIG,
             cmd_class=cmdClass,
             script_fields=SCRIPT_FIELDS,
+            cmd_args=args,
         )
 
         try:

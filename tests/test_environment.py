@@ -34,6 +34,7 @@ testauto = Automatix(
     config=CONFIG,
     cmd_class=cmdClass,
     script_fields=SCRIPT_FIELDS,
+    cmd_args=default_args,
 )
 
 testauto.env.vars.update({

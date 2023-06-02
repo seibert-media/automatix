@@ -8,7 +8,15 @@ from .environment import PipelineEnvironment
 
 
 class Automatix:
-    def __init__(self, script: dict, variables: dict, config: dict, cmd_class: type, script_fields: OrderedDict):
+    def __init__(
+            self,
+            script: dict,
+            variables: dict,
+            config: dict,
+            cmd_class: type,
+            script_fields: OrderedDict,
+            cmd_args: Namespace,
+    ):
         self.script = script
         self.script_fields = script_fields
         self.cmdClass = cmd_class
@@ -19,6 +27,7 @@ class Automatix:
             variables=variables,
             imports=script.get('imports', []),
             batch_mode=script.get('batch_mode', False),
+            cmd_args=cmd_args,
             LOG=logging.getLogger(config['logger']),
         )
 

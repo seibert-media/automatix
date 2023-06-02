@@ -38,7 +38,9 @@ class BWCommand(Command):
                 group: Group = bw_repo.get_group(system)
             except NoSuchGroup:
                 raise exc
+            self.env.LOG.info(f'\n --- Executing command for all nodes in BW group >{group.name}< ---')
             for node in group.nodes:
+                self.env.LOG.info(f'\n- {node.name} -')
                 self._remote_bw_group_action(node=node)
             return 0
 
@@ -46,7 +48,7 @@ class BWCommand(Command):
         return_code = self._remote_action_on_hostname(hostname=node.hostname)
         if return_code != 0:
             self.env.LOG.error(f'Command ({self.index}) on {node.name} failed with return code {return_code}.')
-            if force:
+            if self.env.cmd_args.force:
                 return
 
             err_answer = self._ask_user(question='[PF] What should I do?', allowed_options=['p', 'r', 'a'])
