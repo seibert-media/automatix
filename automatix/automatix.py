@@ -57,19 +57,19 @@ class Automatix:
         for cmd in command_list:
             self.env.LOG.info(f"({cmd.index}) [{cmd.orig_key}]: {cmd.get_resolved_value()}")
 
-    def execute_main_pipeline(self, command_list: List[Command], args: Namespace):
+    def execute_main_pipeline(self, command_list: List[Command]):
         self.env.LOG.info('\n------------------------------')
         self.env.LOG.info(' --- Start MAIN pipeline ---')
 
         steps = self.script.get('steps')
 
-        for cmd in command_list[args.jump_to:]:
+        for cmd in command_list[self.env.cmd_args.jump_to:]:
             if steps and (self.script['exclude'] == (cmd.index in steps)):
                 # Case 1: exclude is True  and index is in steps => skip
                 # Case 2: exclude is False and index is in steps => execute
                 self.env.LOG.notice(f'\n({cmd.index}) Not selected for execution: skip')
                 continue
-            cmd.execute(interactive=args.interactive, force=args.force)
+            cmd.execute(interactive=self.env.cmd_args.interactive, force=self.env.cmd_args.force)
 
         self.env.LOG.info('\n --- End MAIN pipeline ---')
         self.env.LOG.info('------------------------------\n')
@@ -83,7 +83,7 @@ class Automatix:
             self.env.LOG.info(f'\n --- End {pipeline.upper()} pipeline ---')
             self.env.LOG.info('------------------------------\n')
 
-    def run(self, args: Namespace):
+    def run(self):
         self.env.LOG.info('\n\n')
         self.env.LOG.info('//////////////////////////////////////////////////////////////////////')
         self.env.LOG.info(f"---- {self.script['name']} ----")
@@ -97,11 +97,11 @@ class Automatix:
 
         self.print_main_data()
         self.print_command_line_steps(command_list)
-        if args.print_overview:
+        if self.env.cmd_args.print_overview:
             exit()
 
         try:
-            self.execute_main_pipeline(command_list=command_list, args=args)
+            self.execute_main_pipeline(command_list=command_list)
         except (AbortException, SkipBatchItemException):
             self.env.LOG.debug('Abort requested. Cleaning up.')
             self.execute_extra_pipeline(pipeline='cleanup')
