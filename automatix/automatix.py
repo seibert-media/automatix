@@ -48,16 +48,29 @@ class Automatix:
         for cmd in command_list:
             self.env.LOG.info(f"({cmd.index}) [{cmd.orig_key}]: {cmd.get_resolved_value()}")
 
-    def execute_pipeline(self, command_list: List[Command], args: Namespace, start_index: int = 0):
-        for cmd in command_list[start_index:]:
+    def execute_main_pipeline(self, command_list: List[Command], args: Namespace):
+        self.env.LOG.info('\n------------------------------')
+        self.env.LOG.info(' --- Start MAIN pipeline ---')
+
+        steps = self.script.get('steps')
+
+        for cmd in command_list[args.jump_to:]:
+            if steps and (self.script['exclude'] == (cmd.index in steps)):
+                # Case 1: exclude is True  and index is in steps => skip
+                # Case 2: exclude is False and index is in steps => execute
+                self.env.LOG.notice(f'\n({cmd.index}) Not selected for execution: skip')
+                continue
             cmd.execute(interactive=args.interactive, force=args.force)
+
+        self.env.LOG.info('\n --- End MAIN pipeline ---')
+        self.env.LOG.info('------------------------------\n')
 
     def execute_extra_pipeline(self, pipeline: str):
         if self.script.get(pipeline):
-            pipeline_list = self.build_command_list(pipeline=pipeline)
             self.env.LOG.info('\n------------------------------')
             self.env.LOG.info(f' --- Start {pipeline.upper()} pipeline ---')
-            self.execute_pipeline(command_list=pipeline_list, args=Namespace(interactive=False, force=False))
+            for cmd in self.build_command_list(pipeline=pipeline):
+                cmd.execute()
             self.env.LOG.info(f'\n --- End {pipeline.upper()} pipeline ---')
             self.env.LOG.info('------------------------------\n')
 
@@ -79,11 +92,7 @@ class Automatix:
             exit()
 
         try:
-            self.env.LOG.info('\n------------------------------')
-            self.env.LOG.info(' --- Start MAIN pipeline ---')
-            self.execute_pipeline(command_list=command_list, args=args, start_index=int(args.jump_to))
-            self.env.LOG.info('\n --- End MAIN pipeline ---')
-            self.env.LOG.info('------------------------------\n')
+            self.execute_main_pipeline(command_list=command_list, args=args)
         except (AbortException, SkipBatchItemException):
             self.env.LOG.debug('Abort requested. Cleaning up.')
             self.execute_extra_pipeline(pipeline='cleanup')
