@@ -145,11 +145,11 @@ def _tupelize(string) -> tuple:
 
 
 def get_script(args: argparse.Namespace) -> dict:
-    file = args.scriptfile
+    s_file = args.scriptfile
     if not os.path.isfile(args.scriptfile):
-        file = f'{SCRIPT_PATH}/{args.scriptfile}'
+        s_file = f'{SCRIPT_PATH}/{args.scriptfile}'
 
-    script = read_yaml(file)
+    script = read_yaml(s_file)
     validate_script(script)
 
     for field in SCRIPT_FIELDS.keys():
