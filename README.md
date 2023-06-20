@@ -237,8 +237,9 @@ The **scriptfile** has to contain valid YAML.
 **systems** _(associative array)_
 : Define some systems. Value has to be a valid SSH destination like an
  IP address or hostname. If Bundlewrap support is enabled, it has to
- be a valid and existing Bundlewrap nodename or you can preceed your
- IP or hostname with `hostname!` to define a non-Bundlewrap system.
+ be a valid and existing Bundlewrap node or group name or you can 
+ preceed your IP or hostname with `hostname!` to define a
+ non-Bundlewrap system.
 You can refer to these systems in the command pipeline in multiple ways:
 
 1) remote@systemname as your command action (see below)
@@ -246,7 +247,7 @@ You can refer to these systems in the command pipeline in multiple ways:
 2) via {SYSTEMS.systemname} which will be replaced with the value
 
 3) via NODES.systemname in python actions to use the Bundlewrap node
-   object (Bundlewrap systems only)
+   object (Bundlewrap nodes only, no groups)
 
 **vars** _(associative array)_
 : Define some vars. These are accessible in the command pipeline via
@@ -289,6 +290,8 @@ Here you define the commands automatix shall execute.
  has to be a defined system. The command will be run via SSH (without
   pseudo-terminal allocation). It uses the standard SSH command.
   Therefore your .ssh/config should be respected.
+ If systemname is a Bundlewrap group, the remote command will be
+  executed sequentially for every node.
 
 4) **python**: Python code to execute.
    * Notice that there are some modules, constants and functions which
