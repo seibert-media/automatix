@@ -26,9 +26,9 @@ def main():
         from .bundlewrap import BWCommand, AutomatixBwRepo
 
         CONFIG['bw_repo'] = AutomatixBwRepo(repo_path=os.environ.get('BW_REPO_PATH', '.'))
-        cmdClass = BWCommand
+        cmd_class = BWCommand
     else:
-        cmdClass = Command
+        cmd_class = Command
 
     LOG.info(f'Automatix Version {VERSION}')
 
@@ -61,13 +61,13 @@ def main():
             script=script_copy,
             variables=variables,
             config=CONFIG,
-            cmd_class=cmdClass,
+            cmd_class=cmd_class,
             script_fields=SCRIPT_FIELDS,
             cmd_args=args,
         )
 
         try:
-            auto.run(args=args)
+            auto.run()
         except SkipBatchItemException as exc:
             LOG.info(str(exc))
             LOG.notice('=====> Jumping to next batch item.')

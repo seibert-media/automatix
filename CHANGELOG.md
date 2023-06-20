@@ -1,5 +1,9 @@
 # Changelog
 
+# 1.12.0
+- Feature: select or exclude specific pipeline steps by index
+- Feature: remote commands for Bundlewrap groups
+
 # 1.11.2
 - No changes, just to test auto deployment
 

@@ -1,6 +1,7 @@
 from logging import Logger
 from argparse import Namespace
 
+
 class PipelineEnvironment:
     def __init__(
             self,
@@ -11,7 +12,7 @@ class PipelineEnvironment:
             imports: list,
             batch_mode: bool,
             cmd_args: Namespace,
-            LOG: Logger,
+            logger: Logger,
     ):
         self.name = name
         self.config = config
@@ -20,4 +21,4 @@ class PipelineEnvironment:
         self.imports = imports
         self.batch_mode = batch_mode
         self.cmd_args = cmd_args
-        self.LOG = LOG
+        self.LOG = logger
