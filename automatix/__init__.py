@@ -47,6 +47,10 @@ def main():
         script['batch_mode'] = True
         LOG.notice('Detected batch processing from CSV file.')
 
+    if args.steps:
+        exclude = script['exclude'] = args.steps.startswith('e')
+        script['steps'] = {int(s) for s in (args.steps[1:] if exclude else args.steps).split(',')}
+
     for i, row in enumerate(batch_items, start=1):
         script_copy = deepcopy(script)
         update_script_from_row(row=row, script=script_copy, index=i)

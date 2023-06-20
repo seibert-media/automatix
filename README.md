@@ -96,6 +96,7 @@ Default location is "~/.automatix.cfg.yaml".
       \[**--vars-file** _VARS_FILE_PATH_ \]
       \[**--print-overview**|**-p**\]
       \[**--jump-to**|**-j** _JUMP_TO_\]
+      \[**--steps**|**-s** _STEPS_\]
       \[**--interactive**|**-i**\]
       \[**--force**|**-f**\]
       \[**--debug**|**-d**\]
@@ -145,6 +146,11 @@ Default location is "~/.automatix.cfg.yaml".
  beginning. Use **-p** or the output messages to determine the
  desired step index. You can use negative numbers to start counting
  from the end.
+
+**--steps** _STEPS_, **-s** _STEPS_
+: Only execute these steps (comma-separated indices) or exclude steps
+ by prepending the comma-separated list with "e".
+ Examples: `-s 1,3,7`, `-s e2`, `-s e0,5,7,2`
 
 **--interactive**, **-i**
 : Confirm actions before executing.

@@ -111,7 +111,12 @@ def arguments() -> argparse.Namespace:
     parser.add_argument(
         '--jump-to', '-j',
         help='Jump to step instead of starting at the beginning',
+        type=int,
         default=0,
+    )
+    parser.add_argument(
+        '--steps', '-s',
+        help='Only execute these steps (comma-separated indices) or exclude steps (prepend "e")',
     )
     parser.add_argument(
         '--interactive', '-i',
