@@ -31,12 +31,13 @@ POSSIBLE_ANSWERS = {
 
 
 class Command:
-    def __init__(self, pipeline_cmd: dict, index: int, env: PipelineEnvironment):
-        self.pipeline_cmd = pipeline_cmd
+    def __init__(self, cmd: dict, index: int, pipeline: str, env: PipelineEnvironment):
+        self.cmd = cmd
         self.index = index
         self.env = env
+        self.pipeline = pipeline
 
-        for key, value in pipeline_cmd.items():
+        for key, value in cmd.items():
             self.orig_key = key
             self.condition_var, self.assignment_var, self.key = parse_key(key=key)
             if isinstance(value, dict):
@@ -116,7 +117,8 @@ class Command:
             self.env.LOG.info(f'(command execution time: {round(time() - steptime)}s)')
 
         if return_code != 0:
-            self.env.LOG.error(f'>> {self.env.name} << Command ({self.index}) failed with return code {return_code}.')
+            self.env.LOG.error(
+                f'>> {self.env.name} << Command ({self.pipeline}:{self.index}) failed with return code {return_code}.')
             if force:
                 return
 

@@ -35,9 +35,10 @@ class Automatix:
         command_list = []
         for index, cmd in enumerate(self.script[pipeline]):
             new_cmd = self.cmd_class(
-                pipeline_cmd=cmd,
+                cmd=cmd,
                 index=index,
                 env=self.env,
+                pipeline=pipeline,
             )
             command_list.append(new_cmd)
             if new_cmd.assignment_var and new_cmd.assignment_var not in self.env.vars:
