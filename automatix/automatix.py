@@ -19,7 +19,7 @@ class Automatix:
     ):
         self.script = script
         self.script_fields = script_fields
-        self.cmdClass = cmd_class
+        self.cmd_class = cmd_class
         self.env = PipelineEnvironment(
             name=script['name'],
             config=config,
@@ -28,13 +28,13 @@ class Automatix:
             imports=script.get('imports', []),
             batch_mode=script.get('batch_mode', False),
             cmd_args=cmd_args,
-            LOG=logging.getLogger(config['logger']),
+            logger=logging.getLogger(config['logger']),
         )
 
     def build_command_list(self, pipeline: str) -> List[Command]:
         command_list = []
         for index, cmd in enumerate(self.script[pipeline]):
-            new_cmd = self.cmdClass(
+            new_cmd = self.cmd_class(
                 pipeline_cmd=cmd,
                 index=index,
                 env=self.env,
