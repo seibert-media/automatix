@@ -63,4 +63,8 @@ class BWNodesWrapper:
         self.systems = systems
 
     def __getattr__(self, name):
-        return self.repo.get_node(self.systems[name])
+        try:
+            result = self.repo.get_node(self.systems[name])
+        except NoSuchNode:
+            result = self.repo.get_group(self.systems[name])
+        return result
