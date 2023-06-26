@@ -1,5 +1,8 @@
 # Changelog
 
+# 1.12.1
+- Fix warning for not existing node
+
 # 1.12.0
 - Feature: select or exclude specific pipeline steps by index
 - Feature: remote commands for Bundlewrap groups
