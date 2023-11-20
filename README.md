@@ -39,7 +39,7 @@ Please use the interactive mode and doublecheck commands before
 
 # INSTALLATION
 
-Automatix requires Python &ge; 3.6.
+Automatix requires Python &ge; 3.8.
 
 ```
 pip install automatix

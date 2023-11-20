@@ -2,8 +2,8 @@ import argparse
 import logging
 import os
 import re
-import sys
 from collections import OrderedDict
+from importlib import metadata
 from time import sleep
 
 import yaml
@@ -15,11 +15,6 @@ def read_yaml(yamlfile: str) -> dict:
     with open(yamlfile) as file:
         return yaml.load(file.read(), Loader=yaml.SafeLoader)
 
-
-if sys.version_info >= (3, 8):
-    from importlib import metadata
-else:
-    import importlib_metadata as metadata
 
 try:
     from argcomplete import autocomplete
