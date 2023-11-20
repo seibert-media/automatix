@@ -48,7 +48,6 @@ class Command:
                 self.value = value
             break  # There should be only one entry in pipeline_cmd
 
-
     def get_type(self):
         if self.key == 'local':
             return 'local'
@@ -207,6 +206,8 @@ class Command:
                     'Seems you are trying to use bundlewrap functions without having bundlewrap support enabled.'
                     ' Please check your configuration.')
                 return 1
+            if isinstance(exc.__context__, ReloadFromFile):
+                exc.__suppress_context__ = True
 
             self.env.LOG.exception('Unknown error occured:')
             return 1

@@ -86,7 +86,7 @@ class Automatix:
                 else:
                     cmd.execute()
         except ReloadFromFile as exc:
-            self.env.LOG.notice(f'\n({exc.index}) Reload script from file and retry.')
+            self.env.LOG.info(f'\n({exc.index}) Reload script from file and retry.')
             self.reload_script()
             self._execute_command_list(name=name, start_index=exc.index, treat_as_main=treat_as_main)
 
