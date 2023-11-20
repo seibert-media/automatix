@@ -24,6 +24,7 @@ PERSISTENT_VARS = PVARS = PersistentDict()
 POSSIBLE_ANSWERS = {
     'p': 'proceed (default)',
     'r': 'retry',
+    'R': 'reload from file and retry command (same index)',
     's': 'skip',
     'a': 'abort',
     'c': 'abort & continue to next (CSV processing)',
@@ -122,11 +123,9 @@ class Command:
             if force:
                 return
 
-            err_answer = self._ask_user(question='[CF] What should I do?', allowed_options=['p', 'r', 'a'])
-            # answers 'a' and 'c' are handled by _ask_user, 'p' means just pass
+            err_answer = self._ask_user(question='[CF] What should I do?', allowed_options=['p', 'r', 'R', 'a'])
+            # answers 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
             if err_answer == 'r':
-                if self.env.config.get('reload_on_retry'):
-                    raise ReloadFromFile(index=self.index)
                 return self.execute(interactive)
 
     def _ask_user(self, question: str, allowed_options: list) -> str:
@@ -144,19 +143,21 @@ class Command:
         if self.env.batch_mode:
             allowed_options.append('c')
 
-        options = ', '.join([f'{k}: {POSSIBLE_ANSWERS[k]}' for k in allowed_options])
+        options = '\n'.join([f' {k}: {POSSIBLE_ANSWERS[k]}' for k in allowed_options])
 
         answer = None
         while answer not in allowed_options:
             if answer is not None:
                 self.env.LOG.info('Invalid input. Try again.')
 
-            answer = input(f'{question} ({options})\a')
+            answer = input(f'{question}\n{options}\nYour answer: \a')
 
             if answer == '':  # default
                 answer = 'p'
             if answer == 'a':
                 raise AbortException(1)
+            if answer == 'R':
+                raise ReloadFromFile(index=self.index)
             if self.env.batch_mode and answer == 'c':
                 raise SkipBatchItemException()
 

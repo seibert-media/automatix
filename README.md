@@ -55,9 +55,6 @@ Default location is "~/.automatix.cfg.yaml".
 
     # Path to scripts directory
     script_dir: ~/automatix_script_files
-
-    # Reload policy for retries, 'true' reloads the automatix script from the file system
-    reload_on_retry: true
     
     # Global constants for use in pipeline scripts
     constants:
