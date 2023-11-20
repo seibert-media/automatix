@@ -48,6 +48,7 @@ class Command:
                 self.value = value
             break  # There should be only one entry in pipeline_cmd
 
+
     def get_type(self):
         if self.key == 'local':
             return 'local'
@@ -125,6 +126,8 @@ class Command:
             err_answer = self._ask_user(question='[CF] What should I do?', allowed_options=['p', 'r', 'a'])
             # answers 'a' and 'c' are handled by _ask_user, 'p' means just pass
             if err_answer == 'r':
+                if self.env.config.get('reload_on_retry'):
+                    raise ReloadFromFile(index=self.index)
                 return self.execute(interactive)
 
     def _ask_user(self, question: str, allowed_options: list) -> str:
@@ -344,3 +347,11 @@ class SkipBatchItemException(Exception):
 
 class UnknownCommandException(Exception):
     pass
+
+
+class ReloadFromFile(Exception):
+    def __init__(self, index: int):
+        self.index = index
+
+    def __int__(self):
+        return self.index
