@@ -42,7 +42,6 @@ SCRIPT_FIELDS['vars'] = 'Variables'
 
 CONFIG = {
     'script_dir': '~/automatix-config',
-    'reload_on_retry': True,
     'constants': {},
     'encoding': os.getenv('ENCODING', 'utf-8'),
     'import_path': '.',
