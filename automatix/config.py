@@ -152,7 +152,6 @@ def get_script(args: argparse.Namespace) -> dict:
 
     script = read_yaml(s_file)
     validate_script(script)
-    script['script_file_path'] = s_file
 
     for field in SCRIPT_FIELDS.keys():
         if vars(args).get(field):
