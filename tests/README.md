@@ -18,3 +18,6 @@
     
 
 * Run `make test` in the automatix root directory.
+
+Note: Testing remote commands on MacOs with podman seems broken (for me).
+Maybe this needs some adjustment or further investigation.
