@@ -100,8 +100,8 @@ class Command:
         if self.get_type() == 'manual' or interactive:
             self.env.LOG.debug('Ask for user interaction.')
 
-            answer = self._ask_user(question='[MS] Proceed?', allowed_options=['p', 's', 'a'])
-            # answers 'a' and 'c' are handled by _ask_user, 'p' means just pass
+            answer = self._ask_user(question='[MS] Proceed?', allowed_options=['p', 's', 'R', 'a'])
+            # answers 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
             if answer == 's':
                 return
 
