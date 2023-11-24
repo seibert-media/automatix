@@ -14,10 +14,10 @@ setup(
     author='Johannes Paul, //SEIBERT/MEDIA GmbH',
     author_email='jpaul@seibert-media.net',
     license='MIT',
-    python_requires='>=3.6',
+    python_requires='>=3.8',
     install_requires=[
+        'cython<3.0.0',
         'pyyaml>=5.1',
-        'importlib-metadata >= 1.0 ; python_version < "3.8"',
     ],
     extras_require={
         'bash completion': 'argcomplete',

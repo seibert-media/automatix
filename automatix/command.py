@@ -24,6 +24,7 @@ PERSISTENT_VARS = PVARS = PersistentDict()
 POSSIBLE_ANSWERS = {
     'p': 'proceed (default)',
     'r': 'retry',
+    'R': 'reload from file and retry command (same index)',
     's': 'skip',
     'a': 'abort',
     'c': 'abort & continue to next (CSV processing)',
@@ -99,8 +100,8 @@ class Command:
         if self.get_type() == 'manual' or interactive:
             self.env.LOG.debug('Ask for user interaction.')
 
-            answer = self._ask_user(question='[MS] Proceed?', allowed_options=['p', 's', 'a'])
-            # answers 'a' and 'c' are handled by _ask_user, 'p' means just pass
+            answer = self._ask_user(question='[MS] Proceed?', allowed_options=['p', 's', 'R', 'a'])
+            # answers 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
             if answer == 's':
                 return
 
@@ -122,8 +123,8 @@ class Command:
             if force:
                 return
 
-            err_answer = self._ask_user(question='[CF] What should I do?', allowed_options=['p', 'r', 'a'])
-            # answers 'a' and 'c' are handled by _ask_user, 'p' means just pass
+            err_answer = self._ask_user(question='[CF] What should I do?', allowed_options=['p', 'r', 'R', 'a'])
+            # answers 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
             if err_answer == 'r':
                 return self.execute(interactive)
 
@@ -142,19 +143,21 @@ class Command:
         if self.env.batch_mode:
             allowed_options.append('c')
 
-        options = ', '.join([f'{k}: {POSSIBLE_ANSWERS[k]}' for k in allowed_options])
+        options = '\n'.join([f' {k}: {POSSIBLE_ANSWERS[k]}' for k in allowed_options])
 
         answer = None
         while answer not in allowed_options:
             if answer is not None:
                 self.env.LOG.info('Invalid input. Try again.')
 
-            answer = input(f'{question} ({options})\a')
+            answer = input(f'{question}\n{options}\nYour answer: \a')
 
             if answer == '':  # default
                 answer = 'p'
             if answer == 'a':
                 raise AbortException(1)
+            if answer == 'R':
+                raise ReloadFromFile(index=self.index)
             if self.env.batch_mode and answer == 'c':
                 raise SkipBatchItemException()
 
@@ -204,6 +207,8 @@ class Command:
                     'Seems you are trying to use bundlewrap functions without having bundlewrap support enabled.'
                     ' Please check your configuration.')
                 return 1
+            if isinstance(exc.__context__, ReloadFromFile):
+                exc.__suppress_context__ = True
 
             self.env.LOG.exception('Unknown error occured:')
             return 1
@@ -344,3 +349,11 @@ class SkipBatchItemException(Exception):
 
 class UnknownCommandException(Exception):
     pass
+
+
+class ReloadFromFile(Exception):
+    def __init__(self, index: int):
+        self.index = index
+
+    def __int__(self):
+        return self.index

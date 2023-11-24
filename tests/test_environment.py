@@ -5,8 +5,9 @@ from time import sleep
 
 import pytest
 
-from automatix import get_script, collect_vars, CONFIG, cmdClass, SCRIPT_FIELDS
+from automatix import get_script, collect_vars, CONFIG, Command, SCRIPT_FIELDS
 from automatix.automatix import Automatix
+from automatix.logger import init_logger
 
 SELFDIR = dirname(abspath(__file__))
 
@@ -32,7 +33,7 @@ testauto = Automatix(
     script=script,
     variables=variables,
     config=CONFIG,
-    cmd_class=cmdClass,
+    cmd_class=Command,
     script_fields=SCRIPT_FIELDS,
     cmd_args=default_args,
 )
@@ -47,6 +48,8 @@ testauto.env.vars.update({
 
 environment = testauto.env
 
+init_logger(name=CONFIG['logger'], debug=True)
+
 
 def run_command_and_check(cmd):
     subprocess.run(cmd, shell=True).check_returncode()
@@ -55,7 +58,7 @@ def run_command_and_check(cmd):
 @pytest.fixture(scope='function')
 def ssh_up(function_scoped_container_getter):
     max_retries = 20
-    for i in range(max_retries):
+    for _ in range(max_retries):
         sleep(1)
         try:
             run_command_and_check(

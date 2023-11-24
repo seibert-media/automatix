@@ -4,6 +4,7 @@
 
 * Install docker and docker-compose
 * Install pytest and pytest-docker-compose via pip
+  * If install fails, have a look at https://github.com/yaml/pyyaml/issues/601#issuecomment-1813963845
 * Generate a ssh keypair and place it in tests with `ssh-keygen -t rsa -f tests/id_rsa_tests`
 * In tests: Copy docker-compose.example.yml to docker-compose.yml and replace the public key
 * Put something like the following in your ~.ssh/config
@@ -17,3 +18,6 @@
     
 
 * Run `make test` in the automatix root directory.
+
+Note: Testing remote commands on MacOs with podman seems broken (for me).
+Maybe this needs some adjustment or further investigation.

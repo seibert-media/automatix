@@ -1,42 +1,32 @@
 # Path to scripts directory
-
 script_dir: ~/automatix_script_files
 
 # Global constants for use in pipeline scripts
-
 constants:
   apt_update: 'apt-get -qy update'
   apt_upgrade: 'DEBIAN_FRONTEND=noninteractive apt-get -qy -o Dpkg::Options::=--force-confold --no-install-recommends upgrade'
   apt_full_upgrade: 'DEBIAN_FRONTEND=noninteractive apt-get -qy -o Dpkg::Options::=--force-confold --no-install-recommends full-upgrade'
 
 # Encoding
-
 encoding: utf-8
 
 # Path to shell imports
-
 import_path: '.'
 
 # SSH Command used for remote connections
-
 ssh_cmd: 'ssh {hostname} sudo '
 
 # Temporary directory on remote machines for shell imports
-
 remote_tmp_dir: 'automatix_tmp'
 
 # Logger
-
 logger: mylogger
 
 # Logging library
-
 logging_lib: mylib.logging
 
 # Bundlewrap support, bundlewrap has to be installed (default: false)
-
 bundlewrap: true
 
 # Teamvault / Secret support, bundlewrap-teamvault has to be installed (default: false)
-
 teamvault: true
