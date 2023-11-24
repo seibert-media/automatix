@@ -1,5 +1,9 @@
 # Changelog
 
+# 1.13.0
+- Python 3.8 is now required
+- Feature: Reload from file during runtime
+
 # 1.12.1
 - Fix warning for not existing node
 
