@@ -288,8 +288,9 @@ class Command:
         if self.assignment_var:
             proc = subprocess.run(cmd, shell=True, executable='/bin/bash', stdout=subprocess.PIPE)
             output = proc.stdout.decode(self.env.config["encoding"])
-            self.env.vars[self.assignment_var] = output
-            self.env.LOG.info(f'Variable {self.assignment_var} = {output}')
+            self.env.vars[self.assignment_var] = assigned_value = output.rstrip('\r\n')
+            hint = ' (trailing newline removed)' if (output.endswith('\n') or output.endswith('\r')) else ''
+            self.env.LOG.info(f'Variable {self.assignment_var} = "{assigned_value}"{hint}')
         else:
             proc = subprocess.run(cmd, shell=True, executable='/bin/bash')
         return proc.returncode
