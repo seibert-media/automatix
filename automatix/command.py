@@ -150,14 +150,18 @@ class Command:
         options = '\n'.join([f' {k}: {POSSIBLE_ANSWERS[k]}' for k in allowed_options])
 
         answer = None
-        while answer not in allowed_options:
+        while True:
             if answer is not None:
-                self.env.LOG.info('Invalid input. Try again.')
+                self.env.LOG.warning('Invalid input. Try again.')
 
             answer = input(f'{question}\n{options}\nYour answer: \a')
 
             if answer == '':  # default
                 answer = 'p'
+
+            if answer[0] not in allowed_options:
+                continue
+
             if answer == 'a':
                 raise AbortException(1)
             if answer == 'R':
@@ -170,7 +174,7 @@ class Command:
             if self.env.batch_mode and answer == 'c':
                 raise SkipBatchItemException()
 
-        return answer
+            return answer
 
     def _local_action(self) -> int:
         cmd = self._build_command(path=self.env.config['import_path'])
