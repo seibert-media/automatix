@@ -424,6 +424,13 @@ Then start **automatix** in interactive mode (-i) and adjust the
  single steps one by one. Replace manual steps, if suitable. Whenever
  adjustment is needed, abort, adjust and restart **automatix** with
  jump (-j) to the adjusted step.  
+From **automatix** 1.13.0 on you can use the reload scriptfile feature
+ instead. When asked for options (either because a command failed or
+ you are in interactive mode) you can use **-R** to reload the
+ scriptfile. If lines in the scriptfile have changed, or you need to
+ repeat steps, you can use R+/-$number to reload and adjust the
+ restart point (available since **automatix** 1.14.0)  
+
 Repeat this procedure to automate more and more and increase quality,
  whenever you feel like it.
 

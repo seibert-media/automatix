@@ -25,6 +25,7 @@ POSSIBLE_ANSWERS = {
     'p': 'proceed (default)',
     'r': 'retry',
     'R': 'reload from file and retry command (same index)',
+    'R±X': 'same as R, but change index by X (integer)',
     's': 'skip',
     'a': 'abort',
     'c': 'abort & continue to next (CSV processing)',
@@ -143,25 +144,37 @@ class Command:
         if self.env.batch_mode:
             allowed_options.append('c')
 
+        if 'R' in allowed_options:
+            allowed_options.insert(allowed_options.index('R')+1, 'R±X')
+
         options = '\n'.join([f' {k}: {POSSIBLE_ANSWERS[k]}' for k in allowed_options])
 
         answer = None
-        while answer not in allowed_options:
+        while True:
             if answer is not None:
-                self.env.LOG.info('Invalid input. Try again.')
+                self.env.LOG.warning('Invalid input. Try again.')
 
             answer = input(f'{question}\n{options}\nYour answer: \a')
 
             if answer == '':  # default
                 answer = 'p'
+
+            if answer[0] not in allowed_options:
+                continue
+
             if answer == 'a':
                 raise AbortException(1)
             if answer == 'R':
                 raise ReloadFromFile(index=self.index)
+            if answer.startswith('R'):
+                try:
+                    raise ReloadFromFile(index=self.index + int(answer[1:]))
+                except ValueError:
+                    pass
             if self.env.batch_mode and answer == 'c':
                 raise SkipBatchItemException()
 
-        return answer
+            return answer
 
     def _local_action(self) -> int:
         cmd = self._build_command(path=self.env.config['import_path'])
