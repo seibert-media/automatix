@@ -450,6 +450,8 @@ Preferred way of using **automatix** is to put often used and complex
 
 Be careful with **assignments** containing line breaks (echo, ...).
  Using the variables may lead to unexpected behaviour or errors.
+ From version 1.14.0 on trailing new lines in **assignments**
+ of Shell commands (_local_, _remote@_) are removed.
 
 Assignments containing **null bytes** are currently not supported.
 
