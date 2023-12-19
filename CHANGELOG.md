@@ -1,5 +1,10 @@
 # Changelog
 
+# 1.14.0
+- Feature: Remove trailing new lines in Shell command assignments
+- Feature: Possibility to change index on reload from file
+- Fix: Return returncode for non-Bundlewrap remote action
+
 # 1.13.0
 - Python 3.8 is now required
 - Feature: Reload from file during runtime
