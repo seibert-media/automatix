@@ -115,7 +115,7 @@ class Command:
             return_code = self._remote_action()
 
         if 'AUTOMATIX_TIME' in os.environ:
-            self.env.LOG.info(f'(command execution time: {round(time() - steptime)}s)')
+            self.env.LOG.info(f'\n(command execution time: {round(time() - steptime)}s)')
 
         if return_code != 0:
             self.env.LOG.error(
@@ -189,7 +189,7 @@ class Command:
             self.env.LOG.debug(f'Run python command: {cmd}')
             if self.assignment_var:
                 exec(f'vars["{self.assignment_var}"] = {cmd}', globals(), locale_vars)
-                self.env.LOG.info(f'Variable {self.assignment_var} = {self.env.vars[self.assignment_var]}')
+                self.env.LOG.info(f'Variable {self.assignment_var} = {repr(self.env.vars[self.assignment_var])}')
             else:
                 exec(cmd, globals(), locale_vars)
             return 0
@@ -215,13 +215,19 @@ class Command:
 
     def _remote_action(self) -> int:
         # For BWCommand this method is overridden
-        self._remote_action_on_hostname(hostname=self.get_system().replace('hostname!', ''))
+        return self._remote_action_on_hostname(hostname=self.get_system().replace('hostname!', ''))
 
     def _remote_action_on_hostname(self, hostname: str) -> int:
         ssh_cmd = self.env.config["ssh_cmd"].format(hostname=hostname)
         remote_cmd = self.get_resolved_value()
         prefix = ''
         if self.env.imports:
+            # How is this working?
+            # - Create a tar archive with all imports
+            # - Pipe it through SSH
+            # - Create tmp dir on remote
+            # - Extract tar archive there
+            # - Source imports in _build_command
             prefix = f'tar -C {self.env.config["import_path"]} -cf - ' + ' '.join(self.env.imports) + ' | '
             remote_cmd = f'mkdir {self.env.config["remote_tmp_dir"]};' \
                          f' tar -C {self.env.config["remote_tmp_dir"]} -xf -;' \
