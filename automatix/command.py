@@ -115,7 +115,7 @@ class Command:
             return_code = self._remote_action()
 
         if 'AUTOMATIX_TIME' in os.environ:
-            self.env.LOG.info(f'(command execution time: {round(time() - steptime)}s)')
+            self.env.LOG.info(f'\n(command execution time: {round(time() - steptime)}s)')
 
         if return_code != 0:
             self.env.LOG.error(
