@@ -31,6 +31,9 @@ POSSIBLE_ANSWERS = {
     'c': 'abort & continue to next (CSV processing)',
 }
 
+SHELL_EXECUTABLE = '/bin/bash'
+KEYBOARD_INTERRUPT_MESSAGE = 'Abort command by user key stroke. Exit code is set to 130.'
+
 
 class Command:
     def __init__(self, cmd: dict, index: int, pipeline: str, env: PipelineEnvironment):
@@ -141,13 +144,39 @@ class Command:
             if err_answer == 'r':
                 return self.execute(interactive)
 
+    def _ask_user_with_options(self, question: str, allowed_options: list) -> str:
+        answer = input(question)
+
+        if answer == '':  # default
+            return 'p'
+
+        if 'R' in allowed_options and len(answer) > 1 and answer.startswith('R'):
+            try:
+                raise ReloadFromFile(index=self.index + int(answer[1:]))
+            except ValueError:
+                pass
+
+        if answer not in allowed_options:
+            self.env.LOG.warning('Invalid input. Try again.')
+            return self._ask_user_with_options(question=question, allowed_options=allowed_options)
+
+        if answer == 'a':
+            raise AbortException(1)
+        if answer == 'R':
+            raise ReloadFromFile(index=self.index)
+        if self.env.batch_mode and answer == 'c':
+            raise SkipBatchItemException()
+
+        return answer
+
     def _ask_user(self, question: str, allowed_options: list) -> str:
         """
         User-Interactive handling of different scenarios.
         Questions should be prefixed with:
-        [CF] Command Failure
-        [PF] Partial command Failure (BW groups)
+        [CF] Command Failed
+        [PF] Partial command Failed (BW groups)
         [MS] Manual Step
+        [RR] Remote process still Running
 
         :param question:
         :param allowed_options: character list of POSSIBLE_ANSWERS
@@ -161,39 +190,17 @@ class Command:
 
         options = '\n'.join([f' {k}: {POSSIBLE_ANSWERS[k]}' for k in allowed_options])
 
-        answer = None
-        while True:
-            if answer is not None:
-                self.env.LOG.warning('Invalid input. Try again.')
-
-            answer = input(f'{question}\n{options}\nYour answer: \a')
-
-            if answer == '':  # default
-                answer = 'p'
-
-            if answer[0] not in allowed_options:
-                continue
-
-            if answer == 'a':
-                raise AbortException(1)
-            if answer == 'R':
-                raise ReloadFromFile(index=self.index)
-            if answer.startswith('R'):
-                try:
-                    raise ReloadFromFile(index=self.index + int(answer[1:]))
-                except ValueError:
-                    pass
-            if self.env.batch_mode and answer == 'c':
-                raise SkipBatchItemException()
-
-            return answer
+        return self._ask_user_with_options(
+            question=f'{question}\n{options}\nYour answer: \a',
+            allowed_options=allowed_options,
+        )
 
     def _local_action(self) -> int:
         cmd = self._build_command(path=self.env.config['import_path'])
         try:
             return self._run_local_command(cmd=cmd)
         except KeyboardInterrupt:
-            self.env.LOG.info('Abort command by user key stroke. Exit code is set to 130.')
+            self.env.LOG.info(KEYBOARD_INTERRUPT_MESSAGE)
             return 130
 
     def _generate_python_vars(self):
@@ -221,7 +228,7 @@ class Command:
         except (AbortException, SkipBatchItemException):
             raise
         except KeyboardInterrupt:
-            self.env.LOG.info('Abort command by user key stroke. Exit code is set to 130.')
+            self.env.LOG.info(KEYBOARD_INTERRUPT_MESSAGE)
             return 130
         except Exception as exc:
             if isinstance(exc, NameError) and not self.env.config.get('bundlewrap') and str(exc) in [
@@ -242,7 +249,7 @@ class Command:
         # For BWCommand this method is overridden
         return self._remote_action_on_hostname(hostname=self.get_system().replace('hostname!', ''))
 
-    def _remote_action_on_hostname(self, hostname: str) -> int:
+    def _get_remote_command(self, hostname: str) -> str:
         ssh_cmd = self.env.config["ssh_cmd"].format(hostname=hostname)
         remote_cmd = self.get_resolved_value()
         prefix = ''
@@ -258,54 +265,63 @@ class Command:
                          f' tar -C {self.env.config["remote_tmp_dir"]} -xf -;' \
                          f' {self._build_command(path=self.env.config["remote_tmp_dir"])}'
 
-        cmd = f'{prefix}{ssh_cmd}{quote("bash -c " + quote(remote_cmd))}'
+        return f'{prefix}{ssh_cmd}{quote("bash -c " + quote(remote_cmd))}'
+
+    def _remote_handle_keyboard_interrupt(self, hostname: str) -> int:
+        ssh_cmd = self.env.config["ssh_cmd"].format(hostname=hostname)
 
         try:
-            exitcode = self._run_local_command(cmd=cmd)
-        except KeyboardInterrupt:
-            self.env.LOG.info('Abort command by user key stroke. Exit code is set to 130.')
-            exitcode = 130
+            ps_pids = self.get_remote_pids(hostname=hostname, cmd=self.get_resolved_value())
+            while ps_pids:
+                self.env.LOG.notice(
+                    'Remote command seems still to be running! Found PIDs: {}'.format(','.join(ps_pids))
+                )
+                answer = input(
+                    '[RR] What should I do? '
+                    '(i: send SIGINT (default), t: send SIGTERM, k: send SIGKILL, p: do nothing and proceed) \n\a')
 
-            try:
+                if answer == 'p':
+                    break
+                elif answer == 't':
+                    signal = 'TERM'
+                elif answer == 'k':
+                    signal = 'KILL'
+                else:
+                    signal = 'INT'
+                for pid in ps_pids:
+                    kill_cmd = f'{ssh_cmd} kill -{signal} {pid}'
+                    self.env.LOG.info(f'Kill {pid} on {hostname}')
+                    subprocess.run(kill_cmd, shell=True)
+
                 ps_pids = self.get_remote_pids(hostname=hostname, cmd=self.get_resolved_value())
-                while ps_pids:
-                    self.env.LOG.notice(
-                        'Remote command seems still to be running! Found PIDs: {}'.format(','.join(ps_pids))
-                    )
-                    answer = input(
-                        '[RR] What should I do? '
-                        '(i: send SIGINT (default), t: send SIGTERM, k: send SIGKILL, p: do nothing and proceed) \n\a')
+        except subprocess.CalledProcessError:
+            self.env.LOG.warning('Could not check for remaining remote processes.')
 
-                    if answer == 'p':
-                        break
-                    elif answer == 't':
-                        signal = 'TERM'
-                    elif answer == 'k':
-                        signal = 'KILL'
-                    else:
-                        signal = 'INT'
-                    for pid in ps_pids:
-                        kill_cmd = f'{ssh_cmd} kill -{signal} {pid}'
-                        self.env.LOG.info(f'Kill {pid} on {hostname}')
-                        subprocess.run(kill_cmd, shell=True)
+        self.env.LOG.info('Keystroke interrupt handled.\n')
 
-                    ps_pids = self.get_remote_pids(hostname=hostname, cmd=self.get_resolved_value())
-            except subprocess.CalledProcessError:
-                self.env.LOG.warning('Could not check for remaining remote processes.')
+    def _remote_cleanup_imports(self, hostname: str):
+        ssh_cmd = self.env.config["ssh_cmd"].format(hostname=hostname)
+        cleanup_cmd = f'{ssh_cmd} rm -r {self.env.config["remote_tmp_dir"]}'
+        self.env.LOG.debug(f'Executing: {cleanup_cmd}')
+        proc = subprocess.run(cleanup_cmd, shell=True, executable=SHELL_EXECUTABLE)
+        if proc.returncode != 0:
+            self.env.LOG.warning(
+                'Failed to remove {tmp_dir}, exitcode: {return_code}'.format(
+                    tmp_dir=self.env.config["remote_tmp_dir"],
+                    return_code=proc.returncode,
+                )
+            )
 
-            self.env.LOG.info('Keystroke interrupt handled.\n')
+    def _remote_action_on_hostname(self, hostname: str) -> int:
+        try:
+            exitcode = self._run_local_command(cmd=self._get_remote_command(hostname=hostname))
+        except KeyboardInterrupt:
+            self.env.LOG.info(KEYBOARD_INTERRUPT_MESSAGE)
+            exitcode = 130
+            self._remote_handle_keyboard_interrupt(hostname=hostname)
 
         if self.env.imports:
-            cleanup_cmd = f'{ssh_cmd} rm -r {self.env.config["remote_tmp_dir"]}'
-            self.env.LOG.debug(f'Executing: {cleanup_cmd}')
-            proc = subprocess.run(cleanup_cmd, shell=True, executable='/bin/bash')
-            if proc.returncode != 0:
-                self.env.LOG.warning(
-                    'Failed to remove {tmp_dir}, exitcode: {return_code}'.format(
-                        tmp_dir=self.env.config["remote_tmp_dir"],
-                        return_code=proc.returncode,
-                    )
-                )
+            self._remote_cleanup_imports(hostname=hostname)
 
         return exitcode
 
@@ -317,13 +333,13 @@ class Command:
     def _run_local_command(self, cmd: str) -> int:
         self.env.LOG.debug(f'Executing: {cmd}')
         if self.assignment_var:
-            proc = subprocess.run(cmd, shell=True, executable='/bin/bash', stdout=subprocess.PIPE)
+            proc = subprocess.run(cmd, shell=True, executable=SHELL_EXECUTABLE, stdout=subprocess.PIPE)
             output = proc.stdout.decode(self.env.config["encoding"])
             self.env.vars[self.assignment_var] = assigned_value = output.rstrip('\r\n')
             hint = ' (trailing newline removed)' if (output.endswith('\n') or output.endswith('\r')) else ''
             self.env.LOG.info(f'Variable {self.assignment_var} = "{assigned_value}"{hint}')
         else:
-            proc = subprocess.run(cmd, shell=True, executable='/bin/bash')
+            proc = subprocess.run(cmd, shell=True, executable=SHELL_EXECUTABLE)
         return proc.returncode
 
     def get_remote_pids(self, hostname, cmd) -> []:
@@ -332,7 +348,7 @@ class Command:
         pids = subprocess.check_output(
             cmd,
             shell=True,
-            executable='/bin/bash'
+            executable=SHELL_EXECUTABLE
         ).decode(self.env.config["encoding"]).split()
 
         return pids
