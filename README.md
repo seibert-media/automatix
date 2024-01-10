@@ -316,12 +316,12 @@ Here you define the commands automatix shall execute.
  strings when used to build commands in following steps.
  
 **CONDITIONS**: You can define the command only to be executed if
- your condition variable evaluates to "True" in Python. To achieve this
- write the variable name followed by a question mark at the very
+ your condition variable evaluates to "True" in Python. To achieve
+ this write the variable name followed by a question mark at the very
  beginning like `cond?python: destroy_system()`. Be aware that all
- output from **local** or **remote** commands will lead to a
- non-empty string which evaluates to "True" in Python, but empty output
- will evaluate to "False".
+ output from **local** or **remote** commands will lead to a non-empty
+ string which evaluates to "True" in Python, but empty output will
+ evaluate to "False". Use `!?` instead of `?` to invert the outcome.
 
 **VALUE**: Your command. Variables will be replaced with Python
  format function. Therefore, use curly brackets to refer to variables,
@@ -398,6 +398,7 @@ using the shortcut and the attribute notation:
     
       - python: PVARS.cond = some_function()
       - PVARS.cond?local: echo 'This is only printed if "some_function" evaluates to "True"'
+      - PVARS.cond!?local: echo 'And this is printed if "some_function" evaluates to "False"'
 
 An alternative is to make variables global, but in most cases using
  PERSISTENT_VARS is more clean. _**CAUTION: Choosing already existing
