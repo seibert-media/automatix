@@ -321,7 +321,7 @@ Here you define the commands automatix shall execute.
  beginning like `cond?python: destroy_system()`. Be aware that all
  output from **local** or **remote** commands will lead to a non-empty
  string which evaluates to "True" in Python, but empty output will
- evaluate to "False". Use `!?` instead of `?` to invert the outcome.
+ evaluate to "False". Use `!?` instead of `?` to invert the condition.
 
 **VALUE**: Your command. Variables will be replaced with Python
  format function. Therefore, use curly brackets to refer to variables,
