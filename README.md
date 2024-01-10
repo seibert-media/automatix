@@ -237,8 +237,8 @@ The **scriptfile** has to contain valid YAML.
 **systems** _(associative array)_
 : Define some systems. Value has to be a valid SSH destination like an
  IP address or hostname. If Bundlewrap support is enabled, it has to
- be a valid and existing Bundlewrap node or group name or you can 
- preceed your IP or hostname with `hostname!` to define a
+ be a valid and existing Bundlewrap node or group name, or you can 
+ precede your IP or hostname with `hostname!` to define a
  non-Bundlewrap system.
 You can refer to these systems in the command pipeline in multiple ways:
 
@@ -473,6 +473,12 @@ While **aborting remote functions** (via imports), automatix is not
  able to determine still running processes invoked by the function,
  because it only checks the processes for the commands (in this case
  the function name) which is called in the pipeline.
+
+User input questions are of following categories:
+- [MS] **m**anual **s**tep
+- [CF] **c**ommand **f**ailed
+- [PF] **p**artial command **f**ailed (BW groups)
+- [RR] **r**emote process still **r**unning
 
 # EXTRAS
 
