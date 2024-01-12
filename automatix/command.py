@@ -109,8 +109,8 @@ class Command:
         try:
             self._execute(interactive=interactive, force=force)
         except (KeyError, UnknownCommandException):
-            self.env.LOG.exception('Syntax Error!')
-            self.env.LOG.error('Syntax Error! Please fix your script and reload/restart.')
+            self.env.LOG.exception('Syntax or value error!')
+            self.env.LOG.error('Syntax or value error! Please fix your script and reload/restart.')
             self._ask_user(question='[SE] What should I do?', allowed_options=['R', 's', 'a'])
 
     def _execute(self, interactive: bool = False, force: bool = False):
