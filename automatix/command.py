@@ -87,24 +87,6 @@ class Command:
         variables['SYSTEMS'] = SystemsWrapper(self.env.systems)
         return self.value.format(**variables)
 
-    def check_condition(self) -> bool:
-        if self.condition_var is None:
-            return True
-
-        if self.condition_var.endswith('!'):
-            cond_var = self.condition_var[:-1]
-            invert = True
-        else:
-            cond_var = self.condition_var
-            invert = False
-
-        if cond_var.startswith('PVARS.'):
-            condition = PERSISTENT_VARS[cond_var[6:]]
-        else:
-            condition = self.env.vars.get(cond_var, False)
-
-        return bool(condition) != invert
-
     def execute(self, interactive: bool = False, force: bool = False):
         try:
             self._execute(interactive=interactive, force=force)
@@ -113,18 +95,10 @@ class Command:
             self.env.LOG.error('Syntax or value error! Please fix your script and reload/restart.')
             self._ask_user(question='[SE] What should I do?', allowed_options=['R', 's', 'a'])
 
-    def _execute_action(self) -> int:
-        if self.get_type() == 'local':
-            return self._local_action()
-        if self.get_type() == 'python':
-            return self._python_action()
-        if self.get_type() == 'remote':
-            return self._remote_action()
-
     def _execute(self, interactive: bool = False, force: bool = False):
         self.env.LOG.notice(f'\n({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
 
-        if not self.check_condition():
+        if not self._check_condition():
             self.env.LOG.info(f'Skip command, because condition variable "{self.condition_var}" evaluates to False')
             return
 
@@ -154,30 +128,31 @@ class Command:
             if err_answer == 'r':
                 return self._execute(interactive)
 
-    def _ask_user_with_options(self, question: str, allowed_options: list) -> str:
-        answer = input(question)
+    def _check_condition(self) -> bool:
+        if self.condition_var is None:
+            return True
 
-        if answer == '':  # default
-            answer = 'p'
+        if self.condition_var.endswith('!'):
+            cond_var = self.condition_var[:-1]
+            invert = True
+        else:
+            cond_var = self.condition_var
+            invert = False
 
-        if 'R' in allowed_options and len(answer) > 1 and answer.startswith('R'):
-            try:
-                raise ReloadFromFile(index=self.index + int(answer[1:]))
-            except ValueError:
-                pass
+        if cond_var.startswith('PVARS.'):
+            condition = PERSISTENT_VARS[cond_var[6:]]
+        else:
+            condition = self.env.vars.get(cond_var, False)
 
-        if answer not in allowed_options:
-            self.env.LOG.warning('Invalid input. Try again.')
-            return self._ask_user_with_options(question=question, allowed_options=allowed_options)
+        return bool(condition) != invert
 
-        if answer == 'a':
-            raise AbortException(1)
-        if answer == 'R':
-            raise ReloadFromFile(index=self.index)
-        if self.env.batch_mode and answer == 'c':
-            raise SkipBatchItemException()
-
-        return answer
+    def _execute_action(self) -> int:
+        if self.get_type() == 'local':
+            return self._local_action()
+        if self.get_type() == 'python':
+            return self._python_action()
+        if self.get_type() == 'remote':
+            return self._remote_action()
 
     def _ask_user(self, question: str, allowed_options: list) -> str:
         """
@@ -206,13 +181,30 @@ class Command:
             allowed_options=allowed_options,
         )
 
-    def _local_action(self) -> int:
-        cmd = self._build_command(path=self.env.config['import_path'])
-        try:
-            return self._run_local_command(cmd=cmd)
-        except KeyboardInterrupt:
-            self.env.LOG.info(KEYBOARD_INTERRUPT_MESSAGE)
-            return 130
+    def _ask_user_with_options(self, question: str, allowed_options: list) -> str:
+        answer = input(question)
+
+        if answer == '':  # default
+            answer = 'p'
+
+        if 'R' in allowed_options and len(answer) > 1 and answer.startswith('R'):
+            try:
+                raise ReloadFromFile(index=self.index + int(answer[1:]))
+            except ValueError:
+                pass
+
+        if answer not in allowed_options:
+            self.env.LOG.warning('Invalid input. Try again.')
+            return self._ask_user_with_options(question=question, allowed_options=allowed_options)
+
+        if answer == 'a':
+            raise AbortException(1)
+        if answer == 'R':
+            raise ReloadFromFile(index=self.index)
+        if self.env.batch_mode and answer == 'c':
+            raise SkipBatchItemException()
+
+        return answer
 
     def _generate_python_vars(self):
         # For BWCommand this method is overridden
@@ -256,9 +248,47 @@ class Command:
             self.env.LOG.exception('Unknown error occured:')
             return 1
 
+    def _local_action(self) -> int:
+        cmd = self._build_command(path=self.env.config['import_path'])
+        try:
+            return self._run_local_command(cmd=cmd)
+        except KeyboardInterrupt:
+            self.env.LOG.info(KEYBOARD_INTERRUPT_MESSAGE)
+            return 130
+
+    def _build_command(self, path: str) -> str:
+        if not self.env.imports:
+            return self.get_resolved_value()
+        return f'. {path}/' + f'; . {path}/'.join(self.env.imports) + '; ' + self.get_resolved_value()
+
+    def _run_local_command(self, cmd: str) -> int:
+        self.env.LOG.debug(f'Executing: {cmd}')
+        if self.assignment_var:
+            proc = subprocess.run(cmd, shell=True, executable=SHELL_EXECUTABLE, stdout=subprocess.PIPE)
+            output = proc.stdout.decode(self.env.config["encoding"])
+            self.env.vars[self.assignment_var] = assigned_value = output.rstrip('\r\n')
+            hint = ' (trailing newline removed)' if (output.endswith('\n') or output.endswith('\r')) else ''
+            self.env.LOG.info(f'Variable {self.assignment_var} = "{assigned_value}"{hint}')
+        else:
+            proc = subprocess.run(cmd, shell=True, executable=SHELL_EXECUTABLE)
+        return proc.returncode
+
     def _remote_action(self) -> int:
         # For BWCommand this method is overridden
         return self._remote_action_on_hostname(hostname=self.get_system().replace('hostname!', ''))
+
+    def _remote_action_on_hostname(self, hostname: str) -> int:
+        try:
+            exitcode = self._run_local_command(cmd=self._get_remote_command(hostname=hostname))
+        except KeyboardInterrupt:
+            self.env.LOG.info(KEYBOARD_INTERRUPT_MESSAGE)
+            exitcode = 130
+            self._remote_handle_keyboard_interrupt(hostname=hostname)
+
+        if self.env.imports:
+            self._remote_cleanup_imports(hostname=hostname)
+
+        return exitcode
 
     def _get_remote_command(self, hostname: str) -> str:
         ssh_cmd = self.env.config["ssh_cmd"].format(hostname=hostname)
@@ -310,6 +340,17 @@ class Command:
 
         self.env.LOG.info('Keystroke interrupt handled.\n')
 
+    def get_remote_pids(self, hostname, cmd) -> []:
+        ps_cmd = f"ps axu | grep {quote(cmd)} | grep -v 'grep' | awk '{{print $2}}'"
+        cmd = f'ssh {hostname} {quote(ps_cmd)} 2>&1'
+        pids = subprocess.check_output(
+            cmd,
+            shell=True,
+            executable=SHELL_EXECUTABLE
+        ).decode(self.env.config["encoding"]).split()
+
+        return pids
+
     def _remote_cleanup_imports(self, hostname: str):
         ssh_cmd = self.env.config["ssh_cmd"].format(hostname=hostname)
         cleanup_cmd = f'{ssh_cmd} rm -r {self.env.config["remote_tmp_dir"]}'
@@ -322,47 +363,6 @@ class Command:
                     return_code=proc.returncode,
                 )
             )
-
-    def _remote_action_on_hostname(self, hostname: str) -> int:
-        try:
-            exitcode = self._run_local_command(cmd=self._get_remote_command(hostname=hostname))
-        except KeyboardInterrupt:
-            self.env.LOG.info(KEYBOARD_INTERRUPT_MESSAGE)
-            exitcode = 130
-            self._remote_handle_keyboard_interrupt(hostname=hostname)
-
-        if self.env.imports:
-            self._remote_cleanup_imports(hostname=hostname)
-
-        return exitcode
-
-    def _build_command(self, path: str) -> str:
-        if not self.env.imports:
-            return self.get_resolved_value()
-        return f'. {path}/' + f'; . {path}/'.join(self.env.imports) + '; ' + self.get_resolved_value()
-
-    def _run_local_command(self, cmd: str) -> int:
-        self.env.LOG.debug(f'Executing: {cmd}')
-        if self.assignment_var:
-            proc = subprocess.run(cmd, shell=True, executable=SHELL_EXECUTABLE, stdout=subprocess.PIPE)
-            output = proc.stdout.decode(self.env.config["encoding"])
-            self.env.vars[self.assignment_var] = assigned_value = output.rstrip('\r\n')
-            hint = ' (trailing newline removed)' if (output.endswith('\n') or output.endswith('\r')) else ''
-            self.env.LOG.info(f'Variable {self.assignment_var} = "{assigned_value}"{hint}')
-        else:
-            proc = subprocess.run(cmd, shell=True, executable=SHELL_EXECUTABLE)
-        return proc.returncode
-
-    def get_remote_pids(self, hostname, cmd) -> []:
-        ps_cmd = f"ps axu | grep {quote(cmd)} | grep -v 'grep' | awk '{{print $2}}'"
-        cmd = f'ssh {hostname} {quote(ps_cmd)} 2>&1'
-        pids = subprocess.check_output(
-            cmd,
-            shell=True,
-            executable=SHELL_EXECUTABLE
-        ).decode(self.env.config["encoding"]).split()
-
-        return pids
 
 
 def parse_key(key) -> Tuple[str, ...]:
