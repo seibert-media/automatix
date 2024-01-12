@@ -475,10 +475,11 @@ While **aborting remote functions** (via imports), automatix is not
  the function name) which is called in the pipeline.
 
 User input questions are of following categories:
-- [MS] **m**anual **s**tep
-- [CF] **c**ommand **f**ailed
-- [PF] **p**artial command **f**ailed (BW groups)
-- [RR] **r**emote process still **r**unning
+- [MS] **M**anual **S**tep
+- [CF] **C**ommand **F**ailed
+- [PF] **P**artial command **F**ailed (BW groups)
+- [RR] **R**emote process still **R**unning
+- [SE] **S**yntax **E**rror
 
 # EXTRAS
 

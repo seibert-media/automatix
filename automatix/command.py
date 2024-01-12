@@ -346,7 +346,7 @@ class Command:
         pids = subprocess.check_output(
             cmd,
             shell=True,
-            executable=SHELL_EXECUTABLE
+            executable=SHELL_EXECUTABLE,
         ).decode(self.env.config["encoding"]).split()
 
         return pids
