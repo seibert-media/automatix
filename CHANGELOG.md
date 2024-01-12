@@ -1,5 +1,10 @@
 # Changelog
 
+# 1.15.0
+- Feature: Option to invert conditions
+- Feature: Catch script syntax/parsing errors and offer file reload
+- Refactor command.py to reduce complexity
+
 # 1.14.0
 - Feature: Remove trailing new lines in Shell command assignments
 - Feature: Possibility to change index on reload from file
