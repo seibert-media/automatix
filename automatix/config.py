@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import re
+import sys
 from collections import OrderedDict
 from importlib import metadata
 from time import sleep
@@ -149,14 +150,14 @@ def get_script(args: argparse.Namespace) -> dict:
     if not os.path.isfile(args.scriptfile):
         s_file = f'{SCRIPT_PATH}/{args.scriptfile}'
 
-    script = read_yaml(s_file)
     try:
+        script = read_yaml(s_file)
         validate_script(script)
     except Exception:
         LOG.exception('Script validation failed! Please fix syntax before retrying!')
-        if input('To reload and proceed after fixing, type "R" and press Enter.') == 'R':
+        if input('To reload and proceed after fixing type "R" and press Enter.') == 'R':
             return get_script(args=args)
-        raise
+        sys.exit(1)
 
     for field in SCRIPT_FIELDS.keys():
         if vars(args).get(field):
