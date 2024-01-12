@@ -147,6 +147,7 @@ class Command:
         return bool(condition) != invert
 
     def _execute_action(self) -> int:
+        self.env.LOG.info('>')
         if self.get_type() == 'local':
             return self._local_action()
         if self.get_type() == 'python':
