@@ -106,6 +106,14 @@ class Command:
         return bool(condition) != invert
 
     def execute(self, interactive: bool = False, force: bool = False):
+        try:
+            self._execute(interactive=interactive, force=force)
+        except (KeyError, UnknownCommandException):
+            self.env.LOG.exception('Syntax Error!')
+            self.env.LOG.error('Syntax Error! Please fix your script and reload/restart.')
+            self._ask_user(question='[SE] What should I do?', allowed_options=['R', 's', 'a'])
+
+    def _execute(self, interactive: bool = False, force: bool = False):
         self.env.LOG.notice(f'\n({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
         return_code = 0
 
@@ -142,13 +150,13 @@ class Command:
             err_answer = self._ask_user(question='[CF] What should I do?', allowed_options=['p', 'r', 'R', 'a'])
             # answers 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
             if err_answer == 'r':
-                return self.execute(interactive)
+                return self._execute(interactive)
 
     def _ask_user_with_options(self, question: str, allowed_options: list) -> str:
         answer = input(question)
 
         if answer == '':  # default
-            return 'p'
+            answer = 'p'
 
         if 'R' in allowed_options and len(answer) > 1 and answer.startswith('R'):
             try:
@@ -177,6 +185,7 @@ class Command:
         [PF] Partial command Failed (BW groups)
         [MS] Manual Step
         [RR] Remote process still Running
+        [SE] Syntax Error
 
         :param question:
         :param allowed_options: character list of POSSIBLE_ANSWERS

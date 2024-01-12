@@ -150,7 +150,13 @@ def get_script(args: argparse.Namespace) -> dict:
         s_file = f'{SCRIPT_PATH}/{args.scriptfile}'
 
     script = read_yaml(s_file)
-    validate_script(script)
+    try:
+        validate_script(script)
+    except Exception:
+        LOG.exception('Script validation failed! Please fix syntax before retrying!')
+        if input('To reload and proceed after fixing, type "r" and press Enter.') == 'r':
+            return get_script(args=args)
+        raise
 
     for field in SCRIPT_FIELDS.keys():
         if vars(args).get(field):
