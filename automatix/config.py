@@ -154,7 +154,7 @@ def get_script(args: argparse.Namespace) -> dict:
         validate_script(script)
     except Exception:
         LOG.exception('Script validation failed! Please fix syntax before retrying!')
-        if input('To reload and proceed after fixing, type "r" and press Enter.') == 'r':
+        if input('To reload and proceed after fixing, type "R" and press Enter.') == 'R':
             return get_script(args=args)
         raise
 
