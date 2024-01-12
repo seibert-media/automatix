@@ -84,19 +84,31 @@ class Command:
         variables['SYSTEMS'] = SystemsWrapper(self.env.systems)
         return self.value.format(**variables)
 
+    def check_condition(self) -> bool:
+        if self.condition_var is None:
+            return True
+
+        if self.condition_var.endswith('!'):
+            cond_var = self.condition_var[:-1]
+            invert = True
+        else:
+            cond_var = self.condition_var
+            invert = False
+
+        if cond_var.startswith('PVARS.'):
+            condition = PERSISTENT_VARS[cond_var[6:]]
+        else:
+            condition = self.env.vars.get(cond_var, False)
+
+        return bool(condition) != invert
+
     def execute(self, interactive: bool = False, force: bool = False):
         self.env.LOG.notice(f'\n({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
         return_code = 0
 
-        if self.condition_var is not None:
-            if self.condition_var.startswith('PVARS.'):
-                condition = PERSISTENT_VARS[self.condition_var[6:]]
-            else:
-                condition = self.env.vars.get(self.condition_var, False)
-
-            if not bool(condition):
-                self.env.LOG.info(f'Skip command, because condition variable "{self.condition_var}" evaluates to False')
-                return
+        if not self.check_condition():
+            self.env.LOG.info('Skip command, because the condition is not met')
+            return
 
         if self.get_type() == 'manual' or interactive:
             self.env.LOG.debug('Ask for user interaction.')
@@ -145,7 +157,7 @@ class Command:
             allowed_options.append('c')
 
         if 'R' in allowed_options:
-            allowed_options.insert(allowed_options.index('R')+1, 'R±X')
+            allowed_options.insert(allowed_options.index('R') + 1, 'R±X')
 
         options = '\n'.join([f' {k}: {POSSIBLE_ANSWERS[k]}' for k in allowed_options])
 

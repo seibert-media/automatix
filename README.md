@@ -237,8 +237,8 @@ The **scriptfile** has to contain valid YAML.
 **systems** _(associative array)_
 : Define some systems. Value has to be a valid SSH destination like an
  IP address or hostname. If Bundlewrap support is enabled, it has to
- be a valid and existing Bundlewrap node or group name or you can 
- preceed your IP or hostname with `hostname!` to define a
+ be a valid and existing Bundlewrap node or group name, or you can 
+ precede your IP or hostname with `hostname!` to define a
  non-Bundlewrap system.
 You can refer to these systems in the command pipeline in multiple ways:
 
@@ -316,12 +316,12 @@ Here you define the commands automatix shall execute.
  strings when used to build commands in following steps.
  
 **CONDITIONS**: You can define the command only to be executed if
- your condition variable evaluates to "True" in Python. To achieve this
- write the variable name followed by a question mark at the very
+ your condition variable evaluates to "True" in Python. To achieve
+ this write the variable name followed by a question mark at the very
  beginning like `cond?python: destroy_system()`. Be aware that all
- output from **local** or **remote** commands will lead to a
- non-empty string which evaluates to "True" in Python, but empty output
- will evaluate to "False".
+ output from **local** or **remote** commands will lead to a non-empty
+ string which evaluates to "True" in Python, but empty output will
+ evaluate to "False". Use `!?` instead of `?` to invert the condition.
 
 **VALUE**: Your command. Variables will be replaced with Python
  format function. Therefore, use curly brackets to refer to variables,
@@ -398,6 +398,7 @@ using the shortcut and the attribute notation:
     
       - python: PVARS.cond = some_function()
       - PVARS.cond?local: echo 'This is only printed if "some_function" evaluates to "True"'
+      - PVARS.cond!?local: echo 'And this is printed if "some_function" evaluates to "False"'
 
 An alternative is to make variables global, but in most cases using
  PERSISTENT_VARS is more clean. _**CAUTION: Choosing already existing
@@ -472,6 +473,12 @@ While **aborting remote functions** (via imports), automatix is not
  able to determine still running processes invoked by the function,
  because it only checks the processes for the commands (in this case
  the function name) which is called in the pipeline.
+
+User input questions are of following categories:
+- [MS] **m**anual **s**tep
+- [CF] **c**ommand **f**ailed
+- [PF] **p**artial command **f**ailed (BW groups)
+- [RR] **r**emote process still **r**unning
 
 # EXTRAS
 
