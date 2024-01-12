@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='automatix',
-    version='1.14.0',
+    version='1.15.0',
     description='Automation wrapper for bash and python commands',
     keywords=['bash', 'shell', 'command', 'automation', 'process', 'wrapper', 'devops', 'system administration'],
     long_description=long_description,
@@ -16,11 +16,11 @@ setup(
     license='MIT',
     python_requires='>=3.8',
     install_requires=[
-        'cython<3.0.0',
         'pyyaml>=5.1',
     ],
     extras_require={
-        'bash completion': 'argcomplete',
+        'tests': ['cython<3.0.0', 'pytest', 'pytest-docker-compose'],
+        'bash completion': ['argcomplete'],
     },
     packages=find_packages(),
     entry_points={

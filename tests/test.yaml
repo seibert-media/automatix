@@ -6,11 +6,12 @@ vars:
 
 always:
   - local: echo 'Print this always :-)'
+  - python: print(locals())
 pipeline:
-  - python: PVARS.moin = False
-  - PVARS.moin?local: echo 'Moin'
   - python: PVARS.moin = True
-  - PVARS.moin?local: echo 'Moin Moin :-)'
+  - PVARS.moin?local: echo 'Moin'
+  - python: PVARS.moin = False
+  - PVARS.moin!?local: echo 'Moin Moin :-)'
   - a=python: re.match('\d*', '12345')
   - nonexistent?local: echo 'Hups ...'
   - python: |
@@ -24,6 +25,7 @@ pipeline:
   - python: print('{myvar}')
   - cond=python: 'None'
   - cond?python: print('Das ging wohl daneben')
+  - cond!?python: print('Und nun?')
   - cond2=local: test "confluence" == "jira" && echo -n "True"; exit 0
   - cond2?python: print('Das ging wohl daneben 2')
   - python: raise Exception('moin')
