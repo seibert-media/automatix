@@ -113,12 +113,19 @@ class Command:
             self.env.LOG.error('Syntax or value error! Please fix your script and reload/restart.')
             self._ask_user(question='[SE] What should I do?', allowed_options=['R', 's', 'a'])
 
+    def _execute_action(self) -> int:
+        if self.get_type() == 'local':
+            return self._local_action()
+        if self.get_type() == 'python':
+            return self._python_action()
+        if self.get_type() == 'remote':
+            return self._remote_action()
+
     def _execute(self, interactive: bool = False, force: bool = False):
         self.env.LOG.notice(f'\n({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
-        return_code = 0
 
         if not self.check_condition():
-            self.env.LOG.info('Skip command, because the condition is not met')
+            self.env.LOG.info(f'Skip command, because condition variable "{self.condition_var}" evaluates to False')
             return
 
         if self.get_type() == 'manual' or interactive:
@@ -131,12 +138,7 @@ class Command:
 
         steptime = time()
 
-        if self.get_type() == 'local':
-            return_code = self._local_action()
-        if self.get_type() == 'python':
-            return_code = self._python_action()
-        if self.get_type() == 'remote':
-            return_code = self._remote_action()
+        return_code = self._execute_action()
 
         if 'AUTOMATIX_TIME' in os.environ:
             self.env.LOG.info(f'\n(command execution time: {round(time() - steptime)}s)')
