@@ -99,7 +99,7 @@ class Command:
         self.env.LOG.notice(f'\n({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
 
         if not self._check_condition():
-            self.env.LOG.info(f'Skip command, because condition variable "{self.condition_var}" evaluates to False')
+            self.env.LOG.info('Skip command, because the condition is not met.')
             return
 
         if self.get_type() == 'manual' or interactive:
