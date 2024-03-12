@@ -107,7 +107,7 @@ class Command:
 
             answer = self._ask_user(question='[MS] Proceed?', allowed_options=['p', 's', 'R', 'a'])
             # answers 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
-            if answer == 's':
+            if answer == 's' or self.get_type() == 'manual':
                 return
 
         steptime = time()
