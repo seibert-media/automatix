@@ -24,7 +24,7 @@ PERSISTENT_VARS = PVARS = PersistentDict()
 SHELL_EXECUTABLE = '/bin/bash'
 
 # Leading red " Automatix \w > " to indicate that this shell is inside a running Automatix execution
-AUTOMATIX_PROMPT = '\033[0;31m Automatix \033[0m\\w > '
+AUTOMATIX_PROMPT = r'\[\033[0;31m\] Automatix \[\033[0m\]\\w > '
 
 POSSIBLE_ANSWERS = {
     'p': 'proceed (default)',
