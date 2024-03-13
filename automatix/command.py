@@ -24,7 +24,7 @@ PERSISTENT_VARS = PVARS = PersistentDict()
 SHELL_EXECUTABLE = '/bin/bash'
 
 # Leading red " Automatix \w > " to indicate that this shell is inside a running Automatix execution
-PROMPT_COMMAND = 'PS1=\\"\033[0;31m Automatix \033[0m\\w > \\" ;'
+AUTOMATIX_PROMPT = '\033[0;31m Automatix \033[0m\\w > '
 
 POSSIBLE_ANSWERS = {
     'p': 'proceed (default)',
@@ -208,7 +208,12 @@ class Command:
 
         if answer == 'T':
             self.env.LOG.notice('\nStarting interactive terminal shell')
-            self._run_local_command(f'PROMPT_COMMAND="{PROMPT_COMMAND}" AUTOMATIX_SHELL=True {SHELL_EXECUTABLE} -i')
+            self._run_local_command(
+                f'AUTOMATIX_SHELL=True'
+                f' {SHELL_EXECUTABLE}'
+                f' --rcfile <(cat ~/.bashrc ; echo "PS1=\\"{AUTOMATIX_PROMPT}\\"")'
+                f' -i'
+            )
             return self._ask_user_with_options(question=question, allowed_options=allowed_options)
 
         if answer == 'a':
