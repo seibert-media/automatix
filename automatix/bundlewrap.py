@@ -54,7 +54,7 @@ class BWCommand(Command):
             if self.env.cmd_args.force:
                 return
 
-            err_answer = self._ask_user(question='[PF] What should I do?', allowed_options=['p', 'r', 'a'])
+            err_answer = self._ask_user(question='[PF] What should I do?', allowed_options=['p', 'T', 'r', 'a'])
             # answers 'a' and 'c' are handled by _ask_user, 'p' means just pass
             if err_answer == 'r':
                 return self._remote_bw_group_action(node=node)
