@@ -368,8 +368,11 @@ Intended use case for **cleanup**: Remove temporary files or artifacts.
 **AUTOMATIX_CONFIG**: Specify the path to the configuration file.
  Default is "~/.automatix.cfg.yaml".  
 
+**AUTOMATIX_SCRIPT_DIR**: Set or overwrite directory where script files
+ are located (and searched in case of autocompletion).  
+
 **AUTOMATIX_TIME**: Set this to an arbitrary value to print the times
- for the single steps and the whole script.
+ for the single steps and the whole script.  
 
 **ENCODING**: Specify output encoding. Default is "UTF-8".  
 
