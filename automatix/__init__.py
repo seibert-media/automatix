@@ -6,11 +6,16 @@ from importlib import import_module
 from time import time
 from typing import List
 
-import python_progress_bar as progress_bar
-
 from .automatix import Automatix
 from .command import Command, SkipBatchItemException, AbortException
 from .config import arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION
+
+try:
+    import python_progress_bar as progress_bar
+
+    PROGRESS_BAR = True
+except ImportError:
+    PROGRESS_BAR = False
 
 
 def main():
@@ -62,7 +67,8 @@ def main():
         script['steps'] = {int(s) for s in (args.steps[1:] if exclude else args.steps).split(',')}
 
     try:
-        progress_bar.setup_scroll_area()
+        if PROGRESS_BAR:
+            progress_bar.setup_scroll_area()
         for i, row in enumerate(batch_items, start=1):
             script_copy = deepcopy(script)
             update_script_from_row(row=row, script=script_copy, index=i)
@@ -92,7 +98,8 @@ def main():
                 LOG.warning('\nAborted by user. Exiting.')
                 sys.exit(130)
     finally:
-        progress_bar.destroy_scroll_area()
+        if PROGRESS_BAR:
+            progress_bar.destroy_scroll_area()
 
     if 'AUTOMATIX_TIME' in os.environ:
         LOG.info(f'The Automatix script took {round(time() - starttime)}s!')
