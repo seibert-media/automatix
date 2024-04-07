@@ -106,12 +106,12 @@ class Command:
 
     def execute(self, interactive: bool = False, force: bool = False):
         try:
-            progress_bar.draw_progress_bar(self.progress_portion)
             self._execute(interactive=interactive, force=force)
         except (KeyError, UnknownCommandException):
             self.env.LOG.exception('Syntax or value error!')
             self.env.LOG.error('Syntax or value error! Please fix your script and reload/restart.')
             self._ask_user(question='[SE] What should I do?', allowed_options=['R', 'T', 's', 'a'])
+        progress_bar.draw_progress_bar(self.progress_portion)
 
     def _execute(self, interactive: bool = False, force: bool = False):
         self.env.LOG.notice(f'\n({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
