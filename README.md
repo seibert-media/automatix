@@ -108,59 +108,59 @@ Default location is "~/.automatix.cfg.yaml".
 **scriptfile**
 : The only required parameter for this tool to work. Use " -- " if
  needed to delimit this from argument fields. See **SCRIPTFILE**
- section for more information.
+ section for more information.  
 
 **-h**, **--help**
-: View help message and exit.
+: View help message and exit.  
 
 **--systems** _SYSTEM1=ADDRESS_OR_NODENAME_
 : Use this to set systems without adding them to the
   scriptfile or to overwrite them. You can specify multiple
-  systems like: --systems v1=string1 v2=string2 v3=string3
+  systems like: --systems v1=string1 v2=string2 v3=string3  
   
 **--vars** _VAR1=VALUE1_
 : Use this to set vars without adding them to the scriptfile
   or to overwrite them. You can specify multiple vars
-  like: --vars v1=string1 v2=string2 v3=string3
+  like: --vars v1=string1 v2=string2 v3=string3  
   
 **--secrets** _SECRET1=SECRETID_
 : Use this to set secrets without adding them to the
   scriptfile or to overwrite them. You can specify multiple
   secrets like: --secrets v1=string1 v2=string2 v3=string3 *(only if
-  teamvault is enabled)*
+  teamvault is enabled)*  
   
 **--vars-file** _VARS_FILE_PATH_
 : Use this to specify a CSV file from where **automatix** reads
   systems, variables and secrets. First row must contain the field
   types and names. You may also specify an `label` field.
   Example: `label,systems:mysystem,vars:myvar`. The automatix script will
-  be processed for each row sequentially.
+  be processed for each row sequentially.  
   
 **--print-overview**, **-p**
 : Just print command pipeline overview with indices then exit without
  executing the commandline. Note that the *always pipeline* will be
- executed anyway.
+ executed anyway.  
 
 **--jump-to** _JUMP_TO_, **-j** _JUMP_TO_
 : Jump to step with index _JUMP_TO_ instead of starting at the
  beginning. Use **-p** or the output messages to determine the
  desired step index. You can use negative numbers to start counting
- from the end.
+ from the end.  
 
 **--steps** _STEPS_, **-s** _STEPS_
 : Only execute these steps (comma-separated indices) or exclude steps
  by prepending the comma-separated list with "e".
- Examples: `-s 1,3,7`, `-s e2`, `-s e0,5,7,2`
+ Examples: `-s 1,3,7`, `-s e2`, `-s e0,5,7,2`  
 
 **--interactive**, **-i**
-: Confirm actions before executing.
+: Confirm actions before executing.  
   
 **--force**, **-f**
 : Try always to proceed (except manual steps), even if errors occur
- (no retries).
+ (no retries).  
 
 **--debug**, **-d**
-: Activate debug log level.
+: Activate debug log level.  
 
 
 ### EXAMPLE: Usage
