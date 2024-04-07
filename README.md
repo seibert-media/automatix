@@ -511,3 +511,6 @@ or activation for automatix (e.g. in `.bashrc`)
     eval "$(register-python-argcomplete automatix)"
 
 Automatix will recognize the installed module and offer the completion automatically.
+
+## Progress bar (experimental)
+By installing `python_progress_bar` via pip you can activate an "apt-like" progress bar based on the amount of commands.
