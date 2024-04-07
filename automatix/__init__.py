@@ -6,6 +6,8 @@ from importlib import import_module
 from time import time
 from typing import List
 
+import python_progress_bar as progress_bar
+
 from .automatix import Automatix
 from .command import Command, SkipBatchItemException, AbortException
 from .config import arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION
@@ -52,38 +54,45 @@ def main():
         with open(args.vars_file) as csvfile:
             batch_items = list(DictReader(csvfile))
         script['batch_mode'] = True
+        script['batch_items_count'] = len(batch_items)
         LOG.notice('Detected batch processing from CSV file.')
 
     if args.steps:
         exclude = script['exclude'] = args.steps.startswith('e')
         script['steps'] = {int(s) for s in (args.steps[1:] if exclude else args.steps).split(',')}
 
-    for i, row in enumerate(batch_items, start=1):
-        script_copy = deepcopy(script)
-        update_script_from_row(row=row, script=script_copy, index=i)
+    try:
+        progress_bar.setup_scroll_area()
+        for i, row in enumerate(batch_items, start=1):
+            script_copy = deepcopy(script)
+            update_script_from_row(row=row, script=script_copy, index=i)
 
-        variables = collect_vars(script_copy)
+            variables = collect_vars(script_copy)
 
-        auto = Automatix(
-            script=script_copy,
-            variables=variables,
-            config=CONFIG,
-            cmd_class=cmd_class,
-            script_fields=SCRIPT_FIELDS,
-            cmd_args=args,
-        )
+            auto = Automatix(
+                script=script_copy,
+                variables=variables,
+                config=CONFIG,
+                cmd_class=cmd_class,
+                script_fields=SCRIPT_FIELDS,
+                cmd_args=args,
+                batch_index=i,
+            )
 
-        try:
-            auto.run()
-        except SkipBatchItemException as exc:
-            LOG.info(str(exc))
-            LOG.notice('=====> Jumping to next batch item.')
-            continue
-        except AbortException as exc:
-            exit(int(exc))
-        except KeyboardInterrupt:
-            LOG.warning('\nAborted by user. Exiting.')
-            exit(130)
+            auto.set_command_count()
+            try:
+                auto.run()
+            except SkipBatchItemException as exc:
+                LOG.info(str(exc))
+                LOG.notice('=====> Jumping to next batch item.')
+                continue
+            except AbortException as exc:
+                sys.exit(int(exc))
+            except KeyboardInterrupt:
+                LOG.warning('\nAborted by user. Exiting.')
+                sys.exit(130)
+    finally:
+        progress_bar.destroy_scroll_area()
 
     if 'AUTOMATIX_TIME' in os.environ:
         LOG.info(f'The Automatix script took {round(time() - starttime)}s!')

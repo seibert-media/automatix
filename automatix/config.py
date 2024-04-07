@@ -196,7 +196,7 @@ def validate_script(script: dict):
     script_required_version = script.get('require_version', '0.0.0')
     if _tupelize(VERSION) < _tupelize(script_required_version):
         LOG.error(f'The script requires minimum version {script_required_version}. We have {VERSION}.')
-        exit(1)
+        sys.exit(1)
     warn = 0
     for pipeline in ['always', 'pipeline', 'cleanup']:
         for index, command in enumerate(script.get(pipeline, [])):

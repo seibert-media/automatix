@@ -5,6 +5,8 @@ from shlex import quote
 from time import time
 from typing import Tuple
 
+import python_progress_bar as progress_bar
+
 from .environment import PipelineEnvironment
 
 
@@ -44,11 +46,12 @@ KEYBOARD_INTERRUPT_MESSAGE = 'Abort command by user key stroke. Exit code is set
 
 
 class Command:
-    def __init__(self, cmd: dict, index: int, pipeline: str, env: PipelineEnvironment):
+    def __init__(self, cmd: dict, index: int, pipeline: str, env: PipelineEnvironment, position: int):
         self.cmd = cmd
         self.index = index
         self.env = env
         self.pipeline = pipeline
+        self.position = position
 
         for key, value in cmd.items():
             self.orig_key = key
@@ -60,6 +63,12 @@ class Command:
             else:
                 self.value = value
             break  # There should be only one entry in pipeline_cmd
+
+    @property
+    def progress_portion(self) -> int:
+        own_position = self.env.command_count * (self.env.batch_index - 1) + self.position
+        overall_command_count = self.env.batch_items_count * self.env.command_count
+        return round(own_position / overall_command_count * 100)
 
     def get_type(self):
         if self.key == 'local':
@@ -97,6 +106,7 @@ class Command:
 
     def execute(self, interactive: bool = False, force: bool = False):
         try:
+            progress_bar.draw_progress_bar(self.progress_portion)
             self._execute(interactive=interactive, force=force)
         except (KeyError, UnknownCommandException):
             self.env.LOG.exception('Syntax or value error!')
@@ -191,6 +201,7 @@ class Command:
         )
 
     def _ask_user_with_options(self, question: str, allowed_options: list) -> str:
+        progress_bar.block_progress_bar(self.progress_portion)
         answer = input(question)
 
         if answer == '':  # default
