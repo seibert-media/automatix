@@ -5,14 +5,8 @@ from shlex import quote
 from time import time
 from typing import Tuple
 
+from .config import PROGRESS_BAR, progress_bar
 from .environment import PipelineEnvironment
-
-try:
-    import python_progress_bar as progress_bar
-
-    PROGRESS_BAR = True
-except ImportError:
-    PROGRESS_BAR = False
 
 
 class PersistentDict(dict):

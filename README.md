@@ -86,6 +86,9 @@ Default location is "~/.automatix.cfg.yaml".
     # Teamvault / Secret support, bundlewrap-teamvault has to be installed (default: false)
     teamvault: true
 
+    # Set this to false, if you have python_progress_bar installed, but don't want to use it.
+    progress_bar: true
+
 # SYNOPSIS
 
 **automatix**
@@ -492,15 +495,6 @@ User input questions are of following categories:
 The terminal (T) answer starts an interactive Bash-Shell (/bin/bash -i).
  Therefore .bashrc is executed, but the command prompt (PS1) is
  replaced to indicate, we are still in an automatix process.
-
-Using commands that heavily modify the terminal behaviour/output
- (such as `top`, `watch`, `glances`, ...), may lead to a unreadable
- or undesirable output. It might be a better idea to encourage the user
- to open a separate terminal and type these commands there.
-
-Using automatix itself as command should work, but may lead to confusing
- output as well. Note that the optional progress bar (see below) will be
- overwritten by the new automatix instance for the duration of this command.
  
 
 # EXTRAS
@@ -523,4 +517,18 @@ or activation for automatix (e.g. in `.bashrc`)
 Automatix will recognize the installed module and offer the completion automatically.
 
 ## Progress bar (experimental)
-By installing `python_progress_bar` via pip you can activate an "apt-like" progress bar based on the amount of commands.
+By installing `python_progress_bar` via pip you can activate an "apt-like"
+ progress bar based on the amount of commands.
+
+Note, that using commands that heavily modify the terminal behaviour/output
+ (such as `top`, `watch`, `glances`, ...), may lead to a unreadable
+ or undesirable output. It might be a better idea to encourage the user
+ to open a separate terminal and type these commands there.
+
+Using automatix itself as command should work, but may lead to confusing
+ output as well. Note that the optional progress bar will be
+ overwritten by the new automatix instance for the duration of this command.
+
+If you want to keep `python_progress_bar` installed for other programms, but have
+ troubles here, you can either set `progress_bar` to `false` in the config file or
+ set the `AUTOMATIX_SUPPRESS_PROGRESS_BAR` environment variable.

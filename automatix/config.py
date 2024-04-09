@@ -74,6 +74,14 @@ if CONFIG['teamvault']:
     class UnknownSecretTypeException(Exception):
         pass
 
+try:
+    import python_progress_bar as progress_bar
+
+    PROGRESS_BAR = True and CONFIG.get('progress_bar', True) and not os.getenv('AUTOMATIX_SUPPRESS_PROGRESS_BAR', False)
+except ImportError:
+    progress_bar = None
+    PROGRESS_BAR = False
+
 
 def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
