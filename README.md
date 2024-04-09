@@ -493,6 +493,16 @@ The terminal (T) answer starts an interactive Bash-Shell (/bin/bash -i).
  Therefore .bashrc is executed, but the command prompt (PS1) is
  replaced to indicate, we are still in an automatix process.
 
+Using commands that heavily modify the terminal behaviour/output
+ (such as `top`, `watch`, `glances`, ...), may lead to a unreadable
+ or undesirable output. It might be a better idea to encourage the user
+ to open a separate terminal and type these commands there.
+
+Using automatix itself as command should work, but may lead to confusing
+ output as well. Note that the optional progress bar (see below) will be
+ overwritten by the new automatix instance for the duration of this command.
+ 
+
 # EXTRAS
 
 ## Bash completion (experimental)
