@@ -76,7 +76,8 @@ if CONFIG['teamvault']:
 
 progress_bar = None
 PROGRESS_BAR = False
-if CONFIG.get('progress_bar', False) or os.getenv('AUTOMATIX_PROGRESS_BAR', False):
+if (CONFIG.get('progress_bar', False) or os.getenv('AUTOMATIX_PROGRESS_BAR', False)) and \
+        os.getenv('AUTOMATIX_PROGRESS_BAR', False) not in ['False', 'false']:
     try:
         import python_progress_bar as progress_bar
 

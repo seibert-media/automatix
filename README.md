@@ -519,8 +519,11 @@ Automatix will recognize the installed module and offer the completion automatic
 ## Progress bar (experimental)
 For activation of an "apt-like" progress bar based on the amount of commands
  install `python_progress_bar` via pip and either set `AUTOMATIX_PROGRESS_BAR`
- environment variable to an arbitrary value or set `progress_bar` to `true` in
- the config file.
+ environment variable to an arbitrary value (not "False") or set `progress_bar`
+ to `true` in the config file.
+
+You can force deactivation in setting `AUTOMATIX_PROGRESS_BAR` environment variable
+ to "False" (overwrites config file setting).
 
 Note, that using commands that heavily modify the terminal behaviour/output
  (such as `top`, `watch`, `glances`, ...), may lead to a unreadable
