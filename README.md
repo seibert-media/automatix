@@ -86,7 +86,7 @@ Default location is "~/.automatix.cfg.yaml".
     # Teamvault / Secret support, bundlewrap-teamvault has to be installed (default: false)
     teamvault: true
 
-    # Set this to false, if you have python_progress_bar installed, but don't want to use it.
+    # Activate progress bar, python_progress_bar has to be installed (default: false)
     progress_bar: true
 
 # SYNOPSIS
@@ -517,8 +517,10 @@ or activation for automatix (e.g. in `.bashrc`)
 Automatix will recognize the installed module and offer the completion automatically.
 
 ## Progress bar (experimental)
-By installing `python_progress_bar` via pip you can activate an "apt-like"
- progress bar based on the amount of commands.
+For activation of an "apt-like" progress bar based on the amount of commands
+ install `python_progress_bar` via pip and either set `AUTOMATIX_PROGRESS_BAR`
+ environment variable to an arbitrary value or set `progress_bar` to `true` in
+ the config file.
 
 Note, that using commands that heavily modify the terminal behaviour/output
  (such as `top`, `watch`, `glances`, ...), may lead to a unreadable
@@ -526,9 +528,5 @@ Note, that using commands that heavily modify the terminal behaviour/output
  to open a separate terminal and type these commands there.
 
 Using automatix itself as command should work, but may lead to confusing
- output as well. Note that the optional progress bar will be
- overwritten by the new automatix instance for the duration of this command.
-
-If you want to keep `python_progress_bar` installed for other programms, but have
- troubles here, you can either set `progress_bar` to `false` in the config file or
- set the `AUTOMATIX_SUPPRESS_PROGRESS_BAR` environment variable.
+ output as well. Note, that the progress bar will be overwritten by the
+ new automatix instance for the duration of the automatix command.
