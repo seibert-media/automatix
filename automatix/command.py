@@ -67,7 +67,7 @@ class Command:
     def progress_portion(self) -> int:
         own_position = self.env.command_count * (self.env.batch_index - 1) + self.position
         overall_command_count = self.env.batch_items_count * self.env.command_count
-        return round(own_position / overall_command_count * 100, 2)
+        return round(own_position / overall_command_count * 100, 1)
 
     def get_type(self):
         if self.key == 'local':
