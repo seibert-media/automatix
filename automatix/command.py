@@ -5,6 +5,7 @@ from shlex import quote
 from time import time
 from typing import Tuple
 
+from .config import PROGRESS_BAR, progress_bar
 from .environment import PipelineEnvironment
 
 
@@ -21,26 +22,35 @@ class PersistentDict(dict):
 
 PERSISTENT_VARS = PVARS = PersistentDict()
 
+SHELL_EXECUTABLE = '/bin/bash'
+
+# Leading red " Automatix \w > " to indicate that this shell is inside a running Automatix execution
+AUTOMATIX_PROMPT = r'\[\033[0;31m\] Automatix \[\033[0m\]\\w > '
+
 POSSIBLE_ANSWERS = {
     'p': 'proceed (default)',
+    'T': f'start interactive terminal shell ({SHELL_EXECUTABLE} -i) and return back here on exit',
     'r': 'retry',
     'R': 'reload from file and retry command (same index)',
     'R±X': 'same as R, but change index by X (integer)',
     's': 'skip',
     'a': 'abort',
     'c': 'abort & continue to next (CSV processing)',
+    # 't' -> reserved for handling still running remote processes
+    # 'k' -> reserved for handling still running remote processes
+    # 'i' -> reserved for handling still running remote processes
 }
 
-SHELL_EXECUTABLE = '/bin/bash'
 KEYBOARD_INTERRUPT_MESSAGE = 'Abort command by user key stroke. Exit code is set to 130.'
 
 
 class Command:
-    def __init__(self, cmd: dict, index: int, pipeline: str, env: PipelineEnvironment):
+    def __init__(self, cmd: dict, index: int, pipeline: str, env: PipelineEnvironment, position: int):
         self.cmd = cmd
         self.index = index
         self.env = env
         self.pipeline = pipeline
+        self.position = position
 
         for key, value in cmd.items():
             self.orig_key = key
@@ -52,6 +62,12 @@ class Command:
             else:
                 self.value = value
             break  # There should be only one entry in pipeline_cmd
+
+    @property
+    def progress_portion(self) -> int:
+        own_position = self.env.command_count * (self.env.batch_index - 1) + self.position
+        overall_command_count = self.env.batch_items_count * self.env.command_count
+        return round(own_position / overall_command_count * 100, 1)
 
     def get_type(self):
         if self.key == 'local':
@@ -93,7 +109,9 @@ class Command:
         except (KeyError, UnknownCommandException):
             self.env.LOG.exception('Syntax or value error!')
             self.env.LOG.error('Syntax or value error! Please fix your script and reload/restart.')
-            self._ask_user(question='[SE] What should I do?', allowed_options=['R', 's', 'a'])
+            self._ask_user(question='[SE] What should I do?', allowed_options=['R', 'T', 's', 'a'])
+        if PROGRESS_BAR:
+            progress_bar.draw_progress_bar(self.progress_portion)
 
     def _execute(self, interactive: bool = False, force: bool = False):
         self.env.LOG.notice(f'\n({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
@@ -105,7 +123,7 @@ class Command:
         if self.get_type() == 'manual' or interactive:
             self.env.LOG.debug('Ask for user interaction.')
 
-            answer = self._ask_user(question='[MS] Proceed?', allowed_options=['p', 's', 'R', 'a'])
+            answer = self._ask_user(question='[MS] Proceed?', allowed_options=['p', 'T', 's', 'R', 'a'])
             # answers 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
             if answer == 's' or self.get_type() == 'manual':
                 return
@@ -123,7 +141,7 @@ class Command:
             if force:
                 return
 
-            err_answer = self._ask_user(question='[CF] What should I do?', allowed_options=['p', 'r', 'R', 'a'])
+            err_answer = self._ask_user(question='[CF] What should I do?', allowed_options=['p', 'T', 'r', 'R', 'a'])
             # answers 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
             if err_answer == 'r':
                 return self._execute(interactive)
@@ -183,6 +201,8 @@ class Command:
         )
 
     def _ask_user_with_options(self, question: str, allowed_options: list) -> str:
+        if PROGRESS_BAR:
+            progress_bar.block_progress_bar(self.progress_portion)
         answer = input(question)
 
         if answer == '':  # default
@@ -196,6 +216,16 @@ class Command:
 
         if answer not in allowed_options:
             self.env.LOG.warning('Invalid input. Try again.')
+            return self._ask_user_with_options(question=question, allowed_options=allowed_options)
+
+        if answer == 'T':
+            self.env.LOG.notice('\nStarting interactive terminal shell')
+            self._run_local_command(
+                f'AUTOMATIX_SHELL=True'
+                f' {SHELL_EXECUTABLE}'
+                f' --rcfile <(cat ~/.bashrc ; echo "PS1=\\"{AUTOMATIX_PROMPT}\\"")'
+                f' -i'
+            )
             return self._ask_user_with_options(question=question, allowed_options=allowed_options)
 
         if answer == 'a':

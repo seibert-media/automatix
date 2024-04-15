@@ -74,6 +74,17 @@ if CONFIG['teamvault']:
     class UnknownSecretTypeException(Exception):
         pass
 
+progress_bar = None
+PROGRESS_BAR = False
+if (CONFIG.get('progress_bar', False) or os.getenv('AUTOMATIX_PROGRESS_BAR', False)) and \
+        os.getenv('AUTOMATIX_PROGRESS_BAR', False) not in ['False', 'false']:
+    try:
+        import python_progress_bar as progress_bar
+
+        PROGRESS_BAR = True
+    except ImportError:
+        pass
+
 
 def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -155,7 +166,7 @@ def get_script(args: argparse.Namespace) -> dict:
         validate_script(script)
     except Exception:
         LOG.exception('Script validation failed! Please fix syntax before retrying!')
-        if input('To reload and proceed after fixing type "R" and press Enter.') == 'R':
+        if input('To reload and proceed after fixing type "R" and press Enter.\a') == 'R':
             return get_script(args=args)
         sys.exit(1)
 
@@ -196,7 +207,7 @@ def validate_script(script: dict):
     script_required_version = script.get('require_version', '0.0.0')
     if _tupelize(VERSION) < _tupelize(script_required_version):
         LOG.error(f'The script requires minimum version {script_required_version}. We have {VERSION}.')
-        exit(1)
+        sys.exit(1)
     warn = 0
     for pipeline in ['always', 'pipeline', 'cleanup']:
         for index, command in enumerate(script.get(pipeline, [])):

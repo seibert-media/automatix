@@ -21,6 +21,7 @@ setup(
     extras_require={
         'tests': ['cython<3.0.0', 'pytest', 'pytest-docker-compose'],
         'bash completion': ['argcomplete'],
+        'progress bar': ['python_progress_bar>=1.10'],
     },
     packages=find_packages(),
     entry_points={
