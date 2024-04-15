@@ -1,4 +1,5 @@
 import os
+import sys
 from copy import deepcopy
 from csv import DictReader
 from importlib import import_module
@@ -11,6 +12,12 @@ from .config import arguments, CONFIG, get_script, LOG, update_script_from_row, 
 
 
 def main():
+    if os.getenv('AUTOMATIX_SHELL'):
+        print('You are running Automatix from an interactive shell of an already running Automatix!')
+        answer = input('Do you really want to proceed? Then type "yes" and ENTER.\n')
+        if answer != 'yes':
+            sys.exit(0)
+
     starttime = time()
     args = arguments()
 

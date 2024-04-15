@@ -346,7 +346,7 @@ Standard YAML escapes (see also https://yaml.org/spec/1.2/spec.html):
 `'` -> `''`  
 `"` -> `\"`  
 `\ ` -> `\\`  
-`:` -> Please use quotes (double or single).  
+`:` -> Please use quotes (double or single).
 
 
 ### ALWAYS / CLEANUP PIPELINE
@@ -381,6 +381,10 @@ Additionally you can modify the environment to adjust things to your
 
 
 # TIPS & TRICKS
+
+For multiline commands and variables YAML offers different possibilities
+ to write multiline strings. A look at https://yaml-multiline.info/ might
+ be helpful.  
 
 If you want to access variables in **python** action you defined in
 preceeding command, you can use the **PERSISTENT_VARS** dictionary
@@ -483,6 +487,10 @@ User input questions are of following categories:
 - [PF] **P**artial command **F**ailed (BW groups)
 - [RR] **R**emote process still **R**unning
 - [SE] **S**yntax **E**rror
+
+The terminal (T) answer starts an interactive Bash-Shell (/bin/bash -i).
+ Therefore .bashrc is executed, but the command prompt (PS1) is
+ replaced to indicate, we are still in an automatix process.
 
 # EXTRAS
 
