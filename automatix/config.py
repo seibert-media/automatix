@@ -129,6 +129,10 @@ def arguments() -> argparse.Namespace:
         action='store_true',
         help='activate debug log level',
     )
+    parser.add_argument(
+        '--prepared-from-pipe',
+        help='Process a prepared serialized automatix object which is retrieved via the specified named pipe',
+    )
     if bash_completion:
         autocomplete(parser)
     return parser.parse_args()

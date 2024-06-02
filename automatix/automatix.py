@@ -33,7 +33,6 @@ class Automatix:
             batch_items_count=script.get('batch_items_count', 1),
             batch_index=batch_index,
             cmd_args=cmd_args,
-            logger=logging.getLogger(config['logger']),
         )
 
         self._command_lists: dict = {}

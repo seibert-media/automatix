@@ -1,4 +1,4 @@
-from logging import Logger
+from logging import getLogger
 from argparse import Namespace
 
 
@@ -14,7 +14,6 @@ class PipelineEnvironment:
             batch_items_count: int,
             batch_index: int,
             cmd_args: Namespace,
-            logger: Logger,
     ):
         self.name = name
         self.config = config
@@ -25,7 +24,11 @@ class PipelineEnvironment:
         self.batch_items_count = batch_items_count
         self.batch_index = batch_index
         self.cmd_args = cmd_args
-        self.LOG = logger
+        self.LOG = None
 
         # This will be set on runtime
         self.command_count = None
+
+    def attach_logger(self):
+        self.LOG = getLogger(self.config['logger'])
+
