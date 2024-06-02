@@ -155,3 +155,4 @@ class Automatix:
         self.env.LOG.info('---------------------------------------------------------------')
         self.env.LOG.info('Automatix finished: Congratulations and have a N.I.C.E. day :-)')
         self.env.LOG.info('---------------------------------------------------------------')
+        self.env.send_status('finished')

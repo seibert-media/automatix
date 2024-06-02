@@ -209,7 +209,9 @@ class Command:
     def _ask_user_with_options(self, question: str, allowed_options: list) -> str:
         if PROGRESS_BAR:
             progress_bar.block_progress_bar(self.progress_portion)
+        self.env.send_status('user_input_add')
         answer = input(question)
+        self.env.send_status('user_input_remove')
 
         if answer == '':  # default
             answer = 'p'
@@ -354,9 +356,11 @@ class Command:
                 self.env.LOG.notice(
                     'Remote command seems still to be running! Found PIDs: {}'.format(','.join(ps_pids))
                 )
+                self.env.send_status('user_input_add')
                 answer = input(
                     '[RR] What should I do? '
                     '(i: send SIGINT (default), t: send SIGTERM, k: send SIGKILL, p: do nothing and proceed) \n\a')
+                self.env.send_status('user_input_remove')
 
                 if answer == 'p':
                     break

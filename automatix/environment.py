@@ -1,5 +1,6 @@
 from logging import getLogger
 from argparse import Namespace
+from typing import Callable
 
 
 class PipelineEnvironment:
@@ -32,3 +33,5 @@ class PipelineEnvironment:
     def attach_logger(self):
         self.LOG = getLogger(self.config['logger'])
 
+    def send_status(self, status: str):
+        return

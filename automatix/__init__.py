@@ -132,7 +132,7 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
         time_id = round(time())
         os.mkfifo(f'{tempdir}/{time_id}_finished')
         subprocess.run(
-            f'screen -S {time_id}_overview automatix nonexistent --prepared-from-pipe "{tempdir}/{time_id}_overview"',
+            f'screen -S {time_id}_overview automatix nonexistent --debug --prepared-from-pipe "{tempdir}/{time_id}_overview"',
             shell=True,
         )
         with open(f'{tempdir}/{time_id}_finished') as fifo:
