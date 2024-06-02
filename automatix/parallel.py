@@ -1,16 +1,16 @@
 import pickle
 import sys
+from time import sleep
 
 from automatix import AbortException, LOG
 
 
 def run_from_pipe(pipe: str):
-    if pipe == 'overview':
-        run_overview()
+    if pipe.endswith('overview'):
+        run_overview(name=pipe)
     else:
-        with open(pipe, 'r') as p:
-            data = p.readline().encode()
-        auto = pickle.loads(data)
+        with open(pipe, 'rb') as f:
+            auto = pickle.load(file=f)
         auto.env.attach_logger()
         try:
             auto.run()
@@ -21,5 +21,6 @@ def run_from_pipe(pipe: str):
             sys.exit(130)
 
 
-def run_overview():
-    raise NotImplemented
+def run_overview(name: str):
+    print('Hier ist der Overview')
+    sleep(20)

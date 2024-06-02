@@ -1,10 +1,13 @@
 import os
+import pickle
+import subprocess
 import sys
 from argparse import Namespace
 from copy import deepcopy
 from csv import DictReader
 from importlib import import_module
-from time import time
+from tempfile import TemporaryDirectory
+from time import time, sleep
 from typing import List
 
 from .automatix import Automatix
@@ -56,9 +59,9 @@ def get_script_and_batch_items(args: Namespace) -> (dict, list):
     if args.vars_file:
         with open(args.vars_file) as csvfile:
             batch_items = list(DictReader(csvfile))
-        script['batch_mode'] = True
-        script['batch_items_count'] = len(batch_items)
-        LOG.notice('Detected batch processing from CSV file.')
+        script['batch_mode'] = False if args.parallel else True
+        script['batch_items_count'] = 1 if args.parallel else len(batch_items)
+        LOG.notice(f'Detected {"parallel" if args.parallel else "batch"} processing from CSV file.')
 
     if args.steps:
         exclude = script['exclude'] = args.steps.startswith('e')
@@ -68,9 +71,45 @@ def get_script_and_batch_items(args: Namespace) -> (dict, list):
 
 
 def run_batch_items(script: dict, batch_items: list, args: Namespace):
-    try:
-        if PROGRESS_BAR:
-            progress_bar.setup_scroll_area()
+    cmd_class = get_command_class()
+
+    for i, row in enumerate(batch_items, start=1):
+        script_copy = deepcopy(script)
+        update_script_from_row(row=row, script=script_copy, index=i)
+
+        variables = collect_vars(script_copy)
+
+        auto = Automatix(
+            script=script_copy,
+            variables=variables,
+            config=CONFIG,
+            cmd_class=cmd_class,
+            script_fields=SCRIPT_FIELDS,
+            cmd_args=args,
+            batch_index=i,
+        )
+        auto.env.attach_logger()
+        auto.set_command_count()
+        try:
+            auto.run()
+        except SkipBatchItemException as exc:
+            LOG.info(str(exc))
+            LOG.notice('=====> Jumping to next batch item.')
+            continue
+        except AbortException as exc:
+            sys.exit(int(exc))
+        except KeyboardInterrupt:
+            LOG.warning('\nAborted by user. Exiting.')
+            sys.exit(130)
+
+
+def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
+    progress_bar.destroy_scroll_area()
+    LOG.info('Preparing automatix objects for parallel processing')
+
+    cmd_class = get_command_class()
+    with TemporaryDirectory() as tmpdir:
+        LOG.info(f'Using temporary directory to save object files: {tmpdir}')
         for i, row in enumerate(batch_items, start=1):
             script_copy = deepcopy(script)
             update_script_from_row(row=row, script=script_copy, index=i)
@@ -81,27 +120,26 @@ def run_batch_items(script: dict, batch_items: list, args: Namespace):
                 script=script_copy,
                 variables=variables,
                 config=CONFIG,
-                cmd_class=get_command_class(),
+                cmd_class=cmd_class,
                 script_fields=SCRIPT_FIELDS,
                 cmd_args=args,
-                batch_index=i,
+                batch_index=1,
             )
-            auto.env.attach_logger()
             auto.set_command_count()
-            try:
-                auto.run()
-            except SkipBatchItemException as exc:
-                LOG.info(str(exc))
-                LOG.notice('=====> Jumping to next batch item.')
-                continue
-            except AbortException as exc:
-                sys.exit(int(exc))
-            except KeyboardInterrupt:
-                LOG.warning('\nAborted by user. Exiting.')
-                sys.exit(130)
-    finally:
-        if PROGRESS_BAR:
-            progress_bar.destroy_scroll_area()
+            with open(f'{tmpdir}/auto{i}', 'wb') as f:
+                pickle.dump(obj=auto, file=f)
+
+        time_id = round(time())
+        os.mkfifo(f'{tmpdir}/{time_id}_finished')
+        subprocess.run(
+            f'screen -S {time_id}_overview automatix nonexistent --prepared-from-pipe "{tmpdir}/{time_id}_overview"',
+            shell=True,
+        )
+        with open(f'{tmpdir}/{time_id}_finished') as fifo:
+            LOG.info('Wait for overview to finish')
+            for _ in fifo:
+                LOG.info('Automatix finished parallel processing')
+    LOG.info('Temporary directory cleaned up')
 
 
 def main():
@@ -115,13 +153,22 @@ def main():
     args = arguments()
     setup(args=args)
 
-    if pipe := args.prepared_from_pipe:
-        run_from_pipe(pipe=pipe)
-        sys.exit(0)
+    try:
+        if PROGRESS_BAR:
+            progress_bar.setup_scroll_area()
+        if pipe := args.prepared_from_pipe:
+            run_from_pipe(pipe=pipe)
+            sys.exit(0)
 
-    script, batch_items = get_script_and_batch_items(args=args)
+        script, batch_items = get_script_and_batch_items(args=args)
 
-    run_batch_items(script=script, batch_items=batch_items, args=args)
+        if args.vars_file and args.parallel:
+            run_parallel_screens(script=script, batch_items=batch_items, args=args)
+        else:
+            run_batch_items(script=script, batch_items=batch_items, args=args)
+    finally:
+        if PROGRESS_BAR:
+            progress_bar.destroy_scroll_area()
 
     if 'AUTOMATIX_TIME' in os.environ:
         LOG.info(f'The Automatix script took {round(time() - starttime)}s!')

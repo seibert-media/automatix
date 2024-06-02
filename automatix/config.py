@@ -99,6 +99,11 @@ def arguments() -> argparse.Namespace:
         help='Path to a CSV file containing variables for batch processing',
     )
     parser.add_argument(
+        '--parallel',
+        action='store_true',
+        help='Run CSV file entries parallel in screen sessions; only valid with --vars-file',
+    )
+    parser.add_argument(
         '--print-overview', '-p',
         action='store_true',
         help='Just print command pipeline overview with indices then exit without executing the commandline. '
