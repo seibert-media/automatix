@@ -7,7 +7,7 @@ from copy import deepcopy
 from csv import DictReader
 from importlib import import_module
 from tempfile import TemporaryDirectory
-from time import time, sleep
+from time import time
 from typing import List
 
 from .automatix import Automatix
@@ -108,8 +108,8 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
     LOG.info('Preparing automatix objects for parallel processing')
 
     cmd_class = get_command_class()
-    with TemporaryDirectory() as tmpdir:
-        LOG.info(f'Using temporary directory to save object files: {tmpdir}')
+    with TemporaryDirectory() as tempdir:
+        LOG.info(f'Using temporary directory to save object files: {tempdir}')
         for i, row in enumerate(batch_items, start=1):
             script_copy = deepcopy(script)
             update_script_from_row(row=row, script=script_copy, index=i)
@@ -126,16 +126,16 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
                 batch_index=1,
             )
             auto.set_command_count()
-            with open(f'{tmpdir}/auto{i}', 'wb') as f:
+            with open(f'{tempdir}/auto{i}', 'wb') as f:
                 pickle.dump(obj=auto, file=f)
 
         time_id = round(time())
-        os.mkfifo(f'{tmpdir}/{time_id}_finished')
+        os.mkfifo(f'{tempdir}/{time_id}_finished')
         subprocess.run(
-            f'screen -S {time_id}_overview automatix nonexistent --prepared-from-pipe "{tmpdir}/{time_id}_overview"',
+            f'screen -S {time_id}_overview automatix nonexistent --prepared-from-pipe "{tempdir}/{time_id}_overview"',
             shell=True,
         )
-        with open(f'{tmpdir}/{time_id}_finished') as fifo:
+        with open(f'{tempdir}/{time_id}_finished') as fifo:
             LOG.info('Wait for overview to finish')
             for _ in fifo:
                 LOG.info('Automatix finished parallel processing')
