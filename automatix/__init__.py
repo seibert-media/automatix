@@ -143,11 +143,15 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
             if len(autos.running) + len(autos.waiting) + len(autos.user_input) == 0:
                 break
 
-            answer = input('o: overview, n: next user input required, X (number): switch to autoX\n')
+            answer = input(
+                'o: overview, n: next user input required, X (number): switch to autoX, u: update information\n'
+            )
             if answer == 'o':
                 screen_id = f'{time_id}_overview'
             elif answer == 'n':
                 screen_id = f'{time_id}_{next(iter(autos.user_input))}'
+            elif answer == 'u':
+                continue
             else:
                 try:
                     screen_id = f'{time_id}_auto{int(answer)}'
