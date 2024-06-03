@@ -13,7 +13,7 @@ from typing import List
 from .automatix import Automatix
 from .command import Command, SkipBatchItemException, AbortException
 from .config import arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION
-from .parallel import run_from_pipe
+from .parallel import run_from_pipe, print_status_verbose
 
 try:
     import python_progress_bar as progress_bar
@@ -135,6 +135,28 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
             f'screen -S {time_id}_overview automatix nonexistent --debug --prepared-from-pipe "{tempdir}/{time_id}_overview"',
             shell=True,
         )
+        while True:
+            with open(f'{tempdir}/autos', 'rb') as f:
+                autos = pickle.load(file=f)
+            print_status_verbose(autos=autos)
+
+            if len(autos.running) + len(autos.waiting) + len(autos.user_input) == 0:
+                break
+
+            answer = input('o: overview, n: next user input required, X (number): switch to autoX\n')
+            if answer == 'o':
+                screen_id = f'{time_id}_overview'
+            elif answer == 'n':
+                screen_id = f'{time_id}_{next(iter(autos.user_input))}'
+            else:
+                try:
+                    screen_id = f'{time_id}_auto{int(answer)}'
+                except ValueError:
+                    screen_id = None
+                    LOG.warning('Invalid answer')
+            if screen_id:
+                subprocess.run(f'screen -r {screen_id}', shell=True)
+
         with open(f'{tempdir}/{time_id}_finished') as fifo:
             LOG.info('Wait for overview to finish')
             for _ in fifo:
