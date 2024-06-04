@@ -13,10 +13,11 @@ from .colors import yellow, green, red, cyan
 from .command import AbortException
 from .config import LOG
 
-# TODO
-#  * add communication from automatix via pipe
-#  * add controls for switching screens
-#  * update README (no windows)
+# TODO parallel processing
+#  * update README
+#  * refactoring and testing
+#  * make things prettier...
+#  * logging to files?
 
 LINE_UP = '\033[1A'
 LINE_CLEAR = '\x1b[2K'
@@ -25,6 +26,8 @@ LINE_CLEAR = '\x1b[2K'
 @dataclass
 class Autos:
     count: int
+
+    max_parallel: int = 2
     waiting: set = field(default_factory=set)
     running: set = field(default_factory=set)
     user_input: set = field(default_factory=set)
@@ -76,9 +79,9 @@ def print_status(autos: Autos):
 
 
 def print_status_verbose(autos: Autos):
-    print('--- Screens ---')
+    print(f'------------------ Screens (max. {autos.max_parallel} running) ------------------')
     print_status(autos=autos)
-    print('---------------')
+    print('--------------------------------------------------------------')
     print(f'waiting: {sorted(autos.waiting)}')
     print(f'running: {sorted(autos.running)}')
     print(f'user input required: {red(sorted(autos.user_input))}')
@@ -94,15 +97,13 @@ def run_overview(name: str):
     LOG.info(f'Found {autos.count} files to process. Screens name are like "{time_id}_autoX"')
     LOG.info('To switch to screens detach from this screen via "<ctrl>+a d".')
 
-    max_parallel = 2
-
     open(name, 'a').close()
     try:
         while len(autos.finished) < autos.count:
-            if len(autos.running) < max_parallel and autos.waiting:
+            if len(autos.running) < autos.max_parallel and autos.waiting:
                 auto_file = autos.waiting.pop()
-                LOG.info(f'Starting new screen at {time_id}_{auto_file}')
                 autos.running.add(auto_file)
+                LOG.info(f'Starting new screen at {time_id}_{auto_file}')
                 subprocess.run(
                     f'screen -d -m -S {time_id}_{auto_file}'
                     f' automatix nonexistent --prepared-from-pipe {tempdir}/{auto_file}_{time_id}',
@@ -122,7 +123,7 @@ def run_overview(name: str):
                         case 'max_parallel':
                             # In this case we misuse the "auto_file" part as number
                             # for how many parallel screens are allowed.
-                            max_parallel = int(auto_file)
+                            autos.max_parallel = int(auto_file)
                             LOG.info(f'Now process max {auto_file} screens parallel')
                         case 'user_input_remove':
                             autos.user_input.remove(auto_file)
@@ -198,7 +199,7 @@ def screen_switch_loop(tempdir: str, time_id: int):
                 'o: overview / manager loop,'
                 ' n: next user input required,'
                 ' X (number): switch to autoX,'
-                ' mX: set max parallel screens to X (default 2)\n'
+                f' mX: set max parallel screens to X (actual {autos.max_parallel})\n'
             )
             i, _, _ = select.select([sys.stdin], [], [], 1)
             if i:
