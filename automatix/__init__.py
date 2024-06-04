@@ -5,15 +5,16 @@ import sys
 from argparse import Namespace
 from copy import deepcopy
 from csv import DictReader
-from importlib import import_module
 from tempfile import TemporaryDirectory
 from time import time
 from typing import List
 
 from .automatix import Automatix
 from .command import Command, SkipBatchItemException, AbortException
-from .config import arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION
-from .parallel import run_from_pipe, print_status_verbose
+from .config import (
+    arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION, init_logger
+)
+from .parallel import run_from_pipe, print_status_verbose, screen_switch_loop
 
 try:
     import python_progress_bar as progress_bar
@@ -25,12 +26,6 @@ except ImportError:
 
 def setup(args: Namespace):
     """Setup logger and print version information"""
-    if CONFIG.get('logging_lib'):
-        log_lib = import_module(CONFIG.get('logging_lib'))
-        init_logger = log_lib.init_logger
-    else:
-        from .logger import init_logger
-
     init_logger(name=CONFIG['logger'], debug=args.debug)
 
     LOG.info(f'Automatix Version {VERSION}')
@@ -103,63 +98,46 @@ def run_batch_items(script: dict, batch_items: list, args: Namespace):
             sys.exit(130)
 
 
+def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir: str):
+    cmd_class = get_command_class()
+    LOG.info(f'Using temporary directory to save object files: {tempdir}')
+    for i, row in enumerate(batch_items, start=1):
+        script_copy = deepcopy(script)
+        update_script_from_row(row=row, script=script_copy, index=i)
+
+        variables = collect_vars(script_copy)
+
+        auto = Automatix(
+            script=script_copy,
+            variables=variables,
+            config=CONFIG,
+            cmd_class=cmd_class,
+            script_fields=SCRIPT_FIELDS,
+            cmd_args=args,
+            batch_index=1,
+        )
+        auto.set_command_count()
+        with open(f'{tempdir}/auto{i}', 'wb') as f:
+            pickle.dump(obj=auto, file=f)
+
+
 def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
     progress_bar.destroy_scroll_area()
     LOG.info('Preparing automatix objects for parallel processing')
 
-    cmd_class = get_command_class()
     with TemporaryDirectory() as tempdir:
-        LOG.info(f'Using temporary directory to save object files: {tempdir}')
-        for i, row in enumerate(batch_items, start=1):
-            script_copy = deepcopy(script)
-            update_script_from_row(row=row, script=script_copy, index=i)
-
-            variables = collect_vars(script_copy)
-
-            auto = Automatix(
-                script=script_copy,
-                variables=variables,
-                config=CONFIG,
-                cmd_class=cmd_class,
-                script_fields=SCRIPT_FIELDS,
-                cmd_args=args,
-                batch_index=1,
-            )
-            auto.set_command_count()
-            with open(f'{tempdir}/auto{i}', 'wb') as f:
-                pickle.dump(obj=auto, file=f)
+        create_auto_files(script=script, batch_items=batch_items, args=args, tempdir=tempdir)
 
         time_id = round(time())
         os.mkfifo(f'{tempdir}/{time_id}_finished')
         subprocess.run(
-            f'screen -S {time_id}_overview automatix nonexistent --debug --prepared-from-pipe "{tempdir}/{time_id}_overview"',
+            f'screen -d -m -S {time_id}_overview'
+            f' automatix nonexistent {"--debug" if args.debug else ""}'
+            f' --prepared-from-pipe "{tempdir}/{time_id}_overview"',
             shell=True,
         )
-        while True:
-            with open(f'{tempdir}/autos', 'rb') as f:
-                autos = pickle.load(file=f)
-            print_status_verbose(autos=autos)
 
-            if len(autos.running) + len(autos.waiting) + len(autos.user_input) == 0:
-                break
-
-            answer = input(
-                'o: overview, n: next user input required, X (number): switch to autoX, u: update information\n'
-            )
-            if answer == 'o':
-                screen_id = f'{time_id}_overview'
-            elif answer == 'n':
-                screen_id = f'{time_id}_{next(iter(autos.user_input))}'
-            elif answer == 'u':
-                continue
-            else:
-                try:
-                    screen_id = f'{time_id}_auto{int(answer)}'
-                except ValueError:
-                    screen_id = None
-                    LOG.warning('Invalid answer')
-            if screen_id:
-                subprocess.run(f'screen -r {screen_id}', shell=True)
+        screen_switch_loop(tempdir=tempdir, time_id=time_id)
 
         with open(f'{tempdir}/{time_id}_finished') as fifo:
             LOG.info('Wait for overview to finish')

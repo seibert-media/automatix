@@ -4,7 +4,7 @@ import os
 import re
 import sys
 from collections import OrderedDict
-from importlib import metadata
+from importlib import metadata, import_module
 from time import sleep
 
 import yaml
@@ -60,6 +60,12 @@ if os.path.isfile(configfile):
 
 if os.getenv('AUTOMATIX_SCRIPT_DIR'):
     CONFIG['script_dir'] = os.getenv('AUTOMATIX_SCRIPT_DIR')
+
+if CONFIG.get('logging_lib'):
+    log_lib = import_module(CONFIG.get('logging_lib'))
+    init_logger = log_lib.init_logger
+else:
+    from .logger import init_logger
 
 LOG = logging.getLogger(CONFIG['logger'])
 
