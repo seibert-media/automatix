@@ -1,5 +1,6 @@
 import os
 import pickle
+import select
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -12,11 +13,14 @@ from .colors import yellow, green, red, cyan
 from .command import AbortException
 from .config import LOG
 
-
 # TODO
 #  * add communication from automatix via pipe
 #  * add controls for switching screens
-#  * update README
+#  * update README (no windows)
+
+LINE_UP = '\033[1A'
+LINE_CLEAR = '\x1b[2K'
+
 
 @dataclass
 class Autos:
@@ -57,19 +61,12 @@ def release_lock(file_path: str):
     os.rmdir(f'{file_path}.lock')
 
 
-def run_from_pipe(pipe: str):
-    if pipe.endswith('overview'):
-        run_overview(name=pipe)
-    else:
-        run_auto(name=pipe)
-
-
 def get_files(tempdir: str) -> set:
     return {f for f in listdir(tempdir) if isfile(f'{tempdir}/{f}') and f.startswith('auto')}
 
 
 def print_status(autos: Autos):
-    tmpl = 'waiting: {w}, running: {r}, user input required: {u}, finished: {f}              '
+    tmpl = 'waiting: {w}, running: {r}, user input required: {u}, finished: {f}'
     print(tmpl.format(
         w=yellow(len(autos.waiting)),
         r=cyan(len(autos.running)),
@@ -79,10 +76,12 @@ def print_status(autos: Autos):
 
 
 def print_status_verbose(autos: Autos):
+    print('--- Screens ---')
     print_status(autos=autos)
+    print('---------------')
     print(f'waiting: {sorted(autos.waiting)}')
     print(f'running: {sorted(autos.running)}')
-    print(f'user input required: {sorted(autos.user_input)}')
+    print(f'user input required: {red(sorted(autos.user_input))}')
     print(f'finished: {sorted(autos.finished)}')
 
 
@@ -92,7 +91,6 @@ def run_overview(name: str):
     auto_files = get_files(tempdir)
     autos = Autos(count=len(auto_files), waiting=auto_files)
 
-    LOG.debug(f'Overview names pipe at {name}')
     LOG.info(f'Found {autos.count} files to process. Screens name are like "{time_id}_autoX"')
     LOG.info('To switch to screens detach from this screen via "<ctrl>+a d".')
 
@@ -121,6 +119,11 @@ def run_overview(name: str):
                     auto_file, status = line.strip().split(':')
                     LOG.debug(f'Got {auto_file}:{status}')
                     match status:
+                        case 'max_parallel':
+                            # In this case we misuse the "auto_file" part as number
+                            # for how many parallel screens are allowed.
+                            max_parallel = int(auto_file)
+                            LOG.info(f'Now process max {auto_file} screens parallel')
                         case 'user_input_remove':
                             autos.user_input.remove(auto_file)
                         case 'user_input_add':
@@ -139,6 +142,8 @@ def run_overview(name: str):
             with FileWithLock(f'{tempdir}/autos', 'wb') as f:
                 pickle.dump(obj=autos, file=f)
 
+            sleep(1)
+
         LOG.info(f'All parallel screen reported finished ({len(autos.finished)}/{autos.count}).')
     except Exception as exc:
         LOG.exception(exc)
@@ -153,8 +158,7 @@ def run_auto(name: str):
     tempdir, auto_file = auto_path.rsplit(sep='/', maxsplit=1)
 
     def send_status(status: str):
-        file_path = f'{tempdir}/{time_id}_overview'
-        with FileWithLock(file_path, 'a') as sf:
+        with FileWithLock(f'{tempdir}/{time_id}_overview', 'a') as sf:
             sf.write(f'{auto_file}:{status}\n')
 
     with open(auto_path, 'rb') as f:
@@ -176,33 +180,69 @@ def run_auto(name: str):
 
 
 def screen_switch_loop(tempdir: str, time_id: int):
-    while not isfile(f'{tempdir}/autos'):
-        sleep(1)
-    while True:
-        with FileWithLock(f'{tempdir}/autos', 'rb') as f:
-            autos = pickle.load(file=f)
-        print_status_verbose(autos=autos)
-
-        if len(autos.running) + len(autos.waiting) + len(autos.user_input) == 0:
-            break
-
-        answer = input(
-            'o: overview, n: next user input required, X (number): switch to autoX, Enter: update information\n'
-        )
-        if answer == 'o':
-            screen_id = f'{time_id}_overview'
-        elif answer == 'n' and autos.user_input:
-            screen_id = f'{time_id}_{next(iter(autos.user_input))}'
-        elif answer == '':
-            continue
-        elif answer == 'b':
-            break
-        else:
-            try:
-                screen_id = f'{time_id}_auto{int(answer)}'
-            except ValueError:
-                screen_id = None
-                LOG.warning('Invalid answer')
-        if screen_id:
-            subprocess.run(f'screen -r {screen_id}', shell=True)
+    try:
+        while not isfile(f'{tempdir}/autos'):
             sleep(1)
+        while True:
+            with FileWithLock(f'{tempdir}/autos', 'rb') as f:
+                autos = pickle.load(file=f)
+            print_status_verbose(autos=autos)
+
+            if len(autos.running) + len(autos.waiting) + len(autos.user_input) == 0:
+                break
+
+            print()
+            LOG.notice('Please notice: To come back to this selection press "<ctrl>+a d" in a screen session!')
+            LOG.info('Following options are available:')
+            LOG.info(
+                'o: overview / manager loop,'
+                ' n: next user input required,'
+                ' X (number): switch to autoX,'
+                ' mX: set max parallel screens to X (default 2)\n'
+            )
+            i, _, _ = select.select([sys.stdin], [], [], 1)
+            if i:
+                answer = sys.stdin.readline().strip()
+            else:
+                answer = ''
+
+            screen_id = None
+            if answer == 'o':
+                screen_id = f'{time_id}_overview'
+            elif answer == 'n' and autos.user_input:
+                screen_id = f'{time_id}_{next(iter(autos.user_input))}'
+            elif answer == '':
+                for _ in range(12):
+                    print(LINE_UP, end=LINE_CLEAR)
+                continue
+            elif answer.startswith('m'):
+                try:
+                    max_parallel = int(answer[1:])
+                    with FileWithLock(f'{tempdir}/{time_id}_overview', 'a') as sf:
+                        sf.write(f'{max_parallel}:max_parallel\n')
+                except ValueError:
+                    pass
+            # elif answer == 'b': # for debugging
+            #    break            # for debugging
+            else:
+                try:
+                    screen_id = f'{time_id}_auto{str(int(answer)).rjust(len(str(autos.count)), "0")}'
+                except ValueError:
+                    LOG.warning(f'Invalid answer: {answer}')
+            if screen_id:
+                subprocess.run(f'screen -r {screen_id}', shell=True)
+                sleep(1)
+    except (KeyboardInterrupt, Exception) as exc:
+        print('\n'*8)
+        LOG.exception(exc)
+        LOG.info('\nAn exception occurred! Please decide what to do:')
+        match input(
+            'Press "r" and Enter to reraise.'
+            ' This will cause this programm to terminate.'
+            ' Check "screen -list" afterwards for still running screens.\n'
+            ' Press something else to restart the loop, where you can switch to the different screens.\n'
+        ):
+            case 'r':
+                raise
+            case _:
+                screen_switch_loop(tempdir=tempdir, time_id=time_id)

@@ -14,7 +14,7 @@ from .command import Command, SkipBatchItemException, AbortException
 from .config import (
     arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION, init_logger
 )
-from .parallel import run_from_pipe, print_status_verbose, screen_switch_loop
+from .parallel import print_status_verbose, screen_switch_loop, run_overview, run_auto
 
 try:
     import python_progress_bar as progress_bar
@@ -101,6 +101,7 @@ def run_batch_items(script: dict, batch_items: list, args: Namespace):
 def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir: str):
     cmd_class = get_command_class()
     LOG.info(f'Using temporary directory to save object files: {tempdir}')
+    digits = len(str(len(batch_items)))
     for i, row in enumerate(batch_items, start=1):
         script_copy = deepcopy(script)
         update_script_from_row(row=row, script=script_copy, index=i)
@@ -117,12 +118,12 @@ def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir:
             batch_index=1,
         )
         auto.set_command_count()
-        with open(f'{tempdir}/auto{i}', 'wb') as f:
+        id = str(i).rjust(digits, '0')
+        with open(f'{tempdir}/auto{id}', 'wb') as f:
             pickle.dump(obj=auto, file=f)
 
 
 def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
-    progress_bar.destroy_scroll_area()
     LOG.info('Preparing automatix objects for parallel processing')
 
     with TemporaryDirectory() as tempdir:
@@ -137,9 +138,12 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
             shell=True,
         )
 
+        LOG.info(f'Overview / manager screen started at "{time_id}_overview".')
+        LOG.info('Start loop with information to switch between running screens.\n')
         screen_switch_loop(tempdir=tempdir, time_id=time_id)
 
         with open(f'{tempdir}/{time_id}_finished') as fifo:
+            print()
             LOG.info('Wait for overview to finish')
             for _ in fifo:
                 LOG.info('Automatix finished parallel processing')
@@ -157,19 +161,25 @@ def main():
     args = arguments()
     setup(args=args)
 
+    if (pipe := args.prepared_from_pipe) and pipe.endswith('overview'):
+        run_overview(name=pipe)
+        sys.exit(0)
+
+    if args.vars_file and args.parallel:
+        script, batch_items = get_script_and_batch_items(args=args)
+        run_parallel_screens(script=script, batch_items=batch_items, args=args)
+        sys.exit(0)
+
     try:
         if PROGRESS_BAR:
             progress_bar.setup_scroll_area()
+
         if pipe := args.prepared_from_pipe:
-            run_from_pipe(pipe=pipe)
+            run_auto(name=pipe)
             sys.exit(0)
 
         script, batch_items = get_script_and_batch_items(args=args)
-
-        if args.vars_file and args.parallel:
-            run_parallel_screens(script=script, batch_items=batch_items, args=args)
-        else:
-            run_batch_items(script=script, batch_items=batch_items, args=args)
+        run_batch_items(script=script, batch_items=batch_items, args=args)
     finally:
         if PROGRESS_BAR:
             progress_bar.destroy_scroll_area()
