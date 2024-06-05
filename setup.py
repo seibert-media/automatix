@@ -10,7 +10,7 @@ setup(
     keywords=['bash', 'shell', 'command', 'automation', 'process', 'wrapper', 'devops', 'system administration'],
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='https://github.com/vanadinit/automatix',
+    url='https://github.com/vanadinit/automatix_cmd',
     author='Johannes Paul',
     author_email='vanadinit@quantentunnel.de',
     license='MIT',
