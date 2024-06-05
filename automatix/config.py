@@ -118,7 +118,8 @@ def arguments() -> argparse.Namespace:
     parser.add_argument(
         '--parallel',
         action='store_true',
-        help='Run CSV file entries parallel in screen sessions; only valid with --vars-file',
+        help='Run CSV file entries parallel in screen sessions; only valid with --vars-file. '
+             'GNU screen has to be installed. See EXTRAS section in README.',
     )
     parser.add_argument(
         '--print-overview', '-p',
@@ -150,10 +151,6 @@ def arguments() -> argparse.Namespace:
         '--debug', '-d',
         action='store_true',
         help='activate debug log level',
-    )
-    parser.add_argument(
-        '--prepared-from-pipe',
-        help='Process a prepared serialized automatix object which is retrieved via the specified named pipe',
     )
     if bash_completion:
         autocomplete(parser)
