@@ -4,17 +4,17 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name='automatix',
-    version='1.15.0',
+    name='automatix_cmd',
+    version='2.0.0',
     description='Automation wrapper for bash and python commands',
     keywords=['bash', 'shell', 'command', 'automation', 'process', 'wrapper', 'devops', 'system administration'],
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='https://github.com/seibert-media/automatix',
-    author='Johannes Paul, //SEIBERT/MEDIA GmbH',
-    author_email='jpaul@seibert-media.net',
+    url='https://github.com/vanadinit/automatix',
+    author='Johannes Paul',
+    author_email='vanadinit@quantentunnel.de',
     license='MIT',
-    python_requires='>=3.8',
+    python_requires='>=3.10',
     install_requires=[
         'pyyaml>=5.1',
     ],
@@ -27,6 +27,8 @@ setup(
     entry_points={
         'console_scripts': [
             'automatix=automatix:main',
+            'automatix-manager=automatix.parallel:run_manager',
+            'automatix-from-file=automatix.parallel:run_auto_from_file',
         ],
     },
     classifiers=[

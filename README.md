@@ -1,5 +1,5 @@
 # automatix
-Automation wrapper for bash and python commands
+Automation wrapper for bash and python commands. Extended Feature version.
 
 
 # DESCRIPTION
@@ -19,9 +19,14 @@ There are different modes for **automatix** to work. Without any
  commandline step whether to execute, skip or abort.
  Forced mode (**-f**) will also proceed if errors occur.
 
-**automatix** is originally designed for internal //SEIBERT/MEDIA use.
+**automatix** was originally designed for internal seibert// use.
  It comes therefore with bundlewrap and teamvault support as well as
  the possibility to use your own logging library.
+
+This **automatix** version (automatix_cmd) is a fork of the original
+**automatix** (https://github.com/seibert-media/automatix) with some
+extended functionality and is maintained private in the authors freetime
+(not maintained by seibert//).
 
 ## Warning:
 
@@ -39,11 +44,15 @@ Please use the interactive mode and doublecheck commands before
 
 # INSTALLATION
 
-Automatix requires Python &ge; 3.8.
+Automatix requires Python &ge; 3.10.
 
 ```
-pip install automatix
+pip install automatix_cmd
 ```
+
+NOTICE: original `automatix` and this `automatix_cmd` share the
+same main entrypoint. To avoid overwriting and confusion,
+you should have only installed **ONE** of them!
 
 # CONFIGURATION
 
@@ -111,59 +120,63 @@ Default location is "~/.automatix.cfg.yaml".
 **scriptfile**
 : The only required parameter for this tool to work. Use " -- " if
  needed to delimit this from argument fields. See **SCRIPTFILE**
- section for more information.
+ section for more information.  
 
 **-h**, **--help**
-: View help message and exit.
+: View help message and exit.  
 
 **--systems** _SYSTEM1=ADDRESS_OR_NODENAME_
 : Use this to set systems without adding them to the
   scriptfile or to overwrite them. You can specify multiple
-  systems like: --systems v1=string1 v2=string2 v3=string3
+  systems like: --systems v1=string1 v2=string2 v3=string3  
   
 **--vars** _VAR1=VALUE1_
 : Use this to set vars without adding them to the scriptfile
   or to overwrite them. You can specify multiple vars
-  like: --vars v1=string1 v2=string2 v3=string3
+  like: --vars v1=string1 v2=string2 v3=string3  
   
 **--secrets** _SECRET1=SECRETID_
 : Use this to set secrets without adding them to the
   scriptfile or to overwrite them. You can specify multiple
   secrets like: --secrets v1=string1 v2=string2 v3=string3 *(only if
-  teamvault is enabled)*
+  teamvault is enabled)*  
   
 **--vars-file** _VARS_FILE_PATH_
 : Use this to specify a CSV file from where **automatix** reads
   systems, variables and secrets. First row must contain the field
   types and names. You may also specify an `label` field.
   Example: `label,systems:mysystem,vars:myvar`. The automatix script will
-  be processed for each row sequentially.
+  be processed for each row sequentially.  
   
+**--parallel**
+: Run CSV file entries parallel in screen sessions; only valid with --vars-file.
+  GNU screen has to be installed. See EXTRAS section below.
+
 **--print-overview**, **-p**
 : Just print command pipeline overview with indices then exit without
  executing the commandline. Note that the *always pipeline* will be
- executed anyway.
+ executed anyway.  
 
 **--jump-to** _JUMP_TO_, **-j** _JUMP_TO_
 : Jump to step with index _JUMP_TO_ instead of starting at the
  beginning. Use **-p** or the output messages to determine the
  desired step index. You can use negative numbers to start counting
- from the end.
+ from the end.  
 
 **--steps** _STEPS_, **-s** _STEPS_
 : Only execute these steps (comma-separated indices) or exclude steps
  by prepending the comma-separated list with "e".
- Examples: `-s 1,3,7`, `-s e2`, `-s e0,5,7,2`
+ Examples: `-s 1,3,7`, `-s e2`, `-s e0,5,7,2`  
 
 **--interactive**, **-i**
-: Confirm actions before executing.
+: Confirm actions before executing.  
   
 **--force**, **-f**
 : Try always to proceed (except manual steps), even if errors occur
- (no retries).
+ (no retries).  
 
 **--debug**, **-d**
-: Activate debug log level.
+: Activate debug log level.  
 
 
 ### EXAMPLE: Usage
@@ -498,6 +511,24 @@ The terminal (T) answer starts an interactive Bash-Shell (/bin/bash -i).
  
 
 # EXTRAS
+
+## Parallel processing
+Requirement: GNU screen installed and accessible via `screen` command in bash.
+
+This **automatix** version has the option to process multiple **automatix** instances at a time.
+ This is achieved by starting multiple [GNU screen](https://www.gnu.org/software/screen/) sessions.
+ Please make yourself comfortable with the screen controls before using this feature to avoid getting lost.
+
+The main programm stays in a loop while attaching to the screen sessions and you will come back to it
+ if you detach a screen session. The **automatix-manager** runs in its own screen session and is
+ responsible for starting the automatix screens and status updates.
+
+By default the programm starts with 2 parallel automatix instances. Use the main programm loop controls
+ to change the number of allowed parallel sessions (pressing 'm' followed by your desired number).
+
+If you force the programm to terminate (e.g. keyboard interrupt, process kill, ...),
+ check for still running screen processes via `screen -list`. They are independent and may continue
+ running. Cleanup manually, if necessary.
 
 ## Bash completion (experimental)
 Automatix supports bash completion for parameters and the script directory via [argcomplete](https://github.com/kislyuk/argcomplete).

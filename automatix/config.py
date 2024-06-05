@@ -4,7 +4,7 @@ import os
 import re
 import sys
 from collections import OrderedDict
-from importlib import metadata
+from importlib import metadata, import_module
 from time import sleep
 
 import yaml
@@ -61,6 +61,12 @@ if os.path.isfile(configfile):
 if os.getenv('AUTOMATIX_SCRIPT_DIR'):
     CONFIG['script_dir'] = os.getenv('AUTOMATIX_SCRIPT_DIR')
 
+if CONFIG.get('logging_lib'):
+    log_lib = import_module(CONFIG.get('logging_lib'))
+    init_logger = log_lib.init_logger
+else:
+    from .logger import init_logger
+
 LOG = logging.getLogger(CONFIG['logger'])
 
 SCRIPT_PATH = os.path.expanduser(os.path.expandvars(CONFIG['script_dir']))
@@ -89,7 +95,7 @@ if (CONFIG.get('progress_bar', False) or os.getenv('AUTOMATIX_PROGRESS_BAR', Fal
 def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description='Automation wrapper for bash and python commands.',
-        epilog='Explanations and README at https://github.com/seibert-media/automatix',
+        epilog='Explanations and README at https://github.com/vanadinit/automatix',
     )
     scriptfile_action = parser.add_argument(
         'scriptfile',
@@ -108,6 +114,12 @@ def arguments() -> argparse.Namespace:
     parser.add_argument(
         '--vars-file',
         help='Path to a CSV file containing variables for batch processing',
+    )
+    parser.add_argument(
+        '--parallel',
+        action='store_true',
+        help='Run CSV file entries parallel in screen sessions; only valid with --vars-file. '
+             'GNU screen has to be installed. See EXTRAS section in README.',
     )
     parser.add_argument(
         '--print-overview', '-p',
