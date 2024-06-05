@@ -12,16 +12,11 @@ from typing import List
 from .automatix import Automatix
 from .command import Command, SkipBatchItemException, AbortException
 from .config import (
-    arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION, init_logger
+    arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION, init_logger,
+    PROGRESS_BAR, progress_bar
 )
 from .parallel import print_status_verbose, screen_switch_loop, run_overview, run_auto
 
-try:
-    import python_progress_bar as progress_bar
-
-    PROGRESS_BAR = True
-except ImportError:
-    PROGRESS_BAR = False
 
 
 def setup(args: Namespace):

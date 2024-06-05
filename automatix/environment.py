@@ -28,7 +28,7 @@ class PipelineEnvironment:
         self.cmd_args = cmd_args
         self.LOG = None
 
-        # This will be set on runtime
+        # This will be set at runtime
         self.command_count = None
 
     def attach_logger(self):

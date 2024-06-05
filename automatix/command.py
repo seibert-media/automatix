@@ -5,14 +5,8 @@ from shlex import quote
 from time import time
 from typing import Tuple
 
+from .config import PROGRESS_BAR, progress_bar
 from .environment import PipelineEnvironment
-
-try:
-    import python_progress_bar as progress_bar
-
-    PROGRESS_BAR = True
-except ImportError:
-    PROGRESS_BAR = False
 
 
 class PersistentDict(dict):
@@ -73,7 +67,7 @@ class Command:
     def progress_portion(self) -> int:
         own_position = self.env.command_count * (self.env.batch_index - 1) + self.position
         overall_command_count = self.env.batch_items_count * self.env.command_count
-        return round(own_position / overall_command_count * 100, 2)
+        return round(own_position / overall_command_count * 100, 1)
 
     def get_type(self):
         if self.key == 'local':
