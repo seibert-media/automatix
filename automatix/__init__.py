@@ -8,14 +8,10 @@ from typing import List
 
 from .automatix import Automatix
 from .command import Command, SkipBatchItemException, AbortException
-from .config import arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION
-
-try:
-    import python_progress_bar as progress_bar
-
-    PROGRESS_BAR = True
-except ImportError:
-    PROGRESS_BAR = False
+from .config import (
+    arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION,
+    PROGRESS_BAR, progress_bar
+)
 
 
 def main():

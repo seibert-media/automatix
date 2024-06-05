@@ -27,5 +27,5 @@ class PipelineEnvironment:
         self.cmd_args = cmd_args
         self.LOG = logger
 
-        # This will be set on runtime
+        # This will be set at runtime
         self.command_count = None
