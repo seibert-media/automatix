@@ -19,7 +19,7 @@ setup(
         'pyyaml>=5.1',
     ],
     extras_require={
-        'tests': ['cython<3.0.0', 'pytest', 'pytest-docker-compose'],
+        'tests': ['cython<3.0.0', 'pytest', 'pytest-docker'],
         'bash completion': ['argcomplete'],
         'progress bar': ['python_progress_bar>=1.10'],
     },
