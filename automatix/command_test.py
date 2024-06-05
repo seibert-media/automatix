@@ -5,11 +5,15 @@ import pytest
 from automatix.command import Command, parse_key
 from tests.test_environment import environment, run_command_and_check, ssh_up
 
-pytest_plugins = ["docker_compose"]
-
 
 def test__execute_remote_cmd(ssh_up):
-    cmd = Command(cmd={'remote@testsystem': 'touch /test_remote_cmd'}, index=2, pipeline='pipeline', env=environment)
+    cmd = Command(
+        cmd={'remote@testsystem': 'touch /test_remote_cmd'},
+        index=2,
+        pipeline='pipeline',
+        env=environment,
+        position=1,
+    )
     cmd.execute()
     try:
         run_command_and_check('ssh docker-test ls /test_remote_cmd >/dev/null')
@@ -23,7 +27,13 @@ def test__execute_local_cmd(capfd):
     # empty captured stdin and stderr
     _ = capfd.readouterr()
 
-    cmd = Command(cmd={'local': f'echo {test_string}'}, index=2, pipeline='pipeline', env=environment)
+    cmd = Command(
+        cmd={'local': f'echo {test_string}'},
+        index=2,
+        pipeline='pipeline',
+        env=environment,
+        position=1,
+    )
     cmd.execute()
 
     out, err = capfd.readouterr()
@@ -44,7 +54,13 @@ def test__execute_local_with_condition(capfd):
         # empty captured stdin and stderr
         _ = capfd.readouterr()
 
-        cmd = Command(cmd={f'{condition_var}?local': 'pwd'}, pipeline='pipeline', index=2, env=environment)
+        cmd = Command(
+            cmd={f'{condition_var}?local': 'pwd'},
+            pipeline='pipeline',
+            index=2,
+            env=environment,
+            position=1,
+        )
         cmd.execute()
 
         out, err = capfd.readouterr()
@@ -59,10 +75,10 @@ from pprint import pprint
 PERSISTENT_VARS.update(locals())
 """
 
-    cmd = Command(cmd={'python': test_cmd}, index=2, pipeline='pipeline', env=environment)
+    cmd = Command(cmd={'python': test_cmd}, index=2, pipeline='pipeline', env=environment, position=1)
     cmd.execute()
 
-    cmd = Command(cmd={'python': 'print(uuid4())'}, index=2, pipeline='pipeline', env=environment)
+    cmd = Command(cmd={'python': 'print(uuid4())'}, index=2, pipeline='pipeline', env=environment, position=1)
     cmd.execute()
 
 
