@@ -78,7 +78,7 @@ class Automatix:
 
     def print_main_data(self):
         self.env.LOG.info('\n\n')
-        self.env.LOG.info(f' ------ Overview ------')
+        self.env.LOG.info(' ------ Overview ------')
         for field_key, field_value in self.script_fields.items():
             self.env.LOG.info(f'\n{field_value}:')
             for key, value in self.script.get(field_key, {}).items():

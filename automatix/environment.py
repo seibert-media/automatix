@@ -1,5 +1,5 @@
 from argparse import Namespace
-from logging import getLogger, Logger
+from logging import getLogger
 
 from .config import init_logger
 

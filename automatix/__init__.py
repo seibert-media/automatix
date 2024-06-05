@@ -15,7 +15,7 @@ from .config import (
     arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION, init_logger,
     PROGRESS_BAR, progress_bar
 )
-from .parallel import print_status_verbose, screen_switch_loop
+from .parallel import screen_switch_loop
 
 
 def setup(args: Namespace):

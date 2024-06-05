@@ -63,9 +63,9 @@ if os.getenv('AUTOMATIX_SCRIPT_DIR'):
 
 if CONFIG.get('logging_lib'):
     log_lib = import_module(CONFIG.get('logging_lib'))
-    init_logger = log_lib.init_logger
+    init_logger = log_lib.init_logger  # noqa F401
 else:
-    from .logger import init_logger
+    from .logger import init_logger  # noqa F401
 
 LOG = logging.getLogger(CONFIG['logger'])
 
@@ -76,7 +76,6 @@ if CONFIG['teamvault']:
 
     SCRIPT_FIELDS['secrets'] = 'Secrets'
 
-
     class UnknownSecretTypeException(Exception):
         pass
 
@@ -85,7 +84,7 @@ PROGRESS_BAR = False
 if (CONFIG.get('progress_bar', False) or os.getenv('AUTOMATIX_PROGRESS_BAR', False)) and \
         os.getenv('AUTOMATIX_PROGRESS_BAR', False) not in ['False', 'false']:
     try:
-        import python_progress_bar as progress_bar
+        import python_progress_bar as progress_bar  # noqa F401
 
         PROGRESS_BAR = True
     except ImportError:

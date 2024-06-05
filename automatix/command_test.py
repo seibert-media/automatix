@@ -3,10 +3,10 @@ from subprocess import CalledProcessError
 import pytest
 
 from automatix.command import Command, parse_key
-from tests.test_environment import environment, run_command_and_check, ssh_up
+from tests.test_environment import environment, run_command_and_check, ssh_up  # noqa: F401
 
 
-def test__integration__execute_remote_cmd(ssh_up):
+def test__integration__execute_remote_cmd(ssh_up):  # noqa: F811
     cmd = Command(
         cmd={'remote@testsystem': 'touch /test_remote_cmd'},
         index=2,
