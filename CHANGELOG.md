@@ -1,5 +1,14 @@
 # Changelog
 
+# 2.0.0
+- Decoupled from original repository
+- Rename repo and package: automatix -> automatix_cmd
+- Fix: Manual steps failed always
+- Feature: Interactive shell
+- Feature: Progress bar
+- Feature: Parallel processing
+- Removed deprecated const_, system_ and _node variables (deprecation warnings still remain as hint)
+
 # 1.15.0
 - Feature: Option to invert conditions
 - Feature: Catch script syntax/parsing errors and offer file reload
