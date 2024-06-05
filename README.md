@@ -86,6 +86,9 @@ Default location is "~/.automatix.cfg.yaml".
     # Teamvault / Secret support, bundlewrap-teamvault has to be installed (default: false)
     teamvault: true
 
+    # Activate progress bar, python_progress_bar has to be installed (default: false)
+    progress_bar: true
+
 # SYNOPSIS
 
 **automatix**
@@ -437,7 +440,8 @@ From **automatix** 1.13.0 on you can use the reload scriptfile feature
  you are in interactive mode) you can use **-R** to reload the
  scriptfile. If lines in the scriptfile have changed, or you need to
  repeat steps, you can use R+/-$number to reload and adjust the
- restart point (available since **automatix** 1.14.0)  
+ restart point (available since **automatix** 1.14.0). NOTICE: If using
+ vars-file, this reloads the script ONLY the active CSV row!
 
 Repeat this procedure to automate more and more and increase quality,
  whenever you feel like it.
@@ -491,6 +495,7 @@ User input questions are of following categories:
 The terminal (T) answer starts an interactive Bash-Shell (/bin/bash -i).
  Therefore .bashrc is executed, but the command prompt (PS1) is
  replaced to indicate, we are still in an automatix process.
+ 
 
 # EXTRAS
 
@@ -510,3 +515,21 @@ or activation for automatix (e.g. in `.bashrc`)
     eval "$(register-python-argcomplete automatix)"
 
 Automatix will recognize the installed module and offer the completion automatically.
+
+## Progress bar (experimental)
+For activation of an "apt-like" progress bar based on the amount of commands
+ install `python_progress_bar` via pip and either set `AUTOMATIX_PROGRESS_BAR`
+ environment variable to an arbitrary value (not "False") or set `progress_bar`
+ to `true` in the config file.
+
+You can force deactivation in setting `AUTOMATIX_PROGRESS_BAR` environment variable
+ to "False" (overwrites config file setting).
+
+Note, that using commands that heavily modify the terminal behaviour/output
+ (such as `top`, `watch`, `glances`, ...), may lead to a unreadable
+ or undesirable output. It might be a better idea to encourage the user
+ to open a separate terminal and type these commands there.
+
+Using automatix itself as command should work, but may lead to confusing
+ output as well. Note, that the progress bar will be overwritten by the
+ new automatix instance for the duration of the automatix command.
