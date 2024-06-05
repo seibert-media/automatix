@@ -24,7 +24,8 @@ pipeline:
   - remote@testsystem: whoami
   - python: print('{myvar}')
   - cond=python: 'None'
-  - cond?python: print('Das ging wohl daneben')
+  - cond?python: | 
+      print(f'Das ging wohl daneben: {SYSTEMS.testsystem}')
   - cond!?python: print('Und nun?')
   - cond2=local: test "confluence" == "jira" && echo -n "True"; exit 0
   - cond2?python: print('Das ging wohl daneben 2')

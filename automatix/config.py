@@ -25,7 +25,7 @@ try:
 except ImportError:
     bash_completion = False
 
-VERSION = metadata.version('automatix')
+VERSION = metadata.version('automatix_cmd')
 
 DEPRECATED_SYNTAX = {
     # 0: REGEX pattern

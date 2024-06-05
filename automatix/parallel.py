@@ -80,10 +80,10 @@ def print_status_verbose(autos: Autos):
     print(f'------------------ Screens (max. {autos.max_parallel} running) ------------------')
     print_status(autos=autos)
     print('--------------------------------------------------------------')
-    print(f'waiting: {sorted(autos.waiting)}')
-    print(f'running: {sorted(autos.running)}')
+    print(f'waiting:             {sorted(autos.waiting)}')
+    print(f'running:             {sorted(autos.running)}')
     print(f'user input required: {red(sorted(autos.user_input))}')
-    print(f'finished: {sorted(autos.finished)}')
+    print(f'finished:            {sorted(autos.finished)}')
 
 
 def check_for_status_change(autos: Autos, status_file: str):
