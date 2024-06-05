@@ -31,9 +31,9 @@ DEPRECATED_SYNTAX = {
     # 0: REGEX pattern
     # 1: replacement, formatted with group = re.Match.groups(), e.g. 'something {group[0]} foo'
     # 2: special flags (p: python, b: Bundlewrap, s: replace '{s}' with pipe separated system names)
-    (r'({s})_node(?!\w)', 'NODES.{group[0]}', 'bps'),
-    (r'{\s*system_(\w*)\s*}', '{{SYSTEMS.{group[0]}}}', ''),
-    (r'{\s*const_(\w*)\s*}', '{{CONST.{group[0]}}}', ''),
+    (r'({s})_node(?!\w)', 'NODES.{group[0]}', 'bps'),  # Removed in 2.0.0
+    (r'{\s*system_(\w*)\s*}', '{{SYSTEMS.{group[0]}}}', ''),  # Removed in 2.0.0
+    (r'{\s*const_(\w*)\s*}', '{{CONST.{group[0]}}}', ''),  # Removed in 2.0.0
     (r'(?<!\w)global\s+(\w*)', 'PERSISTENT_VARS[\'{group[0]}\'] = {group[0]}', 'p'),
 }
 
@@ -248,9 +248,6 @@ def collect_vars(script: dict) -> dict:
                 var_dict[key] = bwtv.file(sid)
             else:
                 raise UnknownSecretTypeException(field)
-    for syskey, system in script.get('systems', {}).items():
-        # DEPRECATED, use SYSTEMS instead
-        var_dict[f'system_{syskey}'] = system.replace('hostname!', '')
     return var_dict
 
 

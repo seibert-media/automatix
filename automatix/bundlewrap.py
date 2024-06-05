@@ -17,8 +17,7 @@ class BWCommand(Command):
         for key, value in self.env.systems.items():
             if not value.startswith('hostname!'):
                 try:
-                    # DEPRECATED, use NODES instead
-                    locale_vars[f'{key}_node'] = self.env.config['bw_repo'].get_node(value)
+                    self.env.config['bw_repo'].get_node(value)
                 except NoSuchNode:
                     try:
                         self.env.config['bw_repo'].get_group(value)

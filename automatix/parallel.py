@@ -15,9 +15,6 @@ from .command import AbortException
 from .config import LOG, init_logger, CONFIG, PROGRESS_BAR, progress_bar
 
 # TODO parallel processing
-#  * update README
-#  * refactoring and testing
-#  * make things prettier...
 #  * logging to files?
 
 LINE_UP = '\033[1A'

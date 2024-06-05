@@ -95,10 +95,6 @@ class Command:
                 with open(os.path.expanduser(file_match.group(1))) as file:
                     variables[key] = file.read().strip()
 
-        for key, value in self.env.config['constants'].items():
-            # DEPRECATED, use CONST instead
-            variables[f'const_{key}'] = value
-
         variables['CONST'] = ConstantsWrapper(self.env.config['constants'])
         variables['SYSTEMS'] = SystemsWrapper(self.env.systems)
         return self.value.format(**variables)
