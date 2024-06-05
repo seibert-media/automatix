@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.0.1
+- Adjusted github workflow
+
 # 2.0.0
 - Decoupled from original repository
 - Rename repo and package: automatix -> automatix_cmd
