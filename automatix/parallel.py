@@ -1,3 +1,4 @@
+import argparse
 import os
 import pickle
 import select
@@ -11,7 +12,7 @@ from time import sleep
 from .automatix import Automatix
 from .colors import yellow, green, red, cyan
 from .command import AbortException
-from .config import LOG
+from .config import LOG, init_logger, CONFIG, PROGRESS_BAR, progress_bar
 
 # TODO parallel processing
 #  * update README
@@ -88,16 +89,43 @@ def print_status_verbose(autos: Autos):
     print(f'finished: {sorted(autos.finished)}')
 
 
-def run_overview(name: str):
-    tempdir, screen_id = name.rsplit(sep='/', maxsplit=1)
-    time_id = screen_id.split('_')[0]
+def check_for_status_change(autos: Autos, status_file: str):
+    with FileWithLock(status_file, 'r+') as sf:
+        for line in sf:
+            if not line:
+                continue
+            LOG.debug(f'Line: {line}')
+            auto_file, status = line.strip().split(':')
+            LOG.debug(f'Got {auto_file}:{status}')
+            match status:
+                case 'max_parallel':
+                    # In this case we misuse the "auto_file" part as number
+                    # for how many parallel screens are allowed.
+                    autos.max_parallel = int(auto_file)
+                    LOG.info(f'Now process max {auto_file} screens parallel')
+                case 'user_input_remove':
+                    autos.user_input.remove(auto_file)
+                case 'user_input_add':
+                    autos.user_input.add(auto_file)
+                    LOG.info(f'{auto_file} is waiting for user input')
+                case 'finished':
+                    autos.running.remove(auto_file)
+                    autos.finished.add(auto_file)
+                    LOG.info(f'{auto_file} finished')
+                case _:
+                    LOG.warning(f'[{auto_file}] Unrecognized status "{status}"\n')
+        sf.truncate(0)
+
+
+def run_manage_loop(tempdir: str, time_id: int):
+    status_file = f'{tempdir}/{time_id}_overview'
     auto_files = get_files(tempdir)
     autos = Autos(count=len(auto_files), waiting=auto_files)
 
     LOG.info(f'Found {autos.count} files to process. Screens name are like "{time_id}_autoX"')
     LOG.info('To switch to screens detach from this screen via "<ctrl>+a d".')
 
-    open(name, 'a').close()
+    open(status_file, 'a').close()
     try:
         while len(autos.finished) < autos.count:
             if len(autos.running) < autos.max_parallel and autos.waiting:
@@ -106,40 +134,17 @@ def run_overview(name: str):
                 LOG.info(f'Starting new screen at {time_id}_{auto_file}')
                 subprocess.run(
                     f'screen -d -m -S {time_id}_{auto_file}'
-                    f' automatix nonexistent --prepared-from-pipe {tempdir}/{auto_file}_{time_id}',
+                    f' automatix-from-file {tempdir} {time_id} {auto_file}',
                     # for debugging replace line above with:
-                    # f' bash -c "automatix nonexistent --prepared-from-pipe {tempdir}/{auto_file}_{time_id} || bash"',
+                    # f' bash -c "automatix-from-file {tempdir} {time_id} {auto_file} || bash"',
                     shell=True,
                 )
 
-            with FileWithLock(name, 'r+') as sf:
-                for line in sf:
-                    if not line:
-                        continue
-                    LOG.debug(f'Line: {line}')
-                    auto_file, status = line.strip().split(':')
-                    LOG.debug(f'Got {auto_file}:{status}')
-                    match status:
-                        case 'max_parallel':
-                            # In this case we misuse the "auto_file" part as number
-                            # for how many parallel screens are allowed.
-                            autos.max_parallel = int(auto_file)
-                            LOG.info(f'Now process max {auto_file} screens parallel')
-                        case 'user_input_remove':
-                            autos.user_input.remove(auto_file)
-                        case 'user_input_add':
-                            autos.user_input.add(auto_file)
-                            LOG.info(f'{auto_file} is waiting for user input')
-                        case 'finished':
-                            autos.running.remove(auto_file)
-                            autos.finished.add(auto_file)
-                            LOG.info(f'{auto_file} finished')
-                        case _:
-                            LOG.warning(f'[{auto_file}] Unrecognized status "{status}"\n')
-                sf.truncate(0)
+            check_for_status_change(autos=autos, status_file=status_file)
 
             print_status(autos=autos)
 
+            # Write status to file for screen switch loop
             with FileWithLock(f'{tempdir}/autos', 'wb') as f:
                 pickle.dump(obj=autos, file=f)
 
@@ -154,9 +159,26 @@ def run_overview(name: str):
             fifo.write('finished')
 
 
-def run_auto(name: str):
-    auto_path, time_id = name.rsplit('_', maxsplit=1)
-    tempdir, auto_file = auto_path.rsplit(sep='/', maxsplit=1)
+def run_manager():
+    parser = argparse.ArgumentParser(
+        description='Automatix manager for parallel processing (called by the automatix main programm)',
+        epilog='Explanations and README at https://github.com/vanadinit/automatix',
+    )
+    parser.add_argument('tempdir')
+    parser.add_argument('time_id')
+    parser.add_argument(
+        '--debug', '-d',
+        action='store_true',
+        help='activate debug log level',
+    )
+    args = parser.parse_args()
+
+    init_logger(name=CONFIG['logger'], debug=args.debug)
+    run_manage_loop(tempdir=args.tempdir, time_id=int(args.time_id))
+
+
+def run_auto(tempdir: str, time_id: int, auto_file: str):
+    auto_path = f'{tempdir}/{auto_file}'
 
     def send_status(status: str):
         with FileWithLock(f'{tempdir}/{time_id}_overview', 'a') as sf:
@@ -178,6 +200,26 @@ def run_auto(name: str):
     finally:
         send_status('finished')
         unlink(auto_path)
+
+
+def run_auto_from_file():
+    parser = argparse.ArgumentParser(
+        description='Automatix from file for parallel processing (called by the automatix-manager)',
+        epilog='Explanations and README at https://github.com/vanadinit/automatix',
+    )
+    parser.add_argument('tempdir')
+    parser.add_argument('time_id')
+    parser.add_argument('auto_file')
+    args = parser.parse_args()
+
+    try:
+        if PROGRESS_BAR:
+            progress_bar.setup_scroll_area()
+
+        run_auto(tempdir=args.tempdir, time_id=args.time_id, auto_file=args.auto_file)
+    finally:
+        if PROGRESS_BAR:
+            progress_bar.destroy_scroll_area()
 
 
 def screen_switch_loop(tempdir: str, time_id: int):
@@ -234,7 +276,7 @@ def screen_switch_loop(tempdir: str, time_id: int):
                 subprocess.run(f'screen -r {screen_id}', shell=True)
                 sleep(1)
     except (KeyboardInterrupt, Exception) as exc:
-        print('\n'*8)
+        print('\n' * 8)
         LOG.exception(exc)
         LOG.info('\nAn exception occurred! Please decide what to do:')
         match input(

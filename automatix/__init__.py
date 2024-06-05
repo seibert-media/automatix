@@ -15,8 +15,7 @@ from .config import (
     arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION, init_logger,
     PROGRESS_BAR, progress_bar
 )
-from .parallel import print_status_verbose, screen_switch_loop, run_overview, run_auto
-
+from .parallel import print_status_verbose, screen_switch_loop
 
 
 def setup(args: Namespace):
@@ -128,8 +127,7 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
         os.mkfifo(f'{tempdir}/{time_id}_finished')
         subprocess.run(
             f'screen -d -m -S {time_id}_overview'
-            f' automatix nonexistent {"--debug" if args.debug else ""}'
-            f' --prepared-from-pipe "{tempdir}/{time_id}_overview"',
+            f' automatix-manager {tempdir} {time_id} {"--debug" if args.debug else ""}',
             shell=True,
         )
 
@@ -156,12 +154,9 @@ def main():
     args = arguments()
     setup(args=args)
 
-    if (pipe := args.prepared_from_pipe) and pipe.endswith('overview'):
-        run_overview(name=pipe)
-        sys.exit(0)
+    script, batch_items = get_script_and_batch_items(args=args)
 
     if args.vars_file and args.parallel:
-        script, batch_items = get_script_and_batch_items(args=args)
         run_parallel_screens(script=script, batch_items=batch_items, args=args)
         sys.exit(0)
 
@@ -169,11 +164,6 @@ def main():
         if PROGRESS_BAR:
             progress_bar.setup_scroll_area()
 
-        if pipe := args.prepared_from_pipe:
-            run_auto(name=pipe)
-            sys.exit(0)
-
-        script, batch_items = get_script_and_batch_items(args=args)
         run_batch_items(script=script, batch_items=batch_items, args=args)
     finally:
         if PROGRESS_BAR:

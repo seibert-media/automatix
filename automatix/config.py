@@ -95,7 +95,7 @@ if (CONFIG.get('progress_bar', False) or os.getenv('AUTOMATIX_PROGRESS_BAR', Fal
 def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description='Automation wrapper for bash and python commands.',
-        epilog='Explanations and README at https://github.com/seibert-media/automatix',
+        epilog='Explanations and README at https://github.com/vanadinit/automatix',
     )
     scriptfile_action = parser.add_argument(
         'scriptfile',
