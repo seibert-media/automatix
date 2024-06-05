@@ -6,7 +6,7 @@ from automatix.command import Command, parse_key
 from tests.test_environment import environment, run_command_and_check, ssh_up
 
 
-def test__execute_remote_cmd(ssh_up):
+def test__integration__execute_remote_cmd(ssh_up):
     cmd = Command(
         cmd={'remote@testsystem': 'touch /test_remote_cmd'},
         index=2,

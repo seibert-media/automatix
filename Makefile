@@ -1,4 +1,4 @@
 default: test
 
 test:
-	pytest -s
+	pytest -v
