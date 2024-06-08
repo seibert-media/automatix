@@ -118,6 +118,7 @@ def run_manage_loop(tempdir: str, time_id: int):
     status_file = f'{tempdir}/{time_id}_overview'
     auto_files = get_files(tempdir)
     autos = Autos(count=len(auto_files), waiting=auto_files)
+    logfile_dir = f'{CONFIG.get("logfile_dir")}/{time_id}'
 
     LOG.info(f'Found {autos.count} files to process. Screens name are like "{time_id}_autoX"')
     LOG.info('To switch to screens detach from this screen via "<ctrl>+a d".')
@@ -131,6 +132,7 @@ def run_manage_loop(tempdir: str, time_id: int):
                 LOG.info(f'Starting new screen at {time_id}_{auto_file}')
                 subprocess.run(
                     f'screen -d -m -S {time_id}_{auto_file}'
+                    f' -L -Logfile {logfile_dir}/{auto_file}.log'
                     f' automatix-from-file {tempdir} {time_id} {auto_file}',
                     # for debugging replace line above with:
                     # f' bash -c "automatix-from-file {tempdir} {time_id} {auto_file} || bash"',

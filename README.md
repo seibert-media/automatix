@@ -92,7 +92,7 @@ All (string) configuration values can be overwritten by the
     # Logging library (has to implement the init_logger method)
     logging_lib: 'mylib.logging'
 
-    # Logfile directory for parallel processing
+    # Logfile directory for parallel processing (ONLY for parallel processing!)
     logfile_dir: 'automatix_logs'
     
     # Bundlewrap support, bundlewrap has to be installed (default: false)
@@ -403,9 +403,13 @@ Additionally you can modify the environment to adjust things to your
 
 # TIPS & TRICKS
 
+### YAML Syntax
+
 For multiline commands and variables YAML offers different possibilities
  to write multiline strings. A look at https://yaml-multiline.info/ might
  be helpful.  
+
+### PERSISTENT_VARS
 
 If you want to access variables in **python** action you defined in
 preceeding command, you can use the **PERSISTENT_VARS** dictionary
@@ -436,12 +440,25 @@ Explanation: automatix is written in Python and uses 'exec' to
  execute the command in function context. If you declare variables
  globally they remain across commands.
 
+### Abort and Skip Exceptions
+
 To abort the current automatix and jump to the next batch item you can
  raise the `SkipBatchItemException`. For aborting the whole automatix
  process raise `AbortException(return_code: int)`. In both cases the
  cleanup pipeline is executed. Same is the case for selecting
  `a`:abort or `c`:continue when asked (interactive or error).
- 
+
+### Logging / Saving the output
+
+**automatix** offers no own capability to log the output to a log file or
+ save it otherwise.  
+
+If you have _GNU screen_ installed, you may start a screen session with
+ `-L` and optional `-Logfile LOGFILE` in which you start **automatix**.
+ (This is how it works with "parallel processing", see **EXTRAS** section.)
+
+A different approach is to use `tee`, e.g. `automatix [script file + options] 2>&1 | tee auto.log`.
+ Different to the screen approach this seems not to capture your input.
 
 # BEST PRACTISES
 
@@ -534,6 +551,11 @@ By default the programm starts with 2 parallel automatix instances. Use the main
 If you force the programm to terminate (e.g. keyboard interrupt, process kill, ...),
  check for still running screen processes via `screen -list`. They are independent and may continue
  running. Cleanup manually, if necessary.
+
+The screens write their output to log files in the specified **logfile_dir** (see **CONFIGURATION** section).
+ These logfiles contain the escape sequences that are used to provide the colored output an the terminal.
+ You can use a pager that supports interpreting these sequences like the terminal to have a similar
+ experience (`more` or `less -r` worked for me).
 
 ## Bash completion (experimental)
 Automatix supports bash completion for parameters and the script directory via [argcomplete](https://github.com/kislyuk/argcomplete).
