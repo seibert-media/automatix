@@ -14,15 +14,14 @@ from .colors import yellow, green, red, cyan
 from .command import AbortException
 from .config import LOG, init_logger, CONFIG, PROGRESS_BAR, progress_bar
 
-# TODO parallel processing
-#  * logging to files?
-
 LINE_UP = '\033[1A'
 LINE_CLEAR = '\x1b[2K'
 
 
 @dataclass
 class Autos:
+    status_file: str
+    time_id: int
     count: int
 
     max_parallel: int = 2
@@ -117,7 +116,7 @@ def check_for_status_change(autos: Autos, status_file: str):
 def run_manage_loop(tempdir: str, time_id: int):
     status_file = f'{tempdir}/{time_id}_overview'
     auto_files = get_files(tempdir)
-    autos = Autos(count=len(auto_files), waiting=auto_files)
+    autos = Autos(status_file=status_file, time_id=time_id, count=len(auto_files), waiting=auto_files)
     logfile_dir = f'{CONFIG.get("logfile_dir")}/{time_id}'
 
     LOG.info(f'Found {autos.count} files to process. Screens name are like "{time_id}_autoX"')
@@ -194,7 +193,8 @@ def run_auto(tempdir: str, time_id: int, auto_file: str):
     except AbortException as exc:
         sys.exit(int(exc))
     except KeyboardInterrupt:
-        LOG.warning('\nAborted by user. Exiting.')
+        print()
+        LOG.warning('Aborted by user. Exiting.')
         sys.exit(130)
     finally:
         send_status('finished')
@@ -221,6 +221,51 @@ def run_auto_from_file():
             progress_bar.destroy_scroll_area()
 
 
+def ask_for_options(autos: Autos) -> str | None:
+    print()
+    LOG.notice('Please notice: To come back to this selection press "<ctrl>+a d" in a screen session!')
+    LOG.info('Following options are available:')
+    LOG.info(
+        'o: overview / manager loop,'
+        ' n: next user input required,'
+        ' X (number): switch to autoX,'
+        f' mX: set max parallel screens to X (actual {autos.max_parallel})\n'
+    )
+    i, _, _ = select.select([sys.stdin], [], [], 1)
+    if i:
+        answer = sys.stdin.readline().strip()
+    else:
+        return
+
+    if answer == '':
+        return
+
+    if answer == 'o':
+        return f'{autos.time_id}_overview'
+
+    if answer == 'n' and autos.user_input:
+        return f'{autos.time_id}_{next(iter(autos.user_input))}'
+
+    if answer.startswith('m'):
+        try:
+            max_parallel = int(answer[1:])
+            with FileWithLock(autos.status_file, 'a') as sf:
+                sf.write(f'{max_parallel}:max_parallel\n')
+            return
+        except ValueError:
+            LOG.warning(f'Invalid answer: {answer}')
+            sleep(1)
+            return
+
+    try:
+        number = int(answer)
+        return f'{autos.time_id}_auto{str(number).rjust(len(str(autos.count)), "0")}'
+    except ValueError:
+        LOG.warning(f'Invalid answer: {answer}')
+        sleep(1)
+        return
+
+
 def screen_switch_loop(tempdir: str, time_id: int):
     try:
         while not isfile(f'{tempdir}/autos'):
@@ -233,51 +278,17 @@ def screen_switch_loop(tempdir: str, time_id: int):
             if len(autos.running) + len(autos.waiting) + len(autos.user_input) == 0:
                 break
 
-            print()
-            LOG.notice('Please notice: To come back to this selection press "<ctrl>+a d" in a screen session!')
-            LOG.info('Following options are available:')
-            LOG.info(
-                'o: overview / manager loop,'
-                ' n: next user input required,'
-                ' X (number): switch to autoX,'
-                f' mX: set max parallel screens to X (actual {autos.max_parallel})\n'
-            )
-            i, _, _ = select.select([sys.stdin], [], [], 1)
-            if i:
-                answer = sys.stdin.readline().strip()
-            else:
-                answer = ''
-
-            screen_id = None
-            if answer == 'o':
-                screen_id = f'{time_id}_overview'
-            elif answer == 'n' and autos.user_input:
-                screen_id = f'{time_id}_{next(iter(autos.user_input))}'
-            elif answer == '':
-                for _ in range(12):
-                    print(LINE_UP, end=LINE_CLEAR)
-                continue
-            elif answer.startswith('m'):
-                try:
-                    max_parallel = int(answer[1:])
-                    with FileWithLock(f'{tempdir}/{time_id}_overview', 'a') as sf:
-                        sf.write(f'{max_parallel}:max_parallel\n')
-                except ValueError:
-                    pass
-            # elif answer == 'b': # for debugging
-            #    break            # for debugging
-            else:
-                try:
-                    screen_id = f'{time_id}_auto{str(int(answer)).rjust(len(str(autos.count)), "0")}'
-                except ValueError:
-                    LOG.warning(f'Invalid answer: {answer}')
-            if screen_id:
+            if screen_id := ask_for_options(autos=autos):
                 subprocess.run(f'screen -r {screen_id}', shell=True)
                 sleep(1)
+            else:
+                for _ in range(12):
+                    print(LINE_UP, end=LINE_CLEAR)
     except (KeyboardInterrupt, Exception) as exc:
         print('\n' * 8)
         LOG.exception(exc)
-        LOG.info('\nAn exception occurred! Please decide what to do:')
+        print()
+        LOG.info('An exception occurred! Please decide what to do:')
         match input(
             'Press "r" and Enter to reraise.'
             ' This will cause this programm to terminate.'

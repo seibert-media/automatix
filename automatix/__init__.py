@@ -88,7 +88,8 @@ def run_batch_items(script: dict, batch_items: list, args: Namespace):
         except AbortException as exc:
             sys.exit(int(exc))
         except KeyboardInterrupt:
-            LOG.warning('\nAborted by user. Exiting.')
+            print()
+            LOG.warning('Aborted by user. Exiting.')
             sys.exit(130)
 
 

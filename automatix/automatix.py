@@ -77,15 +77,17 @@ class Automatix:
         self._command_lists = {}  # Clear cache
 
     def print_main_data(self):
-        self.env.LOG.info('\n\n')
+        print('\n')
         self.env.LOG.info(' ------ Overview ------')
         for field_key, field_value in self.script_fields.items():
-            self.env.LOG.info(f'\n{field_value}:')
+            print()
+            self.env.LOG.info(f'{field_value}:')
             for key, value in self.script.get(field_key, {}).items():
                 self.env.LOG.info(f" {key}: {value}")
 
     def print_command_line_steps(self, command_list: List[Command]):
-        self.env.LOG.info('\nCommandline Steps:')
+        print()
+        self.env.LOG.info('Commandline Steps:')
         for cmd in command_list:
             self.env.LOG.info(f"({cmd.index}) [{cmd.orig_key}]: {cmd.get_resolved_value()}")
 
@@ -97,13 +99,15 @@ class Automatix:
                     if steps and (self.script['exclude'] == (cmd.index in steps)):
                         # Case 1: exclude is True  and index is in steps => skip
                         # Case 2: exclude is False and index is in steps => execute
-                        self.env.LOG.notice(f'\n({cmd.index}) Not selected for execution: skip')
+                        print()
+                        self.env.LOG.notice(f'({cmd.index}) Not selected for execution: skip')
                         continue
                     cmd.execute(interactive=self.env.cmd_args.interactive, force=self.env.cmd_args.force)
                 else:
                     cmd.execute()
         except ReloadFromFile as exc:
-            self.env.LOG.info(f'\nReload script from file and retry => ({exc.index})')
+            print()
+            self.env.LOG.info(f'Reload script from file and retry => ({exc.index})')
             self.reload_script()
             self._execute_command_list(name=name, start_index=exc.index, treat_as_main=treat_as_main)
 
@@ -118,16 +122,18 @@ class Automatix:
             treat_as_main = False
             start_index = 0
 
-        self.env.LOG.info('\n------------------------------')
+        print()
+        self.env.LOG.info('------------------------------')
         self.env.LOG.info(f' --- Start {name.upper()} pipeline ---')
 
         self._execute_command_list(name=name, start_index=start_index, treat_as_main=treat_as_main)
 
-        self.env.LOG.info(f'\n --- End {name.upper()} pipeline ---')
+        print()
+        self.env.LOG.info(f' --- End {name.upper()} pipeline ---')
         self.env.LOG.info('------------------------------\n')
 
     def run(self):
-        self.env.LOG.info('\n\n')
+        print('\n')
         self.env.LOG.info('//////////////////////////////////////////////////////////////////////')
         self.env.LOG.info(f"---- {self.script['name']} ----")
         self.env.LOG.info('//////////////////////////////////////////////////////////////////////')
