@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='automatix_cmd',
-    version='2.0.1',
+    version='2.1.0',
     description='Automation wrapper for bash and python commands',
     keywords=['bash', 'shell', 'command', 'automation', 'process', 'wrapper', 'devops', 'system administration'],
     long_description=long_description,
