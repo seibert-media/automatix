@@ -160,7 +160,7 @@ def arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _overwrite(script: dict, key: str, data: str):
+def _overwrite(script: dict, key: str, data: list[str]):
     script.setdefault(key, {})
     for item in data:
         k, v = item.split('=')

@@ -1,7 +1,18 @@
 default: test
 
-test:
-	pytest -v
+test: unittest integration-test flake
+
+unittest:
+	@echo
+	pytest -v -k "not integration"
+
+integration-test:
+	@echo
+	pytest -v -k "integration"
+
+flake:
+	@echo
+	@echo "---------------- flake ----------------"
 	# stop the build if there are Python syntax errors or undefined names
 	flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 	# exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
