@@ -44,11 +44,12 @@ SCRIPT_FIELDS['vars'] = 'Variables'
 CONFIG = {
     'script_dir': '~/automatix-config',
     'constants': {},
-    'encoding': os.getenv('ENCODING', 'utf-8'),
+    'encoding': 'utf-8',
     'import_path': '.',
     'ssh_cmd': 'ssh {hostname} sudo ',
     'remote_tmp_dir': 'automatix_tmp',
     'logger': 'automatix',
+    'logfile_dir': 'automatix_logs',
     'bundlewrap': False,
     'teamvault': False,
 }
@@ -58,8 +59,11 @@ if os.path.isfile(configfile):
     CONFIG.update(read_yaml(configfile))
     CONFIG['config_file'] = configfile
 
-if os.getenv('AUTOMATIX_SCRIPT_DIR'):
-    CONFIG['script_dir'] = os.getenv('AUTOMATIX_SCRIPT_DIR')
+for key, value in CONFIG.items():
+    if not isinstance(value, str):
+        continue
+    if os.getenv(f'AUTOMATIX_{key.upper()}'):
+        CONFIG[key] = os.getenv(f'AUTOMATIX_{key.upper()}')
 
 if CONFIG.get('logging_lib'):
     log_lib = import_module(CONFIG.get('logging_lib'))

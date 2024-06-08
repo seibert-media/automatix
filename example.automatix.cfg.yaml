@@ -1,5 +1,5 @@
 # Path to scripts directory
-script_dir: ~/automatix_script_files
+script_dir: '~/automatix_script_files'
 
 # Global constants for use in pipeline scripts
 constants:
@@ -8,7 +8,7 @@ constants:
   apt_full_upgrade: 'DEBIAN_FRONTEND=noninteractive apt-get -qy -o Dpkg::Options::=--force-confold --no-install-recommends full-upgrade'
 
 # Encoding
-encoding: utf-8
+encoding: 'utf-8'
 
 # Path to shell imports
 import_path: '.'
@@ -20,10 +20,13 @@ ssh_cmd: 'ssh {hostname} sudo '
 remote_tmp_dir: 'automatix_tmp'
 
 # Logger
-logger: mylogger
+logger: 'mylogger'
 
 # Logging library
-logging_lib: mylib.logging
+logging_lib: 'mylib.logging'
+
+# Logfile directory for parallel processing
+logfile_dir: 'automatix_logs'
 
 # Bundlewrap support, bundlewrap has to be installed (default: false)
 bundlewrap: true

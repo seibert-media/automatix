@@ -125,6 +125,11 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
 
         time_id = round(time())
         os.mkfifo(f'{tempdir}/{time_id}_finished')
+
+        logfile_dir = f'{CONFIG.get("logfile_dir")}/{time_id}'
+        os.makedirs(logfile_dir)
+        LOG.info(f'Created directory for logfiles at {logfile_dir}')
+
         subprocess.run(
             f'screen -d -m -S {time_id}_overview'
             f' automatix-manager {tempdir} {time_id} {"--debug" if args.debug else ""}',
@@ -132,6 +137,7 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
         )
 
         LOG.info(f'Overview / manager screen started at "{time_id}_overview".')
+
         LOG.info('Start loop with information to switch between running screens.\n')
         screen_switch_loop(tempdir=tempdir, time_id=time_id)
 
@@ -141,6 +147,7 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
             for _ in fifo:
                 LOG.info('Automatix finished parallel processing')
     LOG.info('Temporary directory cleaned up')
+    LOG.info(f'All logfiles are available at {logfile_dir}')
 
 
 def main():
