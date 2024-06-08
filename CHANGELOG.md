@@ -1,5 +1,9 @@
 # Changelog
 
+# 2.1.0
+- Logging to file for parallel processing and logging section in TIPS & TRICKS
+- Overwriting configuration by environment variables for all configuration values of `string` type.
+
 # 2.0.1
 - Adjusted github workflow
 
