@@ -40,9 +40,11 @@ class BWCommand(Command):
                 group: Group = bw_repo.get_group(system)
             except NoSuchGroup:
                 raise exc
-            self.env.LOG.info(f'\n --- Executing command for all nodes in BW group >{group.name}< ---')
+            print()
+            self.env.LOG.info(f' --- Executing command for all nodes in BW group >{group.name}< ---')
             for node in group.nodes:
-                self.env.LOG.info(f'\n- {node.name} -')
+                print()
+                self.env.LOG.info(f'- {node.name} -')
                 self._remote_bw_group_action(node=node)
             return 0
 

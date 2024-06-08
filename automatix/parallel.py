@@ -193,7 +193,8 @@ def run_auto(tempdir: str, time_id: int, auto_file: str):
     except AbortException as exc:
         sys.exit(int(exc))
     except KeyboardInterrupt:
-        LOG.warning('\nAborted by user. Exiting.')
+        print()
+        LOG.warning('Aborted by user. Exiting.')
         sys.exit(130)
     finally:
         send_status('finished')
@@ -250,8 +251,10 @@ def ask_for_options(autos: Autos) -> str | None:
             max_parallel = int(answer[1:])
             with FileWithLock(autos.status_file, 'a') as sf:
                 sf.write(f'{max_parallel}:max_parallel\n')
+            return
         except ValueError:
             LOG.warning(f'Invalid answer: {answer}')
+            sleep(1)
             return
 
     try:
@@ -259,6 +262,7 @@ def ask_for_options(autos: Autos) -> str | None:
         return f'{autos.time_id}_auto{str(number).rjust(len(str(autos.count)), "0")}'
     except ValueError:
         LOG.warning(f'Invalid answer: {answer}')
+        sleep(1)
         return
 
 
@@ -283,7 +287,8 @@ def screen_switch_loop(tempdir: str, time_id: int):
     except (KeyboardInterrupt, Exception) as exc:
         print('\n' * 8)
         LOG.exception(exc)
-        LOG.info('\nAn exception occurred! Please decide what to do:')
+        print()
+        LOG.info('An exception occurred! Please decide what to do:')
         match input(
             'Press "r" and Enter to reraise.'
             ' This will cause this programm to terminate.'

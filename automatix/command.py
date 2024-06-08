@@ -110,7 +110,8 @@ class Command:
             progress_bar.draw_progress_bar(self.progress_portion)
 
     def _execute(self, interactive: bool = False, force: bool = False):
-        self.env.LOG.notice(f'\n({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
+        print()
+        self.env.LOG.notice(f'({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
 
         if not self._check_condition():
             self.env.LOG.info('Skip command, because the condition is not met.')
@@ -129,7 +130,8 @@ class Command:
         return_code = self._execute_action()
 
         if 'AUTOMATIX_TIME' in os.environ:
-            self.env.LOG.info(f'\n(command execution time: {round(time() - steptime)}s)')
+            print()
+            self.env.LOG.info(f'(command execution time: {round(time() - steptime)}s)')
 
         if return_code != 0:
             self.env.LOG.error(
@@ -217,7 +219,8 @@ class Command:
             return self._ask_user_with_options(question=question, allowed_options=allowed_options)
 
         if answer == 'T':
-            self.env.LOG.notice('\nStarting interactive terminal shell')
+            print()
+            self.env.LOG.notice('Starting interactive terminal shell')
             self._run_local_command(
                 f'AUTOMATIX_SHELL=True'
                 f' {SHELL_EXECUTABLE}'
