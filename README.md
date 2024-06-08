@@ -59,11 +59,14 @@ you should have only installed **ONE** of them!
 You can specify a path to a configuration YAML file via the
  environment variable **AUTOMATIX_CONFIG**.
 Default location is "~/.automatix.cfg.yaml".
+All (string) configuration values can be overwritten by the
+ corresponding upper case environment variables preceeded
+ by 'AUTOMATIX_', e.g. _AUTOMATIX_ENCODING_.
 
 ### Example: .automatix.cfg.yaml
 
     # Path to scripts directory
-    script_dir: ~/automatix_script_files
+    script_dir: '~/automatix_script_files'
     
     # Global constants for use in pipeline scripts
     constants:
@@ -72,7 +75,7 @@ Default location is "~/.automatix.cfg.yaml".
       apt_full_upgrade: 'DEBIAN_FRONTEND=noninteractive apt-get -qy -o Dpkg::Options::=--force-confold --no-install-recommends full-upgrade'
     
     # Encoding
-    encoding: utf-8
+    encoding: 'utf-8'
     
     # Path for shell imports
     import_path: '.'
@@ -84,10 +87,13 @@ Default location is "~/.automatix.cfg.yaml".
     remote_tmp_dir: 'automatix_tmp'
     
     # Logger
-    logger: mylogger
+    logger: 'mylogger'
     
     # Logging library (has to implement the init_logger method)
-    logging_lib: mylib.logging
+    logging_lib: 'mylib.logging'
+
+    # Logfile directory for parallel processing
+    logfile_dir: 'automatix_logs'
     
     # Bundlewrap support, bundlewrap has to be installed (default: false)
     bundlewrap: true
@@ -384,13 +390,12 @@ Intended use case for **cleanup**: Remove temporary files or artifacts.
 **AUTOMATIX_CONFIG**: Specify the path to the configuration file.
  Default is "~/.automatix.cfg.yaml".  
 
-**AUTOMATIX_SCRIPT_DIR**: Set or overwrite directory where script files
- are located (and searched in case of autocompletion).  
+**AUTOMATIX_**_config-variable-in-upper-case_: Set or overwrite the 
+ corresponding configuration value. See **CONFIGURATION** section.
+ Works only for string values!  
 
 **AUTOMATIX_TIME**: Set this to an arbitrary value to print the times
  for the single steps and the whole script.  
-
-**ENCODING**: Specify output encoding. Default is "UTF-8".  
 
 Additionally you can modify the environment to adjust things to your
  needs.

@@ -1,3 +1,4 @@
+automatix_logs/
 build/
 dist/
 .automatix.cfg.yaml
