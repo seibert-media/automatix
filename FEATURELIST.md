@@ -5,7 +5,7 @@
 - Stop and print manual instructions
 - Interactive and force mode
 - Select steps to execute (start, only, exclude)
-- Exception / error catching and interactive handling (retry, reload from file, jump forward/backward, skip, abort, terminal)
+- Exception / error catching and interactive handling (retry, reload from file, jump forward/backward, skip, abort, terminal, change variable)
 - Beforehand (always) and cleanup commands
 
 - Read Automatix variables from file (FILE_)
