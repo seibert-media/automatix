@@ -30,6 +30,7 @@ AUTOMATIX_PROMPT = r'\[\033[0;31m\] Automatix \[\033[0m\]\\w > '
 POSSIBLE_ANSWERS = {
     'p': 'proceed (default)',
     'T': f'start interactive terminal shell ({SHELL_EXECUTABLE} -i) and return back here on exit',
+    'v': 'show and change variables',
     'r': 'retry',
     'R': 'reload from file and retry command (same index)',
     'R±X': 'same as R, but change index by X (integer)',
@@ -99,19 +100,43 @@ class Command:
         variables['SYSTEMS'] = SystemsWrapper(self.env.systems)
         return self.value.format(**variables)
 
+    def print_command(self):
+        print()
+        self.env.LOG.notice(f'({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
+
+    def show_and_change_variables(self):
+        print()
+        self.env.LOG.info('Variables:')
+        for key, value in self.env.vars.items():
+            self.env.LOG.info(f" {key}: {value}")
+        print()
+        self.env.LOG.info('To change/set variable write variable + "=" followed by value.')
+        self.env.LOG.info('Example: var1=xyz')
+        self.env.LOG.info('Notice: You can only change 1 variable at a time. Repeat if necessary.')
+        self.env.LOG.info('To not change anything just press "ENTER".')
+        answer = input('\n')
+        try:
+            key, value = answer.split('=', maxsplit=1)
+            self.env.vars[key.strip()] = value.strip()
+            self.env.LOG.info(f'Variable {key.strip()} = {value.strip()}')
+        except ValueError:
+            if answer:
+                self.env.LOG.error('Input could not be parsed.')
+        self.print_command()
+        print()
+
     def execute(self, interactive: bool = False, force: bool = False):
         try:
             self._execute(interactive=interactive, force=force)
         except (KeyError, UnknownCommandException):
             self.env.LOG.exception('Syntax or value error!')
             self.env.LOG.error('Syntax or value error! Please fix your script and reload/restart.')
-            self._ask_user(question='[SE] What should I do?', allowed_options=['R', 'T', 's', 'a'])
+            self._ask_user(question='[SE] What should I do?', allowed_options=['R', 'T', 'v', 's', 'a'])
         if PROGRESS_BAR:
             progress_bar.draw_progress_bar(self.progress_portion)
 
     def _execute(self, interactive: bool = False, force: bool = False):
-        print()
-        self.env.LOG.notice(f'({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
+        self.print_command()
 
         if not self._check_condition():
             self.env.LOG.info('Skip command, because the condition is not met.')
@@ -120,7 +145,7 @@ class Command:
         if self.get_type() == 'manual' or interactive:
             self.env.LOG.debug('Ask for user interaction.')
 
-            answer = self._ask_user(question='[MS] Proceed?', allowed_options=['p', 'T', 's', 'R', 'a'])
+            answer = self._ask_user(question='[MS] Proceed?', allowed_options=['p', 'T', 'v', 's', 'R', 'a'])
             # answers 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
             if answer == 's' or self.get_type() == 'manual':
                 return
@@ -139,8 +164,11 @@ class Command:
             if force:
                 return
 
-            err_answer = self._ask_user(question='[CF] What should I do?', allowed_options=['p', 'T', 'r', 'R', 'a'])
-            # answers 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
+            err_answer = self._ask_user(
+                question='[CF] What should I do?',
+                allowed_options=['p', 'T', 'v', 'r', 'R', 'a'],
+            )
+            # answers 'T', 'v', 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
             if err_answer == 'r':
                 return self._execute(interactive)
 
@@ -227,6 +255,10 @@ class Command:
                 f' --rcfile <(cat ~/.bashrc ; echo "PS1=\\"{AUTOMATIX_PROMPT}\\"")'
                 f' -i'
             )
+            return self._ask_user_with_options(question=question, allowed_options=allowed_options)
+
+        if answer == 'v':
+            self.show_and_change_variables()
             return self._ask_user_with_options(question=question, allowed_options=allowed_options)
 
         if answer == 'a':
