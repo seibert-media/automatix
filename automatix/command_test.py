@@ -1,4 +1,7 @@
+import builtins
+from copy import deepcopy
 from subprocess import CalledProcessError
+from unittest import mock
 
 import pytest
 
@@ -42,6 +45,15 @@ def test__execute_local_cmd(capfd):
 
 
 def test__execute_local_with_condition(capfd):
+    env = deepcopy(environment)
+    env.vars.update({
+        'false_var': False,
+        'true_var': True,
+        'empty_var': '',
+        'none_var': None,
+        'example_string': 'example',
+    })
+
     condition_tests = {
         'false_var': False,
         'true_var': True,
@@ -58,7 +70,7 @@ def test__execute_local_with_condition(capfd):
             cmd={f'{condition_var}?local': 'pwd'},
             pipeline='pipeline',
             index=2,
-            env=environment,
+            env=env,
             position=1,
         )
         cmd.execute()
@@ -87,4 +99,30 @@ def test__parse_key():
     assert parse_key('remote@v1') == (None, None, 'remote@v1')
     assert parse_key('host=remote@v1') == (None, 'host', 'remote@v1')
     assert parse_key('is_jira?host=remote@v1') == ('is_jira', 'host', 'remote@v1')
-    assert parse_key('is_jira?python') == ('is_jira', None, 'python')
+    assert parse_key('is_jira!?python') == ('is_jira!', None, 'python')
+
+
+def test__show_and_change_variables():
+    cmd = Command(cmd={'python': 'pass'}, index=2, pipeline='pipeline', env=deepcopy(environment), position=1)
+    assert cmd.env.vars == {
+        'a': '{a}',
+        'myvar': 'huhu',
+        'cond': '{cond}',
+        'cond2': '{cond2}',
+    }
+    with mock.patch.object(builtins, 'input', lambda _: 'var1=xyz'):
+        cmd.show_and_change_variables()
+
+    with mock.patch.object(builtins, 'input', lambda _: 'myvar=hallo'):
+        cmd.show_and_change_variables()
+
+    with mock.patch.object(builtins, 'input', lambda _: ' cond2  =  !dgkls=432 \n\t  '):
+        cmd.show_and_change_variables()
+
+    assert cmd.env.vars == {
+        'a': '{a}',
+        'myvar': 'hallo',
+        'cond': '{cond}',
+        'cond2': '!dgkls=432',
+        'var1': 'xyz',
+    }
