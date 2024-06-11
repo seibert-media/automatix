@@ -18,11 +18,23 @@ from .config import (
 from .parallel import screen_switch_loop
 
 
+def check_for_original_automatix():
+    p = subprocess.run('pip list | grep automatix', shell=True, stdout=subprocess.PIPE)
+
+    for line in p.stdout.decode().split('\n'):
+        if line.strip().split(' ', maxsplit=1)[0].strip() == 'automatix':
+            raise Exception(
+                'This package MUST NOT be installed along with the "automatix" package.'
+                ' Both packages use the same entry point and module names and therefore'
+                ' are conflicting. Please uninstall automatix AND automatix_cmd first,'
+                ' THEN reinstall the package you want to use!')
+
+
 def setup(args: Namespace):
     """Setup logger and print version information"""
     init_logger(name=CONFIG['logger'], debug=args.debug)
 
-    LOG.info(f'Automatix Version {VERSION}')
+    LOG.info(f'Automatix Version {VERSION} (automatix_cmd)')
 
     configfile = CONFIG.get('config_file')
     if configfile:
@@ -152,6 +164,8 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
 
 
 def main():
+    check_for_original_automatix()
+
     if os.getenv('AUTOMATIX_SHELL'):
         print('You are running Automatix from an interactive shell of an already running Automatix!')
         answer = input('Do you really want to proceed? Then type "yes" and ENTER.\n')

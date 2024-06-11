@@ -37,14 +37,6 @@ testauto = Automatix(
     batch_index=1,
 )
 
-testauto.env.vars.update({
-    'false_var': False,
-    'true_var': True,
-    'empty_var': '',
-    'none_var': None,
-    'example_string': 'example',
-})
-
 testauto.env.attach_logger()
 
 environment = testauto.env
