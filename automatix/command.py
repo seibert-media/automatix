@@ -236,7 +236,7 @@ class Command:
         if answer == '':  # default
             answer = 'p'
 
-        if 'R' in allowed_options and len(answer) > 1 and answer.startswith('R'):
+        if answer.startswith('R') and 'R' in allowed_options and len(answer) > 1:
             try:
                 raise ReloadFromFile(index=self.index + int(answer[1:]))
             except ValueError:
@@ -246,29 +246,28 @@ class Command:
             self.env.LOG.warning('Invalid input. Try again.')
             return self._ask_user_with_options(question=question, allowed_options=allowed_options)
 
-        if answer == 'T':
-            print()
-            self.env.LOG.notice('Starting interactive terminal shell')
-            self._run_local_command(
-                f'AUTOMATIX_SHELL=True'
-                f' {SHELL_EXECUTABLE}'
-                f' --rcfile <(cat ~/.bashrc ; echo "PS1=\\"{AUTOMATIX_PROMPT}\\"")'
-                f' -i'
-            )
-            return self._ask_user_with_options(question=question, allowed_options=allowed_options)
-
-        if answer == 'v':
-            self.show_and_change_variables()
-            return self._ask_user_with_options(question=question, allowed_options=allowed_options)
-
-        if answer == 'a':
-            raise AbortException(1)
-        if answer == 'R':
-            raise ReloadFromFile(index=self.index)
-        if self.env.batch_mode and answer == 'c':
-            raise SkipBatchItemException()
-
-        return answer
+        match answer:
+            case 'T':
+                print()
+                self.env.LOG.notice('Starting interactive terminal shell')
+                self._run_local_command(
+                    f'AUTOMATIX_SHELL=True'
+                    f' {SHELL_EXECUTABLE}'
+                    f' --rcfile <(cat ~/.bashrc ; echo "PS1=\\"{AUTOMATIX_PROMPT}\\"")'
+                    f' -i'
+                )
+                return self._ask_user_with_options(question=question, allowed_options=allowed_options)
+            case 'v':
+                self.show_and_change_variables()
+                return self._ask_user_with_options(question=question, allowed_options=allowed_options)
+            case 'a':
+                raise AbortException(1)
+            case 'R':
+                raise ReloadFromFile(index=self.index)
+            case 'c':
+                raise SkipBatchItemException()
+            case _:
+                return answer
 
     def _generate_python_vars(self):
         # For BWCommand this method is overridden
