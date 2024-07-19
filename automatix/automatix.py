@@ -1,6 +1,8 @@
+import os
 import sys
 from argparse import Namespace
 from collections import OrderedDict
+from functools import cached_property
 from typing import List
 
 from .command import Command, AbortException, SkipBatchItemException, PERSISTENT_VARS, ReloadFromFile
@@ -14,14 +16,12 @@ class Automatix:
             script: dict,
             variables: dict,
             config: dict,
-            cmd_class: type,
             script_fields: OrderedDict,
             cmd_args: Namespace,
             batch_index: int,
     ):
         self.script = script
         self.script_fields = script_fields
-        self.cmd_class = cmd_class
         self.env = PipelineEnvironment(
             name=script['name'],
             config=config,
@@ -35,6 +35,16 @@ class Automatix:
         )
 
         self._command_lists: dict = {}
+
+    @cached_property
+    def cmd_class(self) -> type:
+        if self.env.config.get('bundlewrap'):
+            from .bundlewrap import BWCommand, AutomatixBwRepo
+
+            self.env.config['bw_repo'] = AutomatixBwRepo(repo_path=os.environ.get('BW_REPO_PATH', '.'))
+            return BWCommand
+        else:
+            return Command
 
     def command_list(self, pipeline: str) -> list:
         if pipeline == 'main':

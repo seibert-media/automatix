@@ -43,16 +43,6 @@ def setup(args: Namespace):
         LOG.warning('Configuration file not found or not configured. Using defaults.')
 
 
-def get_command_class() -> type:
-    if CONFIG.get('bundlewrap'):
-        from .bundlewrap import BWCommand, AutomatixBwRepo
-
-        CONFIG['bw_repo'] = AutomatixBwRepo(repo_path=os.environ.get('BW_REPO_PATH', '.'))
-        return BWCommand
-    else:
-        return Command
-
-
 def get_script_and_batch_items(args: Namespace) -> (dict, list):
     script = get_script(args=args)
 
@@ -72,8 +62,6 @@ def get_script_and_batch_items(args: Namespace) -> (dict, list):
 
 
 def run_batch_items(script: dict, batch_items: list, args: Namespace):
-    cmd_class = get_command_class()
-
     for i, row in enumerate(batch_items, start=1):
         script_copy = deepcopy(script)
         update_script_from_row(row=row, script=script_copy, index=i)
@@ -84,7 +72,6 @@ def run_batch_items(script: dict, batch_items: list, args: Namespace):
             script=script_copy,
             variables=variables,
             config=CONFIG,
-            cmd_class=cmd_class,
             script_fields=SCRIPT_FIELDS,
             cmd_args=args,
             batch_index=i,
@@ -106,7 +93,6 @@ def run_batch_items(script: dict, batch_items: list, args: Namespace):
 
 
 def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir: str):
-    cmd_class = get_command_class()
     LOG.info(f'Using temporary directory to save object files: {tempdir}')
     digits = len(str(len(batch_items)))
     for i, row in enumerate(batch_items, start=1):
@@ -119,14 +105,17 @@ def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir:
             script=script_copy,
             variables=variables,
             config=CONFIG,
-            cmd_class=cmd_class,
             script_fields=SCRIPT_FIELDS,
             cmd_args=args,
             batch_index=1,
         )
-        auto.set_command_count()
         id = str(i).rjust(digits, '0')
+
         with open(f'{tempdir}/auto{id}', 'wb') as f:
+            # The auto.cmd_class attribute MUST NOT be called before this!!!
+            # Otherwise, the Bundlewrap integration will fail for parallel processing,
+            # because the BWCommand is not pickleable.
+
             pickle.dump(obj=auto, file=f)
 
 
