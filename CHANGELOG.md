@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.2.1
+- Fix: Crash with parallel processing and Bundlewrap support enabled
+
 # 2.2.0
 - Feature: Option to change variables at runtime
 - Warning for conflicting automatix package
