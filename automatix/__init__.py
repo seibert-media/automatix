@@ -10,7 +10,7 @@ from time import time
 from typing import List
 
 from .automatix import Automatix
-from .command import Command, SkipBatchItemException, AbortException
+from .command import SkipBatchItemException, AbortException
 from .config import (
     arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION, init_logger,
     PROGRESS_BAR, progress_bar
