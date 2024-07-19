@@ -5,7 +5,7 @@ from time import sleep
 
 import pytest
 
-from automatix import get_script, collect_vars, CONFIG, Command, SCRIPT_FIELDS
+from automatix import get_script, collect_vars, CONFIG, SCRIPT_FIELDS
 from automatix.automatix import Automatix
 from automatix.logger import init_logger
 
@@ -31,7 +31,6 @@ testauto = Automatix(
     script=script,
     variables=variables,
     config=CONFIG,
-    cmd_class=Command,
     script_fields=SCRIPT_FIELDS,
     cmd_args=default_args,
     batch_index=1,

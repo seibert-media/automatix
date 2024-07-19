@@ -184,6 +184,7 @@ def run_auto(tempdir: str, time_id: int, auto_file: str):
 
     with open(auto_path, 'rb') as f:
         auto: Automatix = pickle.load(file=f)
+    auto.set_command_count()
     auto.env.attach_logger()
     auto.env.reinit_logger()
     auto.env.send_status = send_status
