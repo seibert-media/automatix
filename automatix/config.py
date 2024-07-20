@@ -9,6 +9,8 @@ from time import sleep
 
 import yaml
 
+from .colors import red
+
 yaml.warnings({'YAMLLoadWarning': False})
 
 
@@ -46,12 +48,14 @@ CONFIG = {
     'constants': {},
     'encoding': 'utf-8',
     'import_path': '.',
+    'bash_path': '/bin/bash',
     'ssh_cmd': 'ssh {hostname} sudo ',
     'remote_tmp_dir': 'automatix_tmp',
     'logger': 'automatix',
     'logfile_dir': 'automatix_logs',
     'bundlewrap': False,
     'teamvault': False,
+    'progress_bar': False,
 }
 
 configfile = os.path.expanduser(os.path.expandvars(os.getenv('AUTOMATIX_CONFIG', '~/.automatix.cfg.yaml')))
@@ -59,11 +63,21 @@ if os.path.isfile(configfile):
     CONFIG.update(read_yaml(configfile))
     CONFIG['config_file'] = configfile
 
-for key, value in CONFIG.items():
-    if not isinstance(value, str):
+for c_key, c_value in CONFIG.items():
+    env_value = os.getenv(f'AUTOMATIX_{c_key.upper()}')
+    if not env_value:
         continue
-    if os.getenv(f'AUTOMATIX_{key.upper()}'):
-        CONFIG[key] = os.getenv(f'AUTOMATIX_{key.upper()}')
+
+    if isinstance(c_value, bool) and env_value.lower() in ['false', 'true']:
+        CONFIG[c_key] = True if env_value.lower() == 'true' else False
+        continue
+
+    if isinstance(c_value, str):
+        CONFIG[c_key] = env_value
+        continue
+
+    print(red(f'Warning: environment variable "AUTOMATIX_{c_key.upper()}" ignored: wrong value type!'))
+    sleep(2)
 
 if CONFIG.get('logging_lib'):
     log_lib = import_module(CONFIG.get('logging_lib'))
@@ -81,17 +95,6 @@ if CONFIG['teamvault']:
     SCRIPT_FIELDS['secrets'] = 'Secrets'
 
     class UnknownSecretTypeException(Exception):
-        pass
-
-progress_bar = None
-PROGRESS_BAR = False
-if (CONFIG.get('progress_bar', False) or os.getenv('AUTOMATIX_PROGRESS_BAR', False)) and \
-        os.getenv('AUTOMATIX_PROGRESS_BAR', False) not in ['False', 'false']:
-    try:
-        import python_progress_bar as progress_bar  # noqa F401
-
-        PROGRESS_BAR = True
-    except ImportError:
         pass
 
 

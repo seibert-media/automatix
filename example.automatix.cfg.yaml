@@ -13,6 +13,9 @@ encoding: 'utf-8'
 # Path to shell imports
 import_path: '.'
 
+# Path to local bash (default: /bin/bash)
+bash_path: '/bin/bash'
+
 # SSH Command used for remote connections
 ssh_cmd: 'ssh {hostname} sudo '
 

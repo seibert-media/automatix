@@ -1,7 +1,6 @@
 import argparse
 import os
 import pickle
-import select
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -9,10 +8,13 @@ from os import listdir, unlink
 from os.path import isfile
 from time import sleep
 
+import select
+
 from .automatix import Automatix
 from .colors import yellow, green, red, cyan
 from .command import AbortException
-from .config import LOG, init_logger, CONFIG, PROGRESS_BAR, progress_bar
+from .config import LOG, init_logger, CONFIG
+from .progress_bar import setup_scroll_area, destroy_scroll_area
 
 LINE_UP = '\033[1A'
 LINE_CLEAR = '\x1b[2K'
@@ -213,13 +215,13 @@ def run_auto_from_file():
     args = parser.parse_args()
 
     try:
-        if PROGRESS_BAR:
-            progress_bar.setup_scroll_area()
+        if CONFIG['progress_bar']:
+            setup_scroll_area()
 
         run_auto(tempdir=args.tempdir, time_id=args.time_id, auto_file=args.auto_file)
     finally:
-        if PROGRESS_BAR:
-            progress_bar.destroy_scroll_area()
+        if CONFIG['progress_bar']:
+            destroy_scroll_area()
 
 
 def ask_for_options(autos: Autos) -> str | None:

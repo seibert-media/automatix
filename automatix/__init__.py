@@ -12,10 +12,10 @@ from typing import List
 from .automatix import Automatix
 from .command import SkipBatchItemException, AbortException
 from .config import (
-    arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION, init_logger,
-    PROGRESS_BAR, progress_bar
+    arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION, init_logger
 )
 from .parallel import screen_switch_loop
+from .progress_bar import setup_scroll_area, destroy_scroll_area
 
 
 def check_for_original_automatix():
@@ -172,13 +172,13 @@ def main():
         sys.exit(0)
 
     try:
-        if PROGRESS_BAR:
-            progress_bar.setup_scroll_area()
+        if CONFIG['progress_bar']:
+            setup_scroll_area()
 
         run_batch_items(script=script, batch_items=batch_items, args=args)
     finally:
-        if PROGRESS_BAR:
-            progress_bar.destroy_scroll_area()
+        if CONFIG['progress_bar']:
+            destroy_scroll_area()
 
     if 'AUTOMATIX_TIME' in os.environ:
         LOG.info(f'The Automatix script took {round(time() - starttime)}s!')

@@ -1,5 +1,5 @@
 # automatix
-Automation wrapper for bash and python commands. Extended Feature version.
+Automation wrapper for bash and python commands. Extended Features version.
 
 
 # DESCRIPTION
@@ -24,9 +24,9 @@ There are different modes for **automatix** to work. Without any
  the possibility to use your own logging library.
 
 This **automatix** version (automatix_cmd) is a fork of the original
-**automatix** (https://github.com/seibert-media/automatix) with some
-extended functionality and is maintained private in the authors freetime
-(not maintained by seibert//).
+ **automatix** (https://github.com/seibert-media/automatix) with some
+ extended functionality and is maintained private in the authors free
+ time (not maintained by seibert//).
 
 ## Warning:
 
@@ -79,6 +79,9 @@ All (string) configuration values can be overwritten by the
     
     # Path for shell imports
     import_path: '.'
+
+    # Path to local bash (default: /bin/bash)
+    bash_path: '/bin/bash'
     
     # SSH Command used for remote connections
     ssh_cmd: 'ssh {hostname} sudo '
@@ -306,7 +309,8 @@ Here you define the commands automatix shall execute.
  confirm, that automatix may proceed.
 
 2) **local**: Local shell command to execute. Imports will be sourced
- beforehand. /bin/bash will be used for execution.
+ beforehand. The Bash specified in `bash_path` (default: /bin/bash) will
+ be used for execution.
 
 3) **remote@systemname**: Remote shell command to execute. Systemname
  has to be a defined system. The command will be run via SSH (without
@@ -392,13 +396,13 @@ Intended use case for **cleanup**: Remove temporary files or artifacts.
 
 **AUTOMATIX_**_config-variable-in-upper-case_: Set or overwrite the 
  corresponding configuration value. See **CONFIGURATION** section.
- Works only for string values!  
+ Works only for string and boolean values!
+ String values (case-insensitive 'true' or 'false') are converted
+ to `True` or `False` in Python, if the fields expects a boolean.
+ **All other values (int, float, dict, list, ...) are ignored!**
 
 **AUTOMATIX_TIME**: Set this to an arbitrary value to print the times
- for the single steps and the whole script.  
-
-Additionally you can modify the environment to adjust things to your
- needs.
+ for the single steps and the whole script, e.g. `AUTOMATIX_TIME=true`.
 
 
 # TIPS & TRICKS
@@ -527,9 +531,9 @@ User input questions are of following categories:
 - [RR] **R**emote process still **R**unning
 - [SE] **S**yntax **E**rror
 
-The terminal (T) answer starts an interactive Bash-Shell (/bin/bash -i).
+The terminal (T) answer starts an interactive Bash-Shell.
  Therefore .bashrc is executed, but the command prompt (PS1) is
- replaced to indicate, we are still in an automatix process.
+ replaced to indicate, that we are still in an automatix process.
  
 
 # EXTRAS
@@ -575,13 +579,11 @@ or activation for automatix (e.g. in `.bashrc`)
 Automatix will recognize the installed module and offer the completion automatically.
 
 ## Progress bar (experimental)
-For activation of an "apt-like" progress bar based on the amount of commands
- install `python_progress_bar` via pip and either set `AUTOMATIX_PROGRESS_BAR`
- environment variable to an arbitrary value (not "False") or set `progress_bar`
- to `true` in the config file.
+You can activate an "apt-like" progress bar based on the amount of commands
+ by setting the configuration option `progress_bar` to `True` (config file or environment).
 
-You can force deactivation in setting `AUTOMATIX_PROGRESS_BAR` environment variable
- to "False" (overwrites config file setting).
+The status on the right displays `[elapsed time<remaining time, rate]`,
+ where rate is percentage/second if fast and second/percentage if slow.
 
 Note, that using commands that heavily modify the terminal behaviour/output
  (such as `top`, `watch`, `glances`, ...), may lead to a unreadable
