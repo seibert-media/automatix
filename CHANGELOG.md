@@ -1,5 +1,10 @@
 # Changelog
 
+# 2.3.0
+- Feature: Make Bash path configurable
+- Feature: Overwriting configuration by environment variables also for `boolean` type.
+- Refactoring: Integrate progress bar and refactor. External library is not needed anymore.
+
 # 2.2.1
 - Fix: Crash with parallel processing and Bundlewrap support enabled
 
