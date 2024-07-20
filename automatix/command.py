@@ -5,8 +5,8 @@ from shlex import quote
 from time import time
 from typing import Tuple
 
-from .config import PROGRESS_BAR, progress_bar
 from .environment import PipelineEnvironment
+from .progress_bar import draw_progress_bar, block_progress_bar
 
 
 class PersistentDict(dict):
@@ -132,8 +132,8 @@ class Command:
             self.env.LOG.exception('Syntax or value error!')
             self.env.LOG.error('Syntax or value error! Please fix your script and reload/restart.')
             self._ask_user(question='[SE] What should I do?', allowed_options=['R', 'T', 'v', 's', 'a'])
-        if PROGRESS_BAR:
-            progress_bar.draw_progress_bar(self.progress_portion)
+        if self.env.config['progress_bar']:
+            draw_progress_bar(self.progress_portion)
 
     def _execute(self, interactive: bool = False, force: bool = False):
         self.print_command()
@@ -220,7 +220,7 @@ class Command:
             allowed_options.insert(allowed_options.index('R') + 1, 'R±X')
 
         options = '\n'.join([f' {k}: {POSSIBLE_ANSWERS[k]}' for k in allowed_options])
-        formatted_options = options.format(shell=self.bash_path)
+        formatted_options = options.format(bash_path=self.bash_path)
 
         return self._ask_user_with_options(
             question=f'{question}\n{formatted_options}\nYour answer: \a',
@@ -228,8 +228,8 @@ class Command:
         )
 
     def _ask_user_with_options(self, question: str, allowed_options: list) -> str:
-        if PROGRESS_BAR:
-            progress_bar.block_progress_bar(self.progress_portion)
+        if self.env.config['progress_bar']:
+            block_progress_bar(self.progress_portion)
         self.env.send_status('user_input_add')
         answer = input(question)
         self.env.send_status('user_input_remove')

@@ -396,7 +396,10 @@ Intended use case for **cleanup**: Remove temporary files or artifacts.
 
 **AUTOMATIX_**_config-variable-in-upper-case_: Set or overwrite the 
  corresponding configuration value. See **CONFIGURATION** section.
- Works only for string values!  
+ Works only for string and boolean values!
+ String values (case-insensitive 'true' or 'false') are converted
+ to `True` or `False` in Python, if the fields expects a boolean.
+ **All other values (int, float, dict, list, ...) are ignored!**
 
 **AUTOMATIX_TIME**: Set this to an arbitrary value to print the times
  for the single steps and the whole script, e.g. `AUTOMATIX_TIME=true`.
@@ -576,13 +579,11 @@ or activation for automatix (e.g. in `.bashrc`)
 Automatix will recognize the installed module and offer the completion automatically.
 
 ## Progress bar (experimental)
-For activation of an "apt-like" progress bar based on the amount of commands
- install `python_progress_bar` via pip and either set `AUTOMATIX_PROGRESS_BAR`
- environment variable to an arbitrary value (not "False") or set `progress_bar`
- to `true` in the config file.
+You can activate an "apt-like" progress bar based on the amount of commands
+ by setting the configuration option `progress_bar` to `True` (config file or environment).
 
-You can force deactivation in setting `AUTOMATIX_PROGRESS_BAR` environment variable
- to "False" (overwrites config file setting).
+The status on the right displays `[elapsed time<remaining time, rate]`,
+ where rate is percentage/second if fast and second/percentage if slow.
 
 Note, that using commands that heavily modify the terminal behaviour/output
  (such as `top`, `watch`, `glances`, ...), may lead to a unreadable
