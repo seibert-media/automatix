@@ -22,14 +22,12 @@ class PersistentDict(dict):
 
 PERSISTENT_VARS = PVARS = PersistentDict()
 
-SHELL_EXECUTABLE = '/bin/bash'
-
 # Leading red " Automatix \w > " to indicate that this shell is inside a running Automatix execution
 AUTOMATIX_PROMPT = r'\[\033[0;31m\] Automatix \[\033[0m\]\\w > '
 
 POSSIBLE_ANSWERS = {
     'p': 'proceed (default)',
-    'T': f'start interactive terminal shell ({SHELL_EXECUTABLE} -i) and return back here on exit',
+    'T': 'start interactive terminal shell ({bash_path} -i) and return back here on exit',
     'v': 'show and change variables',
     'r': 'retry',
     'R': 'reload from file and retry command (same index)',
@@ -52,6 +50,8 @@ class Command:
         self.env = env
         self.pipeline = pipeline
         self.position = position
+
+        self.bash_path = self.env.config['bash_path']
 
         for key, value in cmd.items():
             self.orig_key = key
@@ -220,9 +220,10 @@ class Command:
             allowed_options.insert(allowed_options.index('R') + 1, 'R±X')
 
         options = '\n'.join([f' {k}: {POSSIBLE_ANSWERS[k]}' for k in allowed_options])
+        formatted_options = options.format(shell=self.bash_path)
 
         return self._ask_user_with_options(
-            question=f'{question}\n{options}\nYour answer: \a',
+            question=f'{question}\n{formatted_options}\nYour answer: \a',
             allowed_options=allowed_options,
         )
 
@@ -252,7 +253,7 @@ class Command:
                 self.env.LOG.notice('Starting interactive terminal shell')
                 self._run_local_command(
                     f'AUTOMATIX_SHELL=True'
-                    f' {SHELL_EXECUTABLE}'
+                    f' {self.bash_path}'
                     f' --rcfile <(cat ~/.bashrc ; echo "PS1=\\"{AUTOMATIX_PROMPT}\\"")'
                     f' -i'
                 )
@@ -327,13 +328,13 @@ class Command:
     def _run_local_command(self, cmd: str) -> int:
         self.env.LOG.debug(f'Executing: {cmd}')
         if self.assignment_var:
-            proc = subprocess.run(cmd, shell=True, executable=SHELL_EXECUTABLE, stdout=subprocess.PIPE)
+            proc = subprocess.run(cmd, shell=True, executable=self.bash_path, stdout=subprocess.PIPE)
             output = proc.stdout.decode(self.env.config["encoding"])
             self.env.vars[self.assignment_var] = assigned_value = output.rstrip('\r\n')
             hint = ' (trailing newline removed)' if (output.endswith('\n') or output.endswith('\r')) else ''
             self.env.LOG.info(f'Variable {self.assignment_var} = "{assigned_value}"{hint}')
         else:
-            proc = subprocess.run(cmd, shell=True, executable=SHELL_EXECUTABLE)
+            proc = subprocess.run(cmd, shell=True, executable=self.bash_path)
         return proc.returncode
 
     def _remote_action(self) -> int:
@@ -371,7 +372,7 @@ class Command:
 
         return f'{prefix}{ssh_cmd}{quote("bash -c " + quote(remote_cmd))}'
 
-    def _remote_handle_keyboard_interrupt(self, hostname: str) -> int:
+    def _remote_handle_keyboard_interrupt(self, hostname: str):
         ssh_cmd = self.env.config["ssh_cmd"].format(hostname=hostname)
 
         try:
@@ -411,7 +412,7 @@ class Command:
         pids = subprocess.check_output(
             cmd,
             shell=True,
-            executable=SHELL_EXECUTABLE,
+            executable=self.bash_path,
         ).decode(self.env.config["encoding"]).split()
 
         return pids
@@ -420,7 +421,7 @@ class Command:
         ssh_cmd = self.env.config["ssh_cmd"].format(hostname=hostname)
         cleanup_cmd = f'{ssh_cmd} rm -r {self.env.config["remote_tmp_dir"]}'
         self.env.LOG.debug(f'Executing: {cleanup_cmd}')
-        proc = subprocess.run(cleanup_cmd, shell=True, executable=SHELL_EXECUTABLE)
+        proc = subprocess.run(cleanup_cmd, shell=True, executable=self.bash_path)
         if proc.returncode != 0:
             self.env.LOG.warning(
                 'Failed to remove {tmp_dir}, exitcode: {return_code}'.format(

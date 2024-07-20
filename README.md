@@ -1,5 +1,5 @@
 # automatix
-Automation wrapper for bash and python commands. Extended Feature version.
+Automation wrapper for bash and python commands. Extended Features version.
 
 
 # DESCRIPTION
@@ -24,9 +24,9 @@ There are different modes for **automatix** to work. Without any
  the possibility to use your own logging library.
 
 This **automatix** version (automatix_cmd) is a fork of the original
-**automatix** (https://github.com/seibert-media/automatix) with some
-extended functionality and is maintained private in the authors freetime
-(not maintained by seibert//).
+ **automatix** (https://github.com/seibert-media/automatix) with some
+ extended functionality and is maintained private in the authors free
+ time (not maintained by seibert//).
 
 ## Warning:
 
@@ -79,6 +79,9 @@ All (string) configuration values can be overwritten by the
     
     # Path for shell imports
     import_path: '.'
+
+    # Path to local bash (default: /bin/bash)
+    bash_path: '/bin/bash'
     
     # SSH Command used for remote connections
     ssh_cmd: 'ssh {hostname} sudo '
@@ -306,7 +309,8 @@ Here you define the commands automatix shall execute.
  confirm, that automatix may proceed.
 
 2) **local**: Local shell command to execute. Imports will be sourced
- beforehand. /bin/bash will be used for execution.
+ beforehand. The Bash specified in `bash_path` (default: /bin/bash) will
+ be used for execution.
 
 3) **remote@systemname**: Remote shell command to execute. Systemname
  has to be a defined system. The command will be run via SSH (without
@@ -395,10 +399,7 @@ Intended use case for **cleanup**: Remove temporary files or artifacts.
  Works only for string values!  
 
 **AUTOMATIX_TIME**: Set this to an arbitrary value to print the times
- for the single steps and the whole script.  
-
-Additionally you can modify the environment to adjust things to your
- needs.
+ for the single steps and the whole script, e.g. `AUTOMATIX_TIME=true`.
 
 
 # TIPS & TRICKS
@@ -527,9 +528,9 @@ User input questions are of following categories:
 - [RR] **R**emote process still **R**unning
 - [SE] **S**yntax **E**rror
 
-The terminal (T) answer starts an interactive Bash-Shell (/bin/bash -i).
+The terminal (T) answer starts an interactive Bash-Shell.
  Therefore .bashrc is executed, but the command prompt (PS1) is
- replaced to indicate, we are still in an automatix process.
+ replaced to indicate, that we are still in an automatix process.
  
 
 # EXTRAS

@@ -46,6 +46,7 @@ CONFIG = {
     'constants': {},
     'encoding': 'utf-8',
     'import_path': '.',
+    'bash_path': '/bin/bash',
     'ssh_cmd': 'ssh {hostname} sudo ',
     'remote_tmp_dir': 'automatix_tmp',
     'logger': 'automatix',
@@ -59,11 +60,11 @@ if os.path.isfile(configfile):
     CONFIG.update(read_yaml(configfile))
     CONFIG['config_file'] = configfile
 
-for key, value in CONFIG.items():
-    if not isinstance(value, str):
+for c_key, c_value in CONFIG.items():
+    if not isinstance(c_value, str):
         continue
-    if os.getenv(f'AUTOMATIX_{key.upper()}'):
-        CONFIG[key] = os.getenv(f'AUTOMATIX_{key.upper()}')
+    if os.getenv(f'AUTOMATIX_{c_key.upper()}'):
+        CONFIG[c_key] = os.getenv(f'AUTOMATIX_{c_key.upper()}')
 
 if CONFIG.get('logging_lib'):
     log_lib = import_module(CONFIG.get('logging_lib'))
