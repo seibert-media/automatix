@@ -152,6 +152,19 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
     LOG.info(f'All logfiles are available at {logfile_dir}')
 
 
+def check_screen():
+    p = subprocess.run('screen -v', shell=True, stdout=subprocess.PIPE)
+    screen_version = p.stdout.decode()
+    if 'GNU' in screen_version:
+        return
+    if 'FAU' in screen_version:
+        LOG.error(
+            'Parallel processing only supported for the "GNU" version of screen. You have the "FAU" version.\n'
+            'On MacOS you can try to install the GNU version via Homebrew: `brew install screen`.'
+        )
+    raise Exception('No supported GNU screen version found')
+
+
 def main():
     check_for_original_automatix()
 
@@ -168,6 +181,7 @@ def main():
     script, batch_items = get_script_and_batch_items(args=args)
 
     if args.vars_file and args.parallel:
+        check_screen()
         run_parallel_screens(script=script, batch_items=batch_items, args=args)
         sys.exit(0)
 
