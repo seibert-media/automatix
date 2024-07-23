@@ -1,5 +1,9 @@
 # Changelog
 
+# 2.3.1
+- Add check for proper screen version for parallel processing
+- Fix: explanation URL
+
 # 2.3.0
 - Feature: Make Bash path configurable
 - Feature: Overwriting configuration by environment variables also for `boolean` type.
