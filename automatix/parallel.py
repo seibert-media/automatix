@@ -229,9 +229,9 @@ def ask_for_options(autos: Autos) -> str | None:
     LOG.notice('Please notice: To come back to this selection press "<ctrl>+a d" in a screen session!')
     LOG.info('Following options are available:')
     LOG.info(
-        'o: overview / manager loop,'
-        ' n: next user input required,'
-        ' X (number): switch to autoX,'
+        ' o: overview / manager loop\n'
+        ' n: next user input required\n'
+        ' X (number): switch to autoX\n'
         f' mX: set max parallel screens to X (actual {autos.max_parallel})\n'
     )
     i, _, _ = select.select([sys.stdin], [], [], 1)
@@ -285,7 +285,7 @@ def screen_switch_loop(tempdir: str, time_id: int):
                 subprocess.run(f'screen -r {screen_id}', shell=True)
                 sleep(1)
             else:
-                for _ in range(12):
+                for _ in range(15):
                     print(LINE_UP, end=LINE_CLEAR)
     except (KeyboardInterrupt, Exception) as exc:
         print('\n' * 8)
