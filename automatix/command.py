@@ -263,15 +263,28 @@ class Command:
         return f'. {path}/' + f'; . {path}/'.join(self.env.imports) + '; ' + self.get_resolved_value()
 
     def _run_local_command(self, cmd: str) -> int:
-        self.env.LOG.debug(f'Executing: {cmd}')
+        process_environment = os.environ.copy()
+        process_environment['RUNNING_INSIDE_AUTOMATIX'] = '1'
+        self.env.LOG.debug(f'Executing: {repr(cmd)} with environment {repr(process_environment)}')
         if self.assignment_var:
-            proc = subprocess.run(cmd, shell=True, executable=SHELL_EXECUTABLE, stdout=subprocess.PIPE)
+            proc = subprocess.run(
+                cmd,
+                env=process_environment,
+                executable=SHELL_EXECUTABLE,
+                shell=True,
+                stdout=subprocess.PIPE,
+            )
             output = proc.stdout.decode(self.env.config["encoding"])
             self.env.vars[self.assignment_var] = assigned_value = output.rstrip('\r\n')
             hint = ' (trailing newline removed)' if (output.endswith('\n') or output.endswith('\r')) else ''
             self.env.LOG.info(f'Variable {self.assignment_var} = "{assigned_value}"{hint}')
         else:
-            proc = subprocess.run(cmd, shell=True, executable=SHELL_EXECUTABLE)
+            proc = subprocess.run(
+                cmd,
+                env=process_environment,
+                executable=SHELL_EXECUTABLE,
+                shell=True,
+            )
         return proc.returncode
 
     def _remote_action(self) -> int:
