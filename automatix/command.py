@@ -326,15 +326,28 @@ class Command:
         return f'. {path}/' + f'; . {path}/'.join(self.env.imports) + '; ' + self.get_resolved_value()
 
     def _run_local_command(self, cmd: str) -> int:
-        self.env.LOG.debug(f'Executing: {cmd}')
+        process_environment = os.environ.copy()
+        process_environment['RUNNING_INSIDE_AUTOMATIX'] = '1'
+        self.env.LOG.debug(f'Executing: {repr(cmd)} with environment {repr(process_environment)}')
         if self.assignment_var:
-            proc = subprocess.run(cmd, shell=True, executable=self.bash_path, stdout=subprocess.PIPE)
+            proc = subprocess.run(
+                cmd,
+                env=process_environment,
+                executable=self.bash_path,
+                shell=True,
+                stdout=subprocess.PIPE,
+            )
             output = proc.stdout.decode(self.env.config["encoding"])
             self.env.vars[self.assignment_var] = assigned_value = output.rstrip('\r\n')
             hint = ' (trailing newline removed)' if (output.endswith('\n') or output.endswith('\r')) else ''
             self.env.LOG.info(f'Variable {self.assignment_var} = "{assigned_value}"{hint}')
         else:
-            proc = subprocess.run(cmd, shell=True, executable=self.bash_path)
+            proc = subprocess.run(
+                cmd,
+                env=process_environment,
+                executable=self.bash_path,
+                shell=True,
+            )
         return proc.returncode
 
     def _remote_action(self) -> int:
@@ -370,7 +383,7 @@ class Command:
                          f' tar -C {self.env.config["remote_tmp_dir"]} -xf -;' \
                          f' {self._build_command(path=self.env.config["remote_tmp_dir"])}'
 
-        return f'{prefix}{ssh_cmd}{quote("bash -c " + quote(remote_cmd))}'
+        return f'{prefix}{ssh_cmd}{quote("RUNNING_INSIDE_AUTOMATIX=1 bash -c " + quote(remote_cmd))}'
 
     def _remote_handle_keyboard_interrupt(self, hostname: str):
         ssh_cmd = self.env.config["ssh_cmd"].format(hostname=hostname)

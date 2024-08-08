@@ -310,7 +310,8 @@ Here you define the commands automatix shall execute.
 
 2) **local**: Local shell command to execute. Imports will be sourced
  beforehand. The Bash specified in `bash_path` (default: /bin/bash) will
- be used for execution.
+ be used for execution. The environment is inherited with additional
+ **RUNNING_INSIDE_AUTOMATIX** set to 1.
 
 3) **remote@systemname**: Remote shell command to execute. Systemname
  has to be a defined system. The command will be run via SSH (without
