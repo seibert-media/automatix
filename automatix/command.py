@@ -383,7 +383,7 @@ class Command:
                          f' tar -C {self.env.config["remote_tmp_dir"]} -xf -;' \
                          f' {self._build_command(path=self.env.config["remote_tmp_dir"])}'
 
-        return f'{prefix}{ssh_cmd}{quote("bash -c " + quote(remote_cmd))}'
+        return f'{prefix}{ssh_cmd}{quote("RUNNING_INSIDE_AUTOMATIX=1 bash -c " + quote(remote_cmd))}'
 
     def _remote_handle_keyboard_interrupt(self, hostname: str):
         ssh_cmd = self.env.config["ssh_cmd"].format(hostname=hostname)
