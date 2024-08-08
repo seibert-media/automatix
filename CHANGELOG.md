@@ -1,6 +1,6 @@
 # Changelog
 
-# 2.3.1
+# 2.3.1 / 2.3.2
 - Add check for proper screen version for parallel processing
 - Fix: explanation URL
 
