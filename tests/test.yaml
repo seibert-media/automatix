@@ -34,3 +34,5 @@ pipeline:
   - python: raise Exception('moin')
 cleanup:
   - local: echo 'Cleaning up.'
+  - python: pprint(locals())
+  - python: pprint(globals())

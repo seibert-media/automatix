@@ -27,4 +27,4 @@ def test__automatix__get_command_position():
 def test__automatix__set_command_count():
     testauto.env.command_count = None
     testauto.set_command_count()
-    assert testauto.env.command_count == 22
+    assert testauto.env.command_count == 24
