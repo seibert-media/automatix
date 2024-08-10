@@ -6,8 +6,12 @@ vars:
 
 always:
   - local: echo 'Print this always :-)'
-  - python: print(locals())
-  - python: print(globals())
+  - python: |
+      from uuid import uuid4
+      from pprint import pprint
+      PERSISTENT_VARS.update(locals())
+  - python: pprint(locals())
+  - python: pprint(globals())
 pipeline:
   - python: PVARS.moin = True
   - PVARS.moin?local: echo 'Moin'
@@ -15,10 +19,6 @@ pipeline:
   - PVARS.moin!?local: echo 'Moin Moin :-)'
   - a=python: re.match('\d*', '12345')
   - nonexistent?local: echo 'Hups ...'
-  - python: |
-      from uuid import uuid4
-      from pprint import pprint
-      PERSISTENT_VARS.update(locals())
   - python: print(uuid4())
   - python: del PERSISTENT_VARS['uuid4']
   - a=local: uptime

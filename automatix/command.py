@@ -302,7 +302,7 @@ class Command:
     @staticmethod
     def _get_python_globals() -> dict:
         return {
-            '__builtins__': __builtins__,
+            # builtins seem to be included anyway
             'PERSISTENT_VARS': PERSISTENT_VARS,
             'PVARS': PVARS,
         }
