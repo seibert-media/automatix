@@ -14,7 +14,7 @@ def test__integration__execute_remote_cmd(ssh_up):  # noqa: F811
         cmd={'remote@testsystem': 'touch /test_remote_cmd'},
         index=2,
         pipeline='pipeline',
-        env=environment,
+        env=deepcopy(environment),
         position=1,
     )
     cmd.execute()
@@ -34,7 +34,7 @@ def test__execute_local_cmd(capfd):
         cmd={'local': f'echo {test_string}'},
         index=2,
         pipeline='pipeline',
-        env=environment,
+        env=deepcopy(environment),
         position=1,
     )
     cmd.execute()
@@ -86,11 +86,40 @@ from uuid import uuid4
 from pprint import pprint
 PERSISTENT_VARS.update(locals())
 """
+    env = deepcopy(environment)
 
-    cmd = Command(cmd={'python': test_cmd}, index=2, pipeline='pipeline', env=environment, position=1)
+    cmd = Command(cmd={'python': test_cmd}, index=2, pipeline='pipeline', env=env, position=1)
     cmd.execute()
 
-    cmd = Command(cmd={'python': 'print(uuid4())'}, index=2, pipeline='pipeline', env=environment, position=1)
+    cmd = Command(cmd={'python': 'print(uuid4())'}, index=2, pipeline='pipeline', env=env, position=1)
+    cmd.execute()
+
+
+def test__execute_python_cmd__assignment():
+    env = deepcopy(environment)
+
+    cmd = Command(cmd={'a=python': '5-3'}, index=2, pipeline='pipeline', env=env, position=1)
+    assert cmd.key == cmd.get_type() == 'python'
+    assert cmd.assignment_var == 'a'
+    cmd.execute()
+
+    assert env.vars.get('a') == 2
+
+    cmd = Command(
+        cmd={'myvar=python': 'a_vars["a"] == 2'}, index=2, pipeline='pipeline', env=env, position=1)
+    cmd.execute()
+
+    assert env.vars.get('myvar') is True
+
+    cmd = Command(
+        cmd={'python': 'a_vars["a"] = "new_value"'}, index=2, pipeline='pipeline', env=env, position=1)
+    cmd.execute()
+
+    assert env.vars.get('a') == "new_value"
+
+    # Ensure vars is not shadowed (it was before refactoring)
+    cmd = Command(
+        cmd={'python': 'assert "vars" not in locals()'}, index=2, pipeline='pipeline', env=env, position=1)
     cmd.execute()
 
 

@@ -267,12 +267,20 @@ class Command:
                     f' --rcfile <(cat ~/.bashrc ; echo "PS1=\\"{AUTOMATIX_PROMPT}\\"")'
                     f' -i'
                 )
+
                 return self._ask_user_with_options(question=question, allowed_options=allowed_options)
             case 'D':
+                print()
                 if 'readline' not in vars():
                     import readline  # noqa F401
-                pyconsole = InteractiveConsole(self._get_python_globals().update(self._get_python_locale_vars()))
+
+                pyconsole_locals = self._get_python_globals()
+                pyconsole_locals.update(self._get_python_locale_vars())
+
+                pyconsole = InteractiveConsole(pyconsole_locals)
                 pyconsole.interact(banner=AUTOMATIX_PYTHON_BANNER, exitmsg=AUTOMATIX_PYTHON_EXITMSG)
+
+                return self._ask_user_with_options(question=question, allowed_options=allowed_options)
             case 'v':
                 self.show_and_change_variables()
                 return self._ask_user_with_options(question=question, allowed_options=allowed_options)
@@ -287,7 +295,7 @@ class Command:
 
     def _generate_python_vars(self) -> dict:
         # For BWCommand this method is overridden
-        return {'vars': self.env.vars}
+        return {'a_vars': self.env.vars}
 
     def _get_python_locale_vars(self) -> dict:
         locale_vars = self._generate_python_vars()
@@ -314,10 +322,13 @@ class Command:
         try:
             self.env.LOG.debug(f'Run python command: {cmd}')
             if self.assignment_var:
-                exec(f'vars["{self.assignment_var}"] = {cmd}', self._get_python_globals(), locale_vars)
+                exec(f'a_vars["{self.assignment_var}"] = {cmd}', self._get_python_globals(), locale_vars)
                 self.env.LOG.info(f'Variable {self.assignment_var} = {repr(self.env.vars[self.assignment_var])}')
             else:
                 exec(cmd, self._get_python_globals(), locale_vars)
+            # In case someone added "a_vars" to PVARS = PERSISTENT_VARS we want to remove it here.
+            # This is to avoid a conflict or unexpected behaviour on getting the locale vars for following commands.
+            PVARS.pop('a_vars', None)
             return 0
         except (AbortException, SkipBatchItemException):
             raise
