@@ -19,12 +19,12 @@ def test__automatix__command_list():
 def test__automatix__get_command_position():
     assert testauto.get_command_position(index=4, pipeline='always') == 4
     assert testauto.get_command_position(index=3, pipeline='always') != 4
-    assert testauto.get_command_position(index=3, pipeline='main') == 5  # 2 commands in always pipeline
-    assert testauto.get_command_position(index=3, pipeline='pipeline') == 5  # 2 commands in always pipeline
-    assert testauto.get_command_position(index=2, pipeline='cleanup') == 22  # 20 commands in always + main pipeline
+    assert testauto.get_command_position(index=3, pipeline='main') == 7  # 4 commands in always pipeline
+    assert testauto.get_command_position(index=3, pipeline='pipeline') == 7  # 4 commands in always pipeline
+    assert testauto.get_command_position(index=2, pipeline='cleanup') == 23  # 21 commands in always + main pipeline
 
 
 def test__automatix__set_command_count():
     testauto.env.command_count = None
     testauto.set_command_count()
-    assert testauto.env.command_count == 21
+    assert testauto.env.command_count == 24

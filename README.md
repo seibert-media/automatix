@@ -321,9 +321,7 @@ Here you define the commands automatix shall execute.
   executed sequentially for every node.
 
 4) **python**: Python code to execute.
-   * Notice that there are some modules, constants and functions which
-     are already imported (check command.py): e.g.
-     `re, subprocess, quote(from shlex)`. The variable `vars` is used
+   * Notice that the variable `a_vars` is used
      to store the Automatix variables as a dictionary. You can use it 
      to access or change the variables directly.
    * If bundlewrap is enabled, the Bundlewrap repository object is
@@ -437,13 +435,7 @@ using the shortcut and the attribute notation:
       - PVARS.cond?local: echo 'This is only printed if "some_function" evaluates to "True"'
       - PVARS.cond!?local: echo 'And this is printed if "some_function" evaluates to "False"'
 
-An alternative is to make variables global, but in most cases using
- PERSISTENT_VARS is more clean. _**CAUTION: Choosing already existing
- (Python) variable names may lead to unexpected behaviour!!!**_ Maybe
-  you want to check the source code (command.py).  
-Explanation: automatix is written in Python and uses 'exec' to
- execute the command in function context. If you declare variables
- globally they remain across commands.
+Since version 2.4.0 making variables global does not work any longer!
 
 ### Abort and Skip Exceptions
 
