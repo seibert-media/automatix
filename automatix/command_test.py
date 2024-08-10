@@ -121,6 +121,14 @@ def test__execute_python_cmd__assignment():
     cmd = Command(
         cmd={'python': 'assert "vars" not in locals()'}, index=2, pipeline='pipeline', env=env, position=1)
     cmd.execute()
+    cmd = Command(
+        cmd={'python': 'assert "vars" not in globals()'}, index=2, pipeline='pipeline', env=env, position=1)
+    cmd.execute()
+
+
+def test__get_python_locale_vars():
+    cmd = Command(cmd={'a=python': '5-3'}, index=2, pipeline='pipeline', env=deepcopy(environment), position=1)
+    assert id(cmd.env.vars) == id(cmd._get_python_globals()['a_vars']), 'Automatix variables have been overwritten!'
 
 
 def test__parse_key():

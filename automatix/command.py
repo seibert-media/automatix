@@ -141,7 +141,7 @@ class Command:
         except (KeyError, UnknownCommandException):
             self.env.LOG.exception('Syntax or value error!')
             self.env.LOG.error('Syntax or value error! Please fix your script and reload/restart.')
-            self._ask_user(question='[SE] What should I do?', allowed_options=['R', 'T', 'v', 's', 'a'])
+            self._ask_user(question='[SE] What should I do?', allowed_options=['R', 'T', 'D', 'v', 's', 'a'])
         if self.env.config['progress_bar']:
             draw_progress_bar(self.progress_portion)
 
@@ -275,7 +275,7 @@ class Command:
                     import readline  # noqa F401
 
                 pyconsole_locals = self._get_python_globals()
-                pyconsole_locals.update(self._get_python_locale_vars())
+                pyconsole_locals.update(self._get_python_locals())
 
                 pyconsole = InteractiveConsole(pyconsole_locals)
                 pyconsole.interact(banner=AUTOMATIX_PYTHON_BANNER, exitmsg=AUTOMATIX_PYTHON_EXITMSG)
@@ -297,38 +297,34 @@ class Command:
         # For BWCommand this method is overridden
         return {'a_vars': self.env.vars}
 
-    def _get_python_locale_vars(self) -> dict:
-        locale_vars = self._generate_python_vars()
+    def _get_python_locals(self) -> dict:
+        locale_vars = {}
         locale_vars.update(PERSISTENT_VARS)
-        locale_vars.update({
-            'AbortException': AbortException,
-            'SkipBatchItemException': SkipBatchItemException,
-        })
         self.env.LOG.debug(f'locals:\n {locale_vars}')
         return locale_vars
 
-    @staticmethod
-    def _get_python_globals() -> dict:
-        return {
-            # builtins seem to be included anyway
+    def _get_python_globals(self) -> dict:
+        global_vars = {
+            # builtins are included anyway, if not defined here
             'PERSISTENT_VARS': PERSISTENT_VARS,
             'PVARS': PVARS,
+            'AbortException': AbortException,
+            'SkipBatchItemException': SkipBatchItemException,
         }
+        global_vars.update(self._generate_python_vars())
+        self.env.LOG.debug(f'globals:\n {global_vars}')
+        return global_vars
 
     def _python_action(self) -> int:
         cmd = self.get_resolved_value()
-        locale_vars = self._get_python_locale_vars()
 
         try:
             self.env.LOG.debug(f'Run python command: {cmd}')
             if self.assignment_var:
-                exec(f'a_vars["{self.assignment_var}"] = {cmd}', self._get_python_globals(), locale_vars)
+                exec(f'a_vars["{self.assignment_var}"] = {cmd}', self._get_python_globals(), self._get_python_locals())
                 self.env.LOG.info(f'Variable {self.assignment_var} = {repr(self.env.vars[self.assignment_var])}')
             else:
-                exec(cmd, self._get_python_globals(), locale_vars)
-            # In case someone added "a_vars" to PVARS = PERSISTENT_VARS we want to remove it here.
-            # This is to avoid a conflict or unexpected behaviour on getting the locale vars for following commands.
-            PVARS.pop('a_vars', None)
+                exec(cmd, self._get_python_globals(), self._get_python_locals())
             return 0
         except (AbortException, SkipBatchItemException):
             raise
