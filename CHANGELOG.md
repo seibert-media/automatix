@@ -1,5 +1,13 @@
 # Changelog
 
+# 2.4.0
+- Feature: Add RUNNING_INSIDE_AUTOMATIX as environment variable for shell actions
+- Feature: Python debug shell option
+- Refactoring Python action
+- Python action: Global variables are not persistent through commands any longer. Please use PERSISTENT_VARS.
+- Python action: Global imported modules/functions/objects are not available without import any longer (re, quote, ...)
+- Python action: Automatix variables are now available as `a_vars`, replacing `vars` which was shadowing the builtin `vars()` function
+
 # 2.3.1 / 2.3.2
 - Add check for proper screen version for parallel processing
 - Fix: explanation URL
