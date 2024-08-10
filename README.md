@@ -321,9 +321,7 @@ Here you define the commands automatix shall execute.
   executed sequentially for every node.
 
 4) **python**: Python code to execute.
-   * Notice that there are some modules, constants and functions which
-     are already imported (check command.py): e.g.
-     `re, subprocess, quote(from shlex)`. The variable `vars` is used
+   * Notice that the variable `vars` is used
      to store the Automatix variables as a dictionary. You can use it 
      to access or change the variables directly.
    * If bundlewrap is enabled, the Bundlewrap repository object is

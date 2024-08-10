@@ -1,6 +1,7 @@
 import os
 import re
 import subprocess
+from code import InteractiveConsole
 from shlex import quote
 from time import time
 from typing import Tuple
@@ -25,9 +26,18 @@ PERSISTENT_VARS = PVARS = PersistentDict()
 # Leading red " Automatix \w > " to indicate that this shell is inside a running Automatix execution
 AUTOMATIX_PROMPT = r'\[\033[0;31m\] Automatix \[\033[0m\]\\w > '
 
+AUTOMATIX_PYTHON_BANNER = """\
+Automatix Python Debugging Console
+
+Same variables as in a python command are available, but locals() and globals() are not divided.
+Exit with `exit()` or Ctrl-D.
+"""
+AUTOMATIX_PYTHON_EXITMSG = 'Exit Python Debugging Console.'
+
 POSSIBLE_ANSWERS = {
     'p': 'proceed (default)',
     'T': 'start interactive terminal shell ({bash_path} -i) and return back here on exit',
+    'D': 'start interactive Python debugging shell with command environment',
     'v': 'show and change variables',
     'r': 'retry',
     'R': 'reload from file and retry command (same index)',
@@ -145,7 +155,7 @@ class Command:
         if self.get_type() == 'manual' or interactive:
             self.env.LOG.debug('Ask for user interaction.')
 
-            answer = self._ask_user(question='[MS] Proceed?', allowed_options=['p', 'T', 'v', 's', 'R', 'a'])
+            answer = self._ask_user(question='[MS] Proceed?', allowed_options=['p', 'T', 'D', 'v', 's', 'R', 'a'])
             # answers 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
             if answer == 's' or self.get_type() == 'manual':
                 return
@@ -166,7 +176,7 @@ class Command:
 
             err_answer = self._ask_user(
                 question='[CF] What should I do?',
-                allowed_options=['p', 'T', 'v', 'r', 'R', 'a'],
+                allowed_options=['p', 'T', 'D', 'v', 'r', 'R', 'a'],
             )
             # answers 'T', 'v', 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
             if err_answer == 'r':
@@ -258,6 +268,11 @@ class Command:
                     f' -i'
                 )
                 return self._ask_user_with_options(question=question, allowed_options=allowed_options)
+            case 'D':
+                if 'readline' not in vars():
+                    import readline  # noqa F401
+                pyconsole = InteractiveConsole(self._get_python_globals().update(self._get_python_locale_vars()))
+                pyconsole.interact(banner=AUTOMATIX_PYTHON_BANNER, exitmsg=AUTOMATIX_PYTHON_EXITMSG)
             case 'v':
                 self.show_and_change_variables()
                 return self._ask_user_with_options(question=question, allowed_options=allowed_options)
@@ -270,27 +285,39 @@ class Command:
             case _:
                 return answer
 
-    def _generate_python_vars(self):
+    def _generate_python_vars(self) -> dict:
         # For BWCommand this method is overridden
         return {'vars': self.env.vars}
 
-    def _python_action(self) -> int:
-        cmd = self.get_resolved_value()
+    def _get_python_locale_vars(self) -> dict:
         locale_vars = self._generate_python_vars()
         locale_vars.update(PERSISTENT_VARS)
         locale_vars.update({
             'AbortException': AbortException,
             'SkipBatchItemException': SkipBatchItemException,
         })
-
         self.env.LOG.debug(f'locals:\n {locale_vars}')
+        return locale_vars
+
+    @staticmethod
+    def _get_python_globals() -> dict:
+        return {
+            '__builtins__': __builtins__,
+            'PERSISTENT_VARS': PERSISTENT_VARS,
+            'PVARS': PVARS,
+        }
+
+    def _python_action(self) -> int:
+        cmd = self.get_resolved_value()
+        locale_vars = self._get_python_locale_vars()
+
         try:
             self.env.LOG.debug(f'Run python command: {cmd}')
             if self.assignment_var:
-                exec(f'vars["{self.assignment_var}"] = {cmd}', globals(), locale_vars)
+                exec(f'vars["{self.assignment_var}"] = {cmd}', self._get_python_globals(), locale_vars)
                 self.env.LOG.info(f'Variable {self.assignment_var} = {repr(self.env.vars[self.assignment_var])}')
             else:
-                exec(cmd, globals(), locale_vars)
+                exec(cmd, self._get_python_globals(), locale_vars)
             return 0
         except (AbortException, SkipBatchItemException):
             raise

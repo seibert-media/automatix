@@ -7,6 +7,7 @@ vars:
 always:
   - local: echo 'Print this always :-)'
   - python: print(locals())
+  - python: print(globals())
 pipeline:
   - python: PVARS.moin = True
   - PVARS.moin?local: echo 'Moin'
