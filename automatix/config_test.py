@@ -1,6 +1,7 @@
 from unittest import TestCase
+from unittest.mock import patch
 
-from automatix.config import _overwrite, _tupelize, check_deprecated_syntax
+from automatix.config import _overwrite, _tupelize, check_deprecated_syntax, check_version
 
 tc = TestCase()
 
@@ -45,3 +46,41 @@ def test__check_deprecated_syntax__const(caplog):
 def test__check_deprecated_syntax__global(caplog):
     check_deprecated_syntax(ckey='python', entry='import xy; global xy', script={}, prefix='[always:5]')
     assert '[always:5] Using "global xy" is deprecated. Use "PERSISTENT_VARS[\'xy\'] = xy" instead.'
+
+
+@patch('automatix.config.VERSION', '2.1.5')
+def test__check_version__pass():
+    check_version('==2.1.5')
+    check_version('2.1.5')
+    check_version('2.1.4')
+    check_version('2')
+    check_version('>2.1')
+    check_version('> 2, < 3')
+    check_version('!=2.1.4')
+    check_version('~=2.1')
+    check_version('~= 2.0')
+    check_version('~=2')
+
+
+@patch('automatix.config.VERSION', '2.1.5')
+def test__check_version__fail():
+    with tc.assertRaises(AssertionError):
+        check_version('<2.0.0')
+
+    with tc.assertRaises(AssertionError):
+        check_version('>1.0, <2')
+
+    with tc.assertRaises(AssertionError):
+        check_version('~= 2.2')
+
+    with tc.assertRaises(AssertionError):
+        check_version('~= 3.1')
+
+    with tc.assertRaises(AssertionError):
+        check_version('~= 3')
+
+    with tc.assertRaises(AssertionError):
+        check_version('<=2.1')
+
+    with tc.assertRaises(SyntaxError):
+        check_version('!! 3.7.2')

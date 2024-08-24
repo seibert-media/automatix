@@ -94,6 +94,7 @@ if CONFIG['teamvault']:
 
     SCRIPT_FIELDS['secrets'] = 'Secrets'
 
+
     class UnknownSecretTypeException(Exception):
         pass
 
@@ -221,11 +222,42 @@ def check_deprecated_syntax(ckey: str, entry: str, script: dict, prefix: str) ->
     return warn
 
 
+def check_version(version_str: str):
+    installed_version = _tupelize(VERSION)
+
+    for condition in version_str.split(','):
+        match = re.match(pattern=r'([><=!~]{0,2})\s*((\d+\.){0,3}\d+)', string=condition.strip())
+        operator = match.group(1)
+        required_version = _tupelize(match.group(2))
+
+        match operator:
+            case '==':
+                assert installed_version == required_version
+            case '!=':
+                assert installed_version != required_version
+            case '>=' | '':
+                assert installed_version >= required_version
+            case '<=':
+                assert installed_version <= required_version
+            case '>':
+                assert installed_version > required_version
+            case '<':
+                assert installed_version < required_version
+            case '~=':
+                assert installed_version[:len(required_version)-1] == required_version[:-1]
+                assert installed_version >= required_version
+            case _:
+                raise SyntaxError(f'Unknown operator "{operator}"')
+
+
 def validate_script(script: dict):
-    script_required_version = script.get('require_version', '0.0.0')
-    if _tupelize(VERSION) < _tupelize(script_required_version):
-        LOG.error(f'The script requires minimum version {script_required_version}. We have {VERSION}.')
+    version_str = script.get('require_version', '0.0.0')
+    try:
+        check_version(version_str=version_str)
+    except AssertionError:
+        LOG.error(f'The script requires version {version_str}. We have {VERSION}.')
         sys.exit(1)
+
     warn = 0
     for pipeline in ['always', 'pipeline', 'cleanup']:
         for index, command in enumerate(script.get(pipeline, [])):

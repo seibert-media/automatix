@@ -257,7 +257,9 @@ The **scriptfile** has to contain valid YAML.
 : Just a name for the process. Does not do anything.
 
 **require_version** _(string)_
-: Minimum required Automatix version for this script to run.
+: The required Automatix version for this script to run. Similar to the
+ [Python version specifiers](https://packaging.python.org/en/latest/specifications/version-specifiers/#version-specifiers).
+ Allowed operators are: "==","!=",">=","<=",">","<","~="
 
 **systems** _(associative array)_
 : Define some systems. Value has to be a valid SSH destination like an
