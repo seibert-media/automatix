@@ -40,12 +40,17 @@ def test__check_deprecated_syntax__dict(caplog):
 
 def test__check_deprecated_syntax__const(caplog):
     check_deprecated_syntax(ckey='local', entry='{const_apt}', script={}, prefix='')
-    assert 'Using "{const_apt}" is deprecated. Use "{CONST.apt}" instead.' in caplog.text
+    assert 'Using "{const_apt}" does not work any longer. Use "{CONST.apt}" instead.' in caplog.text
 
 
 def test__check_deprecated_syntax__global(caplog):
     check_deprecated_syntax(ckey='python', entry='import xy; global xy', script={}, prefix='[always:5]')
-    assert '[always:5] Using "global xy" is deprecated. Use "PERSISTENT_VARS[\'xy\'] = xy" instead.'
+    assert '[always:5] Using "global xy" does not work any longer. Use "PERSISTENT_VARS[\'xy\'] = xy" instead.' in caplog.text
+
+
+def test__check_deprecated_syntax__vars(caplog):
+    check_deprecated_syntax(ckey='python', entry='vars["myvar"] = xyz', script={}, prefix='[pipeline:7]')
+    assert '[pipeline:7] Using "vars["myvar"]" does not work any longer. Use "a_vars["myvar"]" instead.' in caplog.text
 
 
 @patch('automatix.config.VERSION', '2.1.5')

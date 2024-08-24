@@ -32,11 +32,12 @@ VERSION = metadata.version('automatix_cmd')
 DEPRECATED_SYNTAX = {
     # 0: REGEX pattern
     # 1: replacement, formatted with group = re.Match.groups(), e.g. 'something {group[0]} foo'
-    # 2: special flags (p: python, b: Bundlewrap, s: replace '{s}' with pipe separated system names)
-    (r'({s})_node(?!\w)', 'NODES.{group[0]}', 'bps'),  # Removed in 2.0.0
-    (r'{\s*system_(\w*)\s*}', '{{SYSTEMS.{group[0]}}}', ''),  # Removed in 2.0.0
-    (r'{\s*const_(\w*)\s*}', '{{CONST.{group[0]}}}', ''),  # Removed in 2.0.0
-    (r'(?<!\w)global\s+(\w*)', 'PERSISTENT_VARS[\'{group[0]}\'] = {group[0]}', 'p'),
+    # 2: special flags (p: python, b: Bundlewrap, s: replace '{s}' with pipe separated system names, r: already removed)
+    (r'({s})_node(?!\w)', 'NODES.{group[0]}', 'bpsr'),  # Removed in 2.0.0
+    (r'{\s*system_(\w*)\s*}', '{{SYSTEMS.{group[0]}}}', 'r'),  # Removed in 2.0.0
+    (r'{\s*const_(\w*)\s*}', '{{CONST.{group[0]}}}', 'r'),  # Removed in 2.0.0
+    (r'(?<!\w)global\s+(\w*)', 'PERSISTENT_VARS[\'{group[0]}\'] = {group[0]}', 'pr'),  # Removed in 2.4.0
+    (r'(?<!\w)vars\[([\w\'"]+)\]', 'a_vars[{group[0]}]', 'pr'),  # Changed vars -> a_vars in 2.4.0
 }
 
 SCRIPT_FIELDS = OrderedDict()
@@ -93,6 +94,7 @@ if CONFIG['teamvault']:
     import bwtv
 
     SCRIPT_FIELDS['secrets'] = 'Secrets'
+
 
     class UnknownSecretTypeException(Exception):
         pass
@@ -213,10 +215,11 @@ def check_deprecated_syntax(ckey: str, entry: str, script: dict, prefix: str) ->
             match = re.search(pattern, entry)
         if match:
             warn += 1
-            LOG.warning('{prefix} Using "{match}" is deprecated. Use "{repl}" instead.'.format(
+            LOG.warning('{prefix} Using "{match}" {state}. Use "{repl}" instead.'.format(
                 prefix=prefix,
                 match=match.group(0),
-                repl=replacement.format(group=match.groups())
+                repl=replacement.format(group=match.groups()),
+                state='does not work any longer' if 'r' in flags else 'is deprecated',
             ))
     return warn
 
