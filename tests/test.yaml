@@ -1,4 +1,5 @@
 name: Automatix Test
+required_version: '~=2.5'
 systems:
   testsystem: docker-test
 vars:

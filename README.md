@@ -259,7 +259,7 @@ The **scriptfile** has to contain valid YAML.
 **require_version** _(string)_
 : The required Automatix version for this script to run. Similar to the
  [Python version specifiers](https://packaging.python.org/en/latest/specifications/version-specifiers/#version-specifiers).
- Allowed operators are: "==","!=",">=","<=",">","<","~="
+ Multiple conditions can be separated by comma. Allowed operators are: "==","!=",">=" (default),"<=",">","<","~="
 
 **systems** _(associative array)_
 : Define some systems. Value has to be a valid SSH destination like an

@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.5.0
+- Add fine tuning for required version
+
 # 2.4.0
 - Feature: Add RUNNING_INSIDE_AUTOMATIX as environment variable for shell actions
 - Feature: Python debug shell option

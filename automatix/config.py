@@ -94,7 +94,6 @@ if CONFIG['teamvault']:
 
     SCRIPT_FIELDS['secrets'] = 'Secrets'
 
-
     class UnknownSecretTypeException(Exception):
         pass
 
@@ -244,7 +243,7 @@ def check_version(version_str: str):
             case '<':
                 assert installed_version < required_version
             case '~=':
-                assert installed_version[:len(required_version)-1] == required_version[:-1]
+                assert installed_version[:len(required_version) - 1] == required_version[:-1]
                 assert installed_version >= required_version
             case _:
                 raise SyntaxError(f'Unknown operator "{operator}"')
