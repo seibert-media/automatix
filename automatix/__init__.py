@@ -155,6 +155,8 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
 def check_screen():
     p = subprocess.run('screen -v', shell=True, stdout=subprocess.PIPE)
     screen_version = p.stdout.decode()
+    if p.returncode != 0 or 'command not found' in screen_version:
+        raise Exception('No GNU screen version found')
     if 'GNU' in screen_version:
         return
     if 'FAU' in screen_version:
@@ -162,7 +164,12 @@ def check_screen():
             'Parallel processing only supported for the "GNU" version of screen. You have the "FAU" version.\n'
             'On MacOS you can try to install the GNU version via Homebrew: `brew install screen`.'
         )
-    raise Exception('No supported GNU screen version found')
+        raise Exception('No supported GNU screen version found')
+
+    LOG.warning(
+        'Could not determine which screen version is available. '
+        'If parallel processing does not work, check for the GNU version of screen.'
+    )
 
 
 def main():
