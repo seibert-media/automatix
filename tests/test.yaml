@@ -4,6 +4,7 @@ systems:
   testsystem: docker-test
 vars:
   myvar: huhu
+  myvar2: FILE_tests/test_var_input_file
 
 always:
   - local: echo 'Print this always :-)'
@@ -12,8 +13,8 @@ always:
       from pprint import pprint
       import re
       PERSISTENT_VARS.update(locals())
-  - python: pprint(locals())
-  - python: pprint(globals())
+  - python: pprint('{myvar}')
+  - python: pprint('''{myvar2}''')
 pipeline:
   - python: PVARS.moin = True
   - PVARS.moin?local: echo 'Moin'
@@ -25,7 +26,7 @@ pipeline:
   - python: del PERSISTENT_VARS['uuid4']
   - a=local: uptime
   - remote@testsystem: whoami
-  - python: print('{myvar}')
+  - python: print('{myvar2}')
   - cond=python: 'None'
   - cond?python: | 
       print(f'Das ging wohl daneben: {SYSTEMS.testsystem}')
@@ -35,5 +36,5 @@ pipeline:
   - python: raise Exception('moin')
 cleanup:
   - local: echo 'Cleaning up.'
-  - python: pprint(locals())
-  - python: pprint(globals())
+  - python: pprint('{myvar}')
+  - python: pprint('''{myvar2}''')
