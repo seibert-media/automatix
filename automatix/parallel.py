@@ -16,8 +16,15 @@ from .command import AbortException
 from .config import LOG, init_logger, CONFIG
 from .progress_bar import setup_scroll_area, destroy_scroll_area
 
+# See https://en.wikipedia.org/wiki/ANSI_escape_code
 LINE_UP = '\033[1A'
-LINE_CLEAR = '\x1b[2K'
+LINE_CLEAR = '\033[2K'
+LINE_END = '\033[20C'  # Moves cursor 20 times forward, should be sufficient.
+LINE_START = '\033[20D'  # Moves cursor 20 times backward, should be sufficient.
+CURSOR_SAVE = '\033[s'
+CURSOR_RESTORE = '\033[u'
+
+LOOP_LINES = 17
 
 
 @dataclass
@@ -122,7 +129,8 @@ def run_manage_loop(tempdir: str, time_id: int):
     logfile_dir = f'{CONFIG.get("logfile_dir")}/{time_id}'
 
     LOG.info(f'Found {autos.count} files to process. Screens name are like "{time_id}_autoX"')
-    LOG.info('To switch to screens detach from this screen via "<ctrl>+a d".')
+    LOG.info('To switch screens detach from this screen via "<ctrl>+a d".')
+    LOG.info('To scroll back in history press "<ctrl>+a Esc" to enable "copy mode". Switch back with "Esc".')
 
     open(status_file, 'a').close()
     try:
@@ -224,9 +232,18 @@ def run_auto_from_file():
             destroy_scroll_area()
 
 
+def clear_loop():
+    print(CURSOR_SAVE, end='', flush=True)
+    print(LINE_START, end='')
+    for _ in range(LOOP_LINES):
+        print(LINE_UP, end=LINE_CLEAR)
+
+
 def ask_for_options(autos: Autos) -> str | None:
     print()
     LOG.notice('Please notice: To come back to this selection press "<ctrl>+a d" in a screen session!')
+    LOG.notice('To scroll back in history press "<ctrl>+a Esc" to enable "copy mode". Switch back with "Esc".')
+    print()
     LOG.info('Following options are available:')
     LOG.info(
         ' o: overview / manager loop\n'
@@ -234,14 +251,19 @@ def ask_for_options(autos: Autos) -> str | None:
         ' X (number): switch to autoX\n'
         f' mX: set max parallel screens to X (actual {autos.max_parallel})\n'
     )
+    print(CURSOR_RESTORE, end='', flush=True)
+
+
+def check_for_option(autos: Autos) -> str | None:
     i, _, _ = select.select([sys.stdin], [], [], 1)
     if i:
         answer = sys.stdin.readline().strip()
+        print(LINE_UP, end=LINE_CLEAR)
     else:
-        return
+        return None
 
     if answer == '':
-        return
+        return None
 
     if answer == 'o':
         return f'{autos.time_id}_overview'
@@ -254,11 +276,11 @@ def ask_for_options(autos: Autos) -> str | None:
             max_parallel = int(answer[1:])
             with FileWithLock(autos.status_file, 'a') as sf:
                 sf.write(f'{max_parallel}:max_parallel\n')
-            return
+            return None
         except ValueError:
             LOG.warning(f'Invalid answer: {answer}')
             sleep(1)
-            return
+            return None
 
     try:
         number = int(answer)
@@ -266,27 +288,31 @@ def ask_for_options(autos: Autos) -> str | None:
     except ValueError:
         LOG.warning(f'Invalid answer: {answer}')
         sleep(1)
-        return
+        print(LINE_UP, end=LINE_CLEAR, flush=True)
+        return None
 
 
 def screen_switch_loop(tempdir: str, time_id: int):
     try:
         while not isfile(f'{tempdir}/autos'):
             sleep(1)
+        print('\n' * LOOP_LINES)  # some initial space for the loop
         while True:
             with FileWithLock(f'{tempdir}/autos', 'rb') as f:
                 autos = pickle.load(file=f)
+
+            if screen_id := check_for_option(autos=autos):
+                subprocess.run(f'screen -r {screen_id}', shell=True)
+                sleep(1)
+
+            clear_loop()
             print_status_verbose(autos=autos)
 
             if len(autos.running) + len(autos.waiting) + len(autos.user_input) == 0:
                 break
 
-            if screen_id := ask_for_options(autos=autos):
-                subprocess.run(f'screen -r {screen_id}', shell=True)
-                sleep(1)
-            else:
-                for _ in range(15):
-                    print(LINE_UP, end=LINE_CLEAR)
+            ask_for_options(autos=autos)
+
     except (KeyboardInterrupt, Exception) as exc:
         print('\n' * 8)
         LOG.exception(exc)
