@@ -10,9 +10,9 @@ setup(
     keywords=['bash', 'shell', 'command', 'automation', 'process', 'wrapper', 'devops', 'system administration'],
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='https://github.com/vanadinit/automatix_cmd',
+    url='https://github.com/seibert-media/automatix',
     author='Johannes Paul',
-    author_email='vanadinit@quantentunnel.de',
+    author_email='johannes.paul@seibert.group, vanadinit@quantentunnel.de',
     license='MIT',
     python_requires='>=3.10',
     install_requires=[

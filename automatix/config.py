@@ -27,7 +27,7 @@ try:
 except ImportError:
     bash_completion = False
 
-VERSION = metadata.version('automatix_cmd')
+VERSION = metadata.version('automatix')
 
 DEPRECATED_SYNTAX = {
     # 0: REGEX pattern
@@ -103,7 +103,7 @@ if CONFIG['teamvault']:
 def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description='Automation wrapper for bash and python commands.',
-        epilog='Explanations and README at https://github.com/vanadinit/automatix_cmd',
+        epilog='Explanations and README at https://github.com/seibert-media/automatix',
     )
     scriptfile_action = parser.add_argument(
         'scriptfile',

@@ -1,5 +1,9 @@
 # Changelog
 
+# 2.6.0
+- Backport changes from fork
+- Adjustments due to backporting
+
 # 2.5.0
 - Add fine tuning for required version
 

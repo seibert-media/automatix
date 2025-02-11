@@ -22,9 +22,9 @@ def check_for_original_automatix():
     p = subprocess.run('pip list | grep automatix', shell=True, stdout=subprocess.PIPE)
 
     for line in p.stdout.decode().split('\n'):
-        if line.strip().split(' ', maxsplit=1)[0].strip() == 'automatix':
+        if line.strip().split(' ', maxsplit=1)[0].strip() == 'automatix_cmd':
             raise Exception(
-                'This package MUST NOT be installed along with the "automatix" package.'
+                'This package MUST NOT be installed along with the "automatix_cmd" package.'
                 ' Both packages use the same entry point and module names and therefore'
                 ' are conflicting. Please uninstall automatix AND automatix_cmd first,'
                 ' THEN reinstall the package you want to use!')
@@ -34,7 +34,7 @@ def setup(args: Namespace):
     """Setup logger and print version information"""
     init_logger(name=CONFIG['logger'], debug=args.debug)
 
-    LOG.info(f'Automatix Version {VERSION} (automatix_cmd)')
+    LOG.info(f'Automatix Version {VERSION}')
 
     configfile = CONFIG.get('config_file')
     if configfile:

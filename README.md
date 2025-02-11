@@ -23,11 +23,6 @@ There are different modes for **automatix** to work. Without any
  It comes therefore with bundlewrap and teamvault support as well as
  the possibility to use your own logging library.
 
-This **automatix** version (automatix_cmd) is a fork of the original
- **automatix** (https://github.com/seibert-media/automatix) with some
- extended functionality and is maintained private in the authors free
- time (not maintained by seibert//).
-
 ## Warning:
 
 Beware that this tool cannot substitute the system administrators
@@ -47,10 +42,10 @@ Please use the interactive mode and doublecheck commands before
 Automatix requires Python &ge; 3.10.
 
 ```
-pip install automatix_cmd
+pip install automatix
 ```
 
-NOTICE: original `automatix` and this `automatix_cmd` share the
+NOTICE: original `automatix` and `automatix_cmd` share the
 same main entrypoint. To avoid overwriting and confusion,
 you should have only installed **ONE** of them!
 
