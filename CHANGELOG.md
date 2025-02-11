@@ -43,6 +43,13 @@
 - Feature: Parallel processing
 - Removed deprecated const_, system_ and _node variables (deprecation warnings still remain as hint)
 
+# 1.16.1
+- Fixup for previous release
+
+# 1.16.0
+- Feature: add environment variable `RUNNING_INSIDE_AUTOMATIX=1`
+- Fix: Manual steps always failing
+
 # 1.15.0
 - Feature: Option to invert conditions
 - Feature: Catch script syntax/parsing errors and offer file reload
