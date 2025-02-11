@@ -1,11 +1,13 @@
 import os
 import re
 import subprocess
+from code import InteractiveConsole
 from shlex import quote
 from time import time
 from typing import Tuple
 
 from .environment import PipelineEnvironment
+from .progress_bar import draw_progress_bar, block_progress_bar
 
 
 class PersistentDict(dict):
@@ -21,26 +23,45 @@ class PersistentDict(dict):
 
 PERSISTENT_VARS = PVARS = PersistentDict()
 
+# Leading red " Automatix \w > " to indicate that this shell is inside a running Automatix execution
+AUTOMATIX_PROMPT = r'\[\033[0;31m\] Automatix \[\033[0m\]\\w > '
+
+AUTOMATIX_PYTHON_BANNER = """\
+Automatix Python Debugging Console
+
+Same variables as in a python command are available, but locals() and globals() are not divided.
+Exit with `exit()` or Ctrl-D.
+"""
+AUTOMATIX_PYTHON_EXITMSG = 'Exit Python Debugging Console.'
+
 POSSIBLE_ANSWERS = {
     'p': 'proceed (default)',
+    'T': 'start interactive terminal shell ({bash_path} -i) and return back here on exit',
+    'D': 'start interactive Python debugging shell with command environment',
+    'v': 'show and change variables',
     'r': 'retry',
     'R': 'reload from file and retry command (same index)',
     'R±X': 'same as R, but change index by X (integer)',
     's': 'skip',
     'a': 'abort',
     'c': 'abort & continue to next (CSV processing)',
+    # 't' -> reserved for handling still running remote processes
+    # 'k' -> reserved for handling still running remote processes
+    # 'i' -> reserved for handling still running remote processes
 }
 
-SHELL_EXECUTABLE = '/bin/bash'
 KEYBOARD_INTERRUPT_MESSAGE = 'Abort command by user key stroke. Exit code is set to 130.'
 
 
 class Command:
-    def __init__(self, cmd: dict, index: int, pipeline: str, env: PipelineEnvironment):
+    def __init__(self, cmd: dict, index: int, pipeline: str, env: PipelineEnvironment, position: int):
         self.cmd = cmd
         self.index = index
         self.env = env
         self.pipeline = pipeline
+        self.position = position
+
+        self.bash_path = self.env.config['bash_path']
 
         for key, value in cmd.items():
             self.orig_key = key
@@ -52,6 +73,12 @@ class Command:
             else:
                 self.value = value
             break  # There should be only one entry in pipeline_cmd
+
+    @property
+    def progress_portion(self) -> int:
+        own_position = self.env.command_count * (self.env.batch_index - 1) + self.position
+        overall_command_count = self.env.batch_items_count * self.env.command_count
+        return round(own_position / overall_command_count * 100, 1)
 
     def get_type(self):
         if self.key == 'local':
@@ -79,13 +106,34 @@ class Command:
                 with open(os.path.expanduser(file_match.group(1))) as file:
                     variables[key] = file.read().strip()
 
-        for key, value in self.env.config['constants'].items():
-            # DEPRECATED, use CONST instead
-            variables[f'const_{key}'] = value
-
         variables['CONST'] = ConstantsWrapper(self.env.config['constants'])
         variables['SYSTEMS'] = SystemsWrapper(self.env.systems)
         return self.value.format(**variables)
+
+    def print_command(self):
+        print()
+        self.env.LOG.notice(f'({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
+
+    def show_and_change_variables(self):
+        print()
+        self.env.LOG.info('Variables:')
+        for key, value in self.env.vars.items():
+            self.env.LOG.info(f" {key}: {value}")
+        print()
+        self.env.LOG.info('To change/set variable write variable + "=" followed by value.')
+        self.env.LOG.info('Example: var1=xyz')
+        self.env.LOG.info('Notice: You can only change 1 variable at a time. Repeat if necessary.')
+        self.env.LOG.info('To not change anything just press "ENTER".')
+        answer = input('\n')
+        try:
+            key, value = answer.split('=', maxsplit=1)
+            self.env.vars[key.strip()] = value.strip()
+            self.env.LOG.info(f'Variable {key.strip()} = {value.strip()}')
+        except ValueError:
+            if answer:
+                self.env.LOG.error('Input could not be parsed.')
+        self.print_command()
+        print()
 
     def execute(self, interactive: bool = False, force: bool = False):
         try:
@@ -93,10 +141,12 @@ class Command:
         except (KeyError, UnknownCommandException):
             self.env.LOG.exception('Syntax or value error!')
             self.env.LOG.error('Syntax or value error! Please fix your script and reload/restart.')
-            self._ask_user(question='[SE] What should I do?', allowed_options=['R', 's', 'a'])
+            self._ask_user(question='[SE] What should I do?', allowed_options=['R', 'T', 'D', 'v', 's', 'a'])
+        if self.env.config['progress_bar']:
+            draw_progress_bar(self.progress_portion)
 
     def _execute(self, interactive: bool = False, force: bool = False):
-        self.env.LOG.notice(f'\n({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
+        self.print_command()
 
         if not self._check_condition():
             self.env.LOG.info('Skip command, because the condition is not met.')
@@ -105,7 +155,7 @@ class Command:
         if self.get_type() == 'manual' or interactive:
             self.env.LOG.debug('Ask for user interaction.')
 
-            answer = self._ask_user(question='[MS] Proceed?', allowed_options=['p', 's', 'R', 'a'])
+            answer = self._ask_user(question='[MS] Proceed?', allowed_options=['p', 'T', 'D', 'v', 's', 'R', 'a'])
             # answers 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
             if answer == 's' or self.get_type() == 'manual':
                 return
@@ -115,7 +165,8 @@ class Command:
         return_code = self._execute_action()
 
         if 'AUTOMATIX_TIME' in os.environ:
-            self.env.LOG.info(f'\n(command execution time: {round(time() - steptime)}s)')
+            print()
+            self.env.LOG.info(f'(command execution time: {round(time() - steptime)}s)')
 
         if return_code != 0:
             self.env.LOG.error(
@@ -123,8 +174,11 @@ class Command:
             if force:
                 return
 
-            err_answer = self._ask_user(question='[CF] What should I do?', allowed_options=['p', 'r', 'R', 'a'])
-            # answers 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
+            err_answer = self._ask_user(
+                question='[CF] What should I do?',
+                allowed_options=['p', 'T', 'D', 'v', 'r', 'R', 'a'],
+            )
+            # answers 'T', 'v', 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
             if err_answer == 'r':
                 return self._execute(interactive)
 
@@ -176,19 +230,24 @@ class Command:
             allowed_options.insert(allowed_options.index('R') + 1, 'R±X')
 
         options = '\n'.join([f' {k}: {POSSIBLE_ANSWERS[k]}' for k in allowed_options])
+        formatted_options = options.format(bash_path=self.bash_path)
 
         return self._ask_user_with_options(
-            question=f'{question}\n{options}\nYour answer: \a',
+            question=f'{question}\n{formatted_options}\nYour answer: \a',
             allowed_options=allowed_options,
         )
 
     def _ask_user_with_options(self, question: str, allowed_options: list) -> str:
+        if self.env.config['progress_bar']:
+            block_progress_bar(self.progress_portion)
+        self.env.send_status('user_input_add')
         answer = input(question)
+        self.env.send_status('user_input_remove')
 
         if answer == '':  # default
             answer = 'p'
 
-        if 'R' in allowed_options and len(answer) > 1 and answer.startswith('R'):
+        if answer.startswith('R') and 'R' in allowed_options and len(answer) > 1:
             try:
                 raise ReloadFromFile(index=self.index + int(answer[1:]))
             except ValueError:
@@ -198,36 +257,74 @@ class Command:
             self.env.LOG.warning('Invalid input. Try again.')
             return self._ask_user_with_options(question=question, allowed_options=allowed_options)
 
-        if answer == 'a':
-            raise AbortException(1)
-        if answer == 'R':
-            raise ReloadFromFile(index=self.index)
-        if self.env.batch_mode and answer == 'c':
-            raise SkipBatchItemException()
+        match answer:
+            case 'T':
+                print()
+                self.env.LOG.notice('Starting interactive terminal shell')
+                self._run_local_command(
+                    f'AUTOMATIX_SHELL=True'
+                    f' {self.bash_path}'
+                    f' --rcfile <(cat ~/.bashrc ; echo "PS1=\\"{AUTOMATIX_PROMPT}\\"")'
+                    f' -i'
+                )
 
-        return answer
+                return self._ask_user_with_options(question=question, allowed_options=allowed_options)
+            case 'D':
+                print()
+                if 'readline' not in vars():
+                    import readline  # noqa F401
 
-    def _generate_python_vars(self):
+                pyconsole_locals = self._get_python_globals()
+                pyconsole_locals.update(self._get_python_locals())
+
+                pyconsole = InteractiveConsole(pyconsole_locals)
+                pyconsole.interact(banner=AUTOMATIX_PYTHON_BANNER, exitmsg=AUTOMATIX_PYTHON_EXITMSG)
+
+                return self._ask_user_with_options(question=question, allowed_options=allowed_options)
+            case 'v':
+                self.show_and_change_variables()
+                return self._ask_user_with_options(question=question, allowed_options=allowed_options)
+            case 'a':
+                raise AbortException(1)
+            case 'R':
+                raise ReloadFromFile(index=self.index)
+            case 'c':
+                raise SkipBatchItemException()
+            case _:
+                return answer
+
+    def _generate_python_vars(self) -> dict:
         # For BWCommand this method is overridden
-        return {'vars': self.env.vars}
+        return {'a_vars': self.env.vars}
+
+    def _get_python_locals(self) -> dict:
+        locale_vars = {}
+        locale_vars.update(PERSISTENT_VARS)
+        self.env.LOG.debug(f'locals:\n {locale_vars}')
+        return locale_vars
+
+    def _get_python_globals(self) -> dict:
+        global_vars = {
+            # builtins are included anyway, if not defined here
+            'PERSISTENT_VARS': PERSISTENT_VARS,
+            'PVARS': PVARS,
+            'AbortException': AbortException,
+            'SkipBatchItemException': SkipBatchItemException,
+        }
+        global_vars.update(self._generate_python_vars())
+        self.env.LOG.debug(f'globals:\n {global_vars}')
+        return global_vars
 
     def _python_action(self) -> int:
         cmd = self.get_resolved_value()
-        locale_vars = self._generate_python_vars()
-        locale_vars.update(PERSISTENT_VARS)
-        locale_vars.update({
-            'AbortException': AbortException,
-            'SkipBatchItemException': SkipBatchItemException,
-        })
 
-        self.env.LOG.debug(f'locals:\n {locale_vars}')
         try:
             self.env.LOG.debug(f'Run python command: {cmd}')
             if self.assignment_var:
-                exec(f'vars["{self.assignment_var}"] = {cmd}', globals(), locale_vars)
+                exec(f'a_vars["{self.assignment_var}"] = {cmd}', self._get_python_globals(), self._get_python_locals())
                 self.env.LOG.info(f'Variable {self.assignment_var} = {repr(self.env.vars[self.assignment_var])}')
             else:
-                exec(cmd, globals(), locale_vars)
+                exec(cmd, self._get_python_globals(), self._get_python_locals())
             return 0
         except (AbortException, SkipBatchItemException):
             raise
@@ -270,7 +367,7 @@ class Command:
             proc = subprocess.run(
                 cmd,
                 env=process_environment,
-                executable=SHELL_EXECUTABLE,
+                executable=self.bash_path,
                 shell=True,
                 stdout=subprocess.PIPE,
             )
@@ -282,7 +379,7 @@ class Command:
             proc = subprocess.run(
                 cmd,
                 env=process_environment,
-                executable=SHELL_EXECUTABLE,
+                executable=self.bash_path,
                 shell=True,
             )
         return proc.returncode
@@ -320,9 +417,9 @@ class Command:
                          f' tar -C {self.env.config["remote_tmp_dir"]} -xf -;' \
                          f' {self._build_command(path=self.env.config["remote_tmp_dir"])}'
 
-        return f'{prefix}{ssh_cmd}{quote("bash -c " + quote(remote_cmd))}'
+        return f'{prefix}{ssh_cmd}{quote("RUNNING_INSIDE_AUTOMATIX=1 bash -c " + quote(remote_cmd))}'
 
-    def _remote_handle_keyboard_interrupt(self, hostname: str) -> int:
+    def _remote_handle_keyboard_interrupt(self, hostname: str):
         ssh_cmd = self.env.config["ssh_cmd"].format(hostname=hostname)
 
         try:
@@ -331,9 +428,11 @@ class Command:
                 self.env.LOG.notice(
                     'Remote command seems still to be running! Found PIDs: {}'.format(','.join(ps_pids))
                 )
+                self.env.send_status('user_input_add')
                 answer = input(
                     '[RR] What should I do? '
                     '(i: send SIGINT (default), t: send SIGTERM, k: send SIGKILL, p: do nothing and proceed) \n\a')
+                self.env.send_status('user_input_remove')
 
                 if answer == 'p':
                     break
@@ -360,7 +459,7 @@ class Command:
         pids = subprocess.check_output(
             cmd,
             shell=True,
-            executable=SHELL_EXECUTABLE,
+            executable=self.bash_path,
         ).decode(self.env.config["encoding"]).split()
 
         return pids
@@ -369,7 +468,7 @@ class Command:
         ssh_cmd = self.env.config["ssh_cmd"].format(hostname=hostname)
         cleanup_cmd = f'{ssh_cmd} rm -r {self.env.config["remote_tmp_dir"]}'
         self.env.LOG.debug(f'Executing: {cleanup_cmd}')
-        proc = subprocess.run(cleanup_cmd, shell=True, executable=SHELL_EXECUTABLE)
+        proc = subprocess.run(cleanup_cmd, shell=True, executable=self.bash_path)
         if proc.returncode != 0:
             self.env.LOG.warning(
                 'Failed to remove {tmp_dir}, exitcode: {return_code}'.format(

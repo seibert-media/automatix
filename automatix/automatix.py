@@ -1,4 +1,5 @@
-import logging
+import os
+import sys
 from argparse import Namespace
 from collections import OrderedDict
 from functools import cached_property
@@ -15,13 +16,12 @@ class Automatix:
             script: dict,
             variables: dict,
             config: dict,
-            cmd_class: type,
             script_fields: OrderedDict,
             cmd_args: Namespace,
+            batch_index: int,
     ):
         self.script = script
         self.script_fields = script_fields
-        self.cmd_class = cmd_class
         self.env = PipelineEnvironment(
             name=script['name'],
             config=config,
@@ -29,17 +29,43 @@ class Automatix:
             variables=variables,
             imports=script.get('imports', []),
             batch_mode=script.get('batch_mode', False),
+            batch_items_count=script.get('batch_items_count', 1),
+            batch_index=batch_index,
             cmd_args=cmd_args,
-            logger=logging.getLogger(config['logger']),
         )
 
+        self._command_lists: dict = {}
+
     @cached_property
-    def command_lists(self) -> dict:
-        return {
-            'always': self.build_command_list(pipeline='always'),
-            'main': self.build_command_list(pipeline='pipeline'),
-            'cleanup': self.build_command_list(pipeline='cleanup'),
-        }
+    def cmd_class(self) -> type:
+        if self.env.config.get('bundlewrap'):
+            from .bundlewrap import BWCommand, AutomatixBwRepo
+
+            self.env.config['bw_repo'] = AutomatixBwRepo(repo_path=os.environ.get('BW_REPO_PATH', '.'))
+            return BWCommand
+        else:
+            return Command
+
+    def command_list(self, pipeline: str) -> list:
+        if pipeline == 'main':
+            pipeline = 'pipeline'
+        if not self._command_lists.get(pipeline):
+            self._command_lists[pipeline] = self.build_command_list(pipeline=pipeline)
+        return self._command_lists[pipeline]
+
+    def get_command_position(self, index: int, pipeline: str) -> int:
+        if pipeline == 'always':
+            return index
+        if pipeline in ['pipeline', 'main']:
+            return index + len(self.command_list('always'))
+        if pipeline == 'cleanup':
+            return index + len(self.command_list('always')) + len(self.command_list('main'))
+
+    def set_command_count(self):
+        if not self.env.command_count:
+            self.env.command_count = len(
+                self.command_list('always') + self.command_list('main') + self.command_list('cleanup')
+            )
 
     def build_command_list(self, pipeline: str) -> List[Command]:
         command_list = []
@@ -49,6 +75,7 @@ class Automatix:
                 index=index,
                 env=self.env,
                 pipeline=pipeline,
+                position=self.get_command_position(index=index, pipeline=pipeline),
             )
             command_list.append(new_cmd)
             if new_cmd.assignment_var and new_cmd.assignment_var not in self.env.vars:
@@ -57,41 +84,45 @@ class Automatix:
 
     def reload_script(self):
         self.script = get_script(args=self.env.cmd_args)
-        del self.command_lists  # Clear cache
+        self._command_lists = {}  # Clear cache
 
     def print_main_data(self):
-        self.env.LOG.info('\n\n')
-        self.env.LOG.info(f' ------ Overview ------')
+        print('\n')
+        self.env.LOG.info(' ------ Overview ------')
         for field_key, field_value in self.script_fields.items():
-            self.env.LOG.info(f'\n{field_value}:')
+            print()
+            self.env.LOG.info(f'{field_value}:')
             for key, value in self.script.get(field_key, {}).items():
                 self.env.LOG.info(f" {key}: {value}")
 
     def print_command_line_steps(self, command_list: List[Command]):
-        self.env.LOG.info('\nCommandline Steps:')
+        print()
+        self.env.LOG.info('Commandline Steps:')
         for cmd in command_list:
             self.env.LOG.info(f"({cmd.index}) [{cmd.orig_key}]: {cmd.get_resolved_value()}")
 
     def _execute_command_list(self, name: str, start_index: int, treat_as_main: bool):
         try:
             steps = self.script.get('steps')
-            for cmd in self.command_lists[name][start_index:]:
+            for cmd in self.command_list(name)[start_index:]:
                 if treat_as_main:
                     if steps and (self.script['exclude'] == (cmd.index in steps)):
                         # Case 1: exclude is True  and index is in steps => skip
                         # Case 2: exclude is False and index is in steps => execute
-                        self.env.LOG.notice(f'\n({cmd.index}) Not selected for execution: skip')
+                        print()
+                        self.env.LOG.notice(f'({cmd.index}) Not selected for execution: skip')
                         continue
                     cmd.execute(interactive=self.env.cmd_args.interactive, force=self.env.cmd_args.force)
                 else:
                     cmd.execute()
         except ReloadFromFile as exc:
-            self.env.LOG.info(f'\nReload script from file and retry => ({exc.index})')
+            print()
+            self.env.LOG.info(f'Reload script from file and retry => ({exc.index})')
             self.reload_script()
             self._execute_command_list(name=name, start_index=exc.index, treat_as_main=treat_as_main)
 
     def execute_pipeline(self, name: str):
-        if not self.command_lists[name]:
+        if not self.command_list(name):
             return
 
         if name == 'main':
@@ -101,16 +132,18 @@ class Automatix:
             treat_as_main = False
             start_index = 0
 
-        self.env.LOG.info('\n------------------------------')
+        print()
+        self.env.LOG.info('------------------------------')
         self.env.LOG.info(f' --- Start {name.upper()} pipeline ---')
 
         self._execute_command_list(name=name, start_index=start_index, treat_as_main=treat_as_main)
 
-        self.env.LOG.info(f'\n --- End {name.upper()} pipeline ---')
+        print()
+        self.env.LOG.info(f' --- End {name.upper()} pipeline ---')
         self.env.LOG.info('------------------------------\n')
 
     def run(self):
-        self.env.LOG.info('\n\n')
+        print('\n')
         self.env.LOG.info('//////////////////////////////////////////////////////////////////////')
         self.env.LOG.info(f"---- {self.script['name']} ----")
         self.env.LOG.info('//////////////////////////////////////////////////////////////////////')
@@ -120,9 +153,9 @@ class Automatix:
         self.execute_pipeline(name='always')
 
         self.print_main_data()
-        self.print_command_line_steps(command_list=self.command_lists['main'])
+        self.print_command_line_steps(command_list=self.command_list('main'))
         if self.env.cmd_args.print_overview:
-            exit()
+            sys.exit()
 
         try:
             self.execute_pipeline(name='main')

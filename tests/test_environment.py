@@ -5,13 +5,11 @@ from time import sleep
 
 import pytest
 
-from automatix import get_script, collect_vars, CONFIG, Command, SCRIPT_FIELDS
+from automatix import get_script, collect_vars, CONFIG, SCRIPT_FIELDS
 from automatix.automatix import Automatix
 from automatix.logger import init_logger
 
 SELFDIR = dirname(abspath(__file__))
-
-pytest_plugins = ["docker_compose"]
 
 default_args = Namespace(
     scriptfile=f'{SELFDIR}/test.yaml',
@@ -33,18 +31,12 @@ testauto = Automatix(
     script=script,
     variables=variables,
     config=CONFIG,
-    cmd_class=Command,
     script_fields=SCRIPT_FIELDS,
     cmd_args=default_args,
+    batch_index=1,
 )
 
-testauto.env.vars.update({
-    'false_var': False,
-    'true_var': True,
-    'empty_var': '',
-    'none_var': None,
-    'example_string': 'example',
-})
+testauto.env.attach_logger()
 
 environment = testauto.env
 
@@ -56,7 +48,7 @@ def run_command_and_check(cmd):
 
 
 @pytest.fixture(scope='function')
-def ssh_up(function_scoped_container_getter):
+def ssh_up(docker_services):
     max_retries = 20
     for _ in range(max_retries):
         sleep(1)
@@ -71,7 +63,8 @@ def ssh_up(function_scoped_container_getter):
                 ' docker-test /bin/true')
         except subprocess.CalledProcessError:
             continue
-        run_command_and_check(cmd=f'ssh-keygen -R localhost:2222 >/dev/null 2>&1')
-        run_command_and_check(cmd=f'ssh-keyscan -t ecdsa -p 2222 localhost 2>/dev/null >> ~/.ssh/known_hosts')
+        run_command_and_check(cmd='ssh-keygen -R [localhost]:2222 >/dev/null 2>&1')
+        run_command_and_check(cmd='ssh-keygen -R localhost:2222 >/dev/null 2>&1')
+        run_command_and_check(cmd='ssh-keyscan -t ecdsa -p 2222 localhost 2>/dev/null >> ~/.ssh/known_hosts')
         return
     raise Exception('Maximum retries exceeded: SSH test setup could not be created.')

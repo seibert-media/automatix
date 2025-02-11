@@ -1,33 +1,40 @@
 name: Automatix Test
+required_version: '~=2.5'
 systems:
   testsystem: docker-test
 vars:
   myvar: huhu
+  myvar2: FILE_tests/test_var_input_file
 
 always:
   - local: echo 'Print this always :-)'
-  - python: print(locals())
-pipeline:
-  - python: PVARS.moin = True
-  - PVARS.moin?local: echo 'Moin'
-  - python: PVARS.moin = False
-  - PVARS.moin!?local: echo 'Moin Moin :-)'
-  - a=python: re.match('\d*', '12345')
-  - nonexistent?local: echo 'Hups ...'
   - python: |
       from uuid import uuid4
       from pprint import pprint
+      import re
       PERSISTENT_VARS.update(locals())
-  - python: print(uuid4())
+  - python: pprint('{myvar}')
+  - python: pprint('''{myvar2}''')
+pipeline:
+  - python: PVARS.moin = True
+  - PVARS.moin?local: echo 'Moin'
+  - python: PVARS = False
+  - PVARS.moin!?local: echo 'Moin Moin :-)'
+  - a=python: re.match(r'\d*', '12345')
+  - nonexistent?local: echo 'Hups ...'
+  - python: print(str(uuid4()) + ' test ' + str(a_vars['a'].string))
   - python: del PERSISTENT_VARS['uuid4']
   - a=local: uptime
   - remote@testsystem: whoami
-  - python: print('{myvar}')
+  - python: print('{myvar2}')
   - cond=python: 'None'
-  - cond?python: print('Das ging wohl daneben')
+  - cond?python: | 
+      print(f'Das ging wohl daneben: {SYSTEMS.testsystem}')
   - cond!?python: print('Und nun?')
   - cond2=local: test "confluence" == "jira" && echo -n "True"; exit 0
   - cond2?python: print('Das ging wohl daneben 2')
   - python: raise Exception('moin')
 cleanup:
   - local: echo 'Cleaning up.'
+  - python: pprint('{myvar}')
+  - python: pprint('''{myvar2}''')
