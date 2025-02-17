@@ -6,7 +6,7 @@ from argparse import Namespace
 from copy import deepcopy
 from csv import DictReader
 from tempfile import TemporaryDirectory
-from time import time
+from time import time, gmtime, strftime
 from typing import List
 
 from .automatix import Automatix
@@ -30,17 +30,21 @@ def check_for_original_automatix():
                 ' THEN reinstall the package you want to use!')
 
 
-def setup(args: Namespace):
+def setup(args: Namespace) -> float:
     """Setup logger and print version information"""
     init_logger(name=CONFIG['logger'], debug=args.debug)
+    starttime = time()
 
     LOG.info(f'Automatix Version {VERSION}')
+    LOG.info(f'Started at: {strftime("%a, %d %b %Y %H:%M:%S UTC", gmtime(starttime))}')
 
     configfile = CONFIG.get('config_file')
     if configfile:
         LOG.info(f'Using configuration from: {configfile}')
     else:
         LOG.warning('Configuration file not found or not configured. Using defaults.')
+
+    return starttime
 
 
 def get_script_and_batch_items(args: Namespace) -> (dict, list):
@@ -174,9 +178,8 @@ def main():
         if answer != 'yes':
             sys.exit(0)
 
-    starttime = time()
     args = arguments()
-    setup(args=args)
+    starttime = setup(args=args)
 
     script, batch_items = get_script_and_batch_items(args=args)
 
