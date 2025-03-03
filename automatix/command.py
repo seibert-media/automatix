@@ -3,7 +3,6 @@ import re
 import subprocess
 from code import InteractiveConsole
 from dataclasses import dataclass
-from enum import Enum
 from shlex import quote
 from time import time
 from typing import Tuple
@@ -49,21 +48,17 @@ class Answer:
         return POSSIBLE_ANSWERS[self.answer]
 
 
-class PossibleAnswers(Enum):
-    proceed: Answer = Answer(answer='p')
-    terminal: Answer = Answer(answer='T')
-    debug_shell: Answer = Answer(answer='D')
-    variables: Answer = Answer(answer='v')
-    retry: Answer = Answer(answer='r')
-    reload: Answer = Answer(answer='R')
-    reload_index: Answer = Answer(answer='R±X')
-    skip: Answer = Answer(answer='s')
-    abort: Answer = Answer(answer='a')
-    abort_continue: Answer = Answer(answer='c')
-
-    @property
-    def answer(self):
-        return self.value.answer
+class PossibleAnswers:
+    proceed = Answer(answer='p')
+    terminal = Answer(answer='T')
+    debug_shell = Answer(answer='D')
+    variables = Answer(answer='v')
+    retry = Answer(answer='r')
+    reload = Answer(answer='R')
+    reload_index = Answer(answer='R±X')
+    skip = Answer(answer='s')
+    abort = Answer(answer='a')
+    abort_continue = Answer(answer='c')
 
 PA = PossibleAnswers
 
@@ -289,7 +284,7 @@ class Command:
         if self.env.batch_mode:
             allowed_options.append(PA.abort_continue)
 
-        options = '\n'.join([f' {k.answer}: {k.value.description}' for k in allowed_options])
+        options = '\n'.join([f' {k.answer}: {k.description}' for k in allowed_options])
         formatted_options = options.format(bash_path=self.bash_path)
 
         return self._ask_user_with_options(
