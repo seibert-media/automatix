@@ -1,3 +1,5 @@
+# PYTHON_ARGCOMPLETE_OK
+
 import os
 import pickle
 import subprocess
