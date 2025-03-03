@@ -22,6 +22,21 @@ class PersistentDict(dict):
         self[key] = value
 
 
+PERSISTENT_VARS = PVARS = PersistentDict()
+
+# Leading red " Automatix \w > " to indicate that this shell is inside a running Automatix execution
+AUTOMATIX_PROMPT = r'\[\033[0;31m\] Automatix \[\033[0m\]\\w > '
+
+AUTOMATIX_PYTHON_BANNER = """\
+Automatix Python Debugging Console
+
+Same variables as in a python command are available, but locals() and globals() are not divided.
+Exit with `exit()` or Ctrl-D.
+"""
+AUTOMATIX_PYTHON_EXITMSG = 'Exit Python Debugging Console.'
+
+KEYBOARD_INTERRUPT_MESSAGE = 'Abort command by user key stroke. Exit code is set to 130.'
+
 POSSIBLE_ANSWERS = {
     'p': 'proceed (default)',
     'T': 'start interactive terminal shell ({bash_path} -i) and return back here on exit',
@@ -60,22 +75,8 @@ class PossibleAnswers:
     abort = Answer(answer='a')
     abort_continue = Answer(answer='c')
 
+
 PA = PossibleAnswers
-
-PERSISTENT_VARS = PVARS = PersistentDict()
-
-# Leading red " Automatix \w > " to indicate that this shell is inside a running Automatix execution
-AUTOMATIX_PROMPT = r'\[\033[0;31m\] Automatix \[\033[0m\]\\w > '
-
-AUTOMATIX_PYTHON_BANNER = """\
-Automatix Python Debugging Console
-
-Same variables as in a python command are available, but locals() and globals() are not divided.
-Exit with `exit()` or Ctrl-D.
-"""
-AUTOMATIX_PYTHON_EXITMSG = 'Exit Python Debugging Console.'
-
-KEYBOARD_INTERRUPT_MESSAGE = 'Abort command by user key stroke. Exit code is set to 130.'
 
 
 class Command:
