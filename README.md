@@ -19,7 +19,7 @@ There are different modes for **automatix** to work. Without any
  commandline step whether to execute, skip or abort.
  Forced mode (**-f**) will also proceed if errors occur.
 
-**automatix** was originally designed for internal seibert// use.
+**automatix** was originally designed for internal Seibert Group use.
  It comes therefore with bundlewrap and teamvault support as well as
  the possibility to use your own logging library.
 
