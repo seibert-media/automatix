@@ -56,9 +56,13 @@ class BWCommand(Command):
                 return
 
             err_answer = self._ask_user(question='[PF] What should I do?', allowed_options=['p', 'T', 'v', 'r', 'a'])
-            # answers 'a' and 'c' are handled by _ask_user, 'p' means just pass
-            if err_answer == 'r':
-                return self._remote_bw_group_action(node=node)
+            # _ask_user handles are answers but 'r', 's', 'p'
+            # 's' is not in the allowed options'
+            match err_answer:
+                case 'r':
+                    return self._remote_bw_group_action(node=node)
+                case 'p':
+                    pass
 
 
 class BWNodesWrapper:

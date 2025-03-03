@@ -142,6 +142,9 @@ class Command:
             self.env.LOG.exception('Syntax or value error!')
             self.env.LOG.error('Syntax or value error! Please fix your script and reload/restart.')
             self._ask_user(question='[SE] What should I do?', allowed_options=['R', 'T', 'D', 'v', 's', 'a'])
+            # _ask_user handles are answers but 'r', 's', 'p'
+            # 'r' and 'p' are not in allowed options
+            # 's' means 'skip' so we can just go on
         if self.env.config['progress_bar']:
             draw_progress_bar(self.progress_portion)
 
@@ -156,8 +159,12 @@ class Command:
             self.env.LOG.debug('Ask for user interaction.')
 
             answer = self._ask_user(question='[MS] Proceed?', allowed_options=['p', 'T', 'D', 'v', 's', 'R', 'a'])
-            # answers 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
+            # _ask_user handles are answers but 'r', 's', 'p'
+            # 'r' is not in allowed options
+            # 'p' means 'proceed' so we can just go on
             if answer == 's' or self.get_type() == 'manual':
+                # no further execution is needed for manual steps
+                # 's' means 'skip' so we skip execution and return
                 return
 
         steptime = time()
@@ -178,7 +185,9 @@ class Command:
                 question='[CF] What should I do?',
                 allowed_options=['p', 'T', 'D', 'v', 'r', 'R', 'a'],
             )
-            # answers 'T', 'v', 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
+            # _ask_user handles are answers but 'r', 's', 'p'
+            # 's' is not in allowed options
+            # 'p' means 'proceed' so we can just go on
             if err_answer == 'r':
                 return self._execute(interactive)
 
@@ -238,6 +247,7 @@ class Command:
         )
 
     def _ask_user_with_options(self, question: str, allowed_options: list) -> str:
+        """Asks user and handles all answers, but 'r', 's' and 'p', which require different handling, based on where in the code the function is called"""
         if self.env.config['progress_bar']:
             block_progress_bar(self.progress_portion)
         self.env.send_status('user_input_add')
@@ -290,8 +300,10 @@ class Command:
                 raise ReloadFromFile(index=self.index)
             case 'c':
                 raise SkipBatchItemException()
-            case _:
+            case 'r' | 's' | 'p':
                 return answer
+            case _:
+                raise RuntimeError('This should never happen! Please consult the maintainer and give details about your usage. Most likely it is a bug, which needs to be fixed.')
 
     def _generate_python_vars(self) -> dict:
         # For BWCommand this method is overridden
