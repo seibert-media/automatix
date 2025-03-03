@@ -24,7 +24,7 @@ LINE_START = '\033[20D'  # Moves cursor 20 times backward, should be sufficient.
 CURSOR_SAVE = '\033[s'
 CURSOR_RESTORE = '\033[u'
 
-LOOP_LINES = 17
+LOOP_LINES = 18
 
 
 @dataclass
@@ -131,6 +131,7 @@ def run_manage_loop(tempdir: str, time_id: int):
     LOG.info(f'Found {autos.count} files to process. Screens name are like "{time_id}_autoX"')
     LOG.info('To switch screens detach from this screen via "<ctrl>+a d".')
     LOG.info('To scroll back in history press "<ctrl>+a Esc" to enable "copy mode". Switch back with "Esc".')
+    LOG.info('You can modify this behaviour by screen configuration options (`~/.screenrc`).')
 
     open(status_file, 'a').close()
     try:
@@ -243,6 +244,7 @@ def ask_for_options(autos: Autos) -> str | None:
     print()
     LOG.notice('Please notice: To come back to this selection press "<ctrl>+a d" in a screen session!')
     LOG.notice('To scroll back in history press "<ctrl>+a Esc" to enable "copy mode". Switch back with "Esc".')
+    LOG.notice('You can modify this behaviour by screen configuration options (`~/.screenrc`).')
     print()
     LOG.info('Following options are available:')
     LOG.info(
