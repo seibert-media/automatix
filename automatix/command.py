@@ -238,7 +238,7 @@ class Command:
             # _ask_user handles are answers but PA.retry, PA.skip, PA.proceed
             # PA.skip is not in allowed options
             # PA.proceed means 'proceed' so we can just go on
-            if err_answer == PA.retry.value.answer:
+            if err_answer == PA.retry.answer:
                 return self._execute(interactive)
 
     def _check_condition(self) -> bool:
