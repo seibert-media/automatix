@@ -1,5 +1,5 @@
 # automatix
-Automation wrapper for bash and python commands
+Automation wrapper for bash and python commands. Extended Features version.
 
 
 # DESCRIPTION
@@ -19,7 +19,7 @@ There are different modes for **automatix** to work. Without any
  commandline step whether to execute, skip or abort.
  Forced mode (**-f**) will also proceed if errors occur.
 
-**automatix** is originally designed for internal //SEIBERT/MEDIA use.
+**automatix** was originally designed for internal Seibert Group use.
  It comes therefore with bundlewrap and teamvault support as well as
  the possibility to use your own logging library.
 
@@ -39,22 +39,29 @@ Please use the interactive mode and doublecheck commands before
 
 # INSTALLATION
 
-Automatix requires Python &ge; 3.8.
+Automatix requires Python &ge; 3.10.
 
 ```
 pip install automatix
 ```
+
+NOTICE: original `automatix` and `automatix_cmd` share the
+same main entrypoint. To avoid overwriting and confusion,
+you should have only installed **ONE** of them!
 
 # CONFIGURATION
 
 You can specify a path to a configuration YAML file via the
  environment variable **AUTOMATIX_CONFIG**.
 Default location is "~/.automatix.cfg.yaml".
+All (string) configuration values can be overwritten by the
+ corresponding upper case environment variables preceeded
+ by 'AUTOMATIX_', e.g. _AUTOMATIX_ENCODING_.
 
 ### Example: .automatix.cfg.yaml
 
     # Path to scripts directory
-    script_dir: ~/automatix_script_files
+    script_dir: '~/automatix_script_files'
     
     # Global constants for use in pipeline scripts
     constants:
@@ -63,10 +70,13 @@ Default location is "~/.automatix.cfg.yaml".
       apt_full_upgrade: 'DEBIAN_FRONTEND=noninteractive apt-get -qy -o Dpkg::Options::=--force-confold --no-install-recommends full-upgrade'
     
     # Encoding
-    encoding: utf-8
+    encoding: 'utf-8'
     
     # Path for shell imports
     import_path: '.'
+
+    # Path to local bash (default: /bin/bash)
+    bash_path: '/bin/bash'
     
     # SSH Command used for remote connections
     ssh_cmd: 'ssh {hostname} sudo '
@@ -75,16 +85,22 @@ Default location is "~/.automatix.cfg.yaml".
     remote_tmp_dir: 'automatix_tmp'
     
     # Logger
-    logger: mylogger
+    logger: 'mylogger'
     
     # Logging library (has to implement the init_logger method)
-    logging_lib: mylib.logging
+    logging_lib: 'mylib.logging'
+
+    # Logfile directory for parallel processing (ONLY for parallel processing!)
+    logfile_dir: 'automatix_logs'
     
     # Bundlewrap support, bundlewrap has to be installed (default: false)
     bundlewrap: true
     
     # Teamvault / Secret support, bundlewrap-teamvault has to be installed (default: false)
     teamvault: true
+
+    # Activate progress bar, python_progress_bar has to be installed (default: false)
+    progress_bar: true
 
 # SYNOPSIS
 
@@ -108,59 +124,63 @@ Default location is "~/.automatix.cfg.yaml".
 **scriptfile**
 : The only required parameter for this tool to work. Use " -- " if
  needed to delimit this from argument fields. See **SCRIPTFILE**
- section for more information.
+ section for more information.  
 
 **-h**, **--help**
-: View help message and exit.
+: View help message and exit.  
 
 **--systems** _SYSTEM1=ADDRESS_OR_NODENAME_
 : Use this to set systems without adding them to the
   scriptfile or to overwrite them. You can specify multiple
-  systems like: --systems v1=string1 v2=string2 v3=string3
+  systems like: --systems v1=string1 v2=string2 v3=string3  
   
 **--vars** _VAR1=VALUE1_
 : Use this to set vars without adding them to the scriptfile
   or to overwrite them. You can specify multiple vars
-  like: --vars v1=string1 v2=string2 v3=string3
+  like: --vars v1=string1 v2=string2 v3=string3  
   
 **--secrets** _SECRET1=SECRETID_
 : Use this to set secrets without adding them to the
   scriptfile or to overwrite them. You can specify multiple
   secrets like: --secrets v1=string1 v2=string2 v3=string3 *(only if
-  teamvault is enabled)*
+  teamvault is enabled)*  
   
 **--vars-file** _VARS_FILE_PATH_
 : Use this to specify a CSV file from where **automatix** reads
   systems, variables and secrets. First row must contain the field
   types and names. You may also specify an `label` field.
   Example: `label,systems:mysystem,vars:myvar`. The automatix script will
-  be processed for each row sequentially.
+  be processed for each row sequentially.  
   
+**--parallel**
+: Run CSV file entries parallel in screen sessions; only valid with --vars-file.
+  GNU screen has to be installed. See EXTRAS section below.
+
 **--print-overview**, **-p**
 : Just print command pipeline overview with indices then exit without
  executing the commandline. Note that the *always pipeline* will be
- executed anyway.
+ executed anyway.  
 
 **--jump-to** _JUMP_TO_, **-j** _JUMP_TO_
 : Jump to step with index _JUMP_TO_ instead of starting at the
  beginning. Use **-p** or the output messages to determine the
  desired step index. You can use negative numbers to start counting
- from the end.
+ from the end.  
 
 **--steps** _STEPS_, **-s** _STEPS_
 : Only execute these steps (comma-separated indices) or exclude steps
  by prepending the comma-separated list with "e".
- Examples: `-s 1,3,7`, `-s e2`, `-s e0,5,7,2`
+ Examples: `-s 1,3,7`, `-s e2`, `-s e0,5,7,2`  
 
 **--interactive**, **-i**
-: Confirm actions before executing.
+: Confirm actions before executing.  
   
 **--force**, **-f**
 : Try always to proceed (except manual steps), even if errors occur
- (no retries).
+ (no retries).  
 
 **--debug**, **-d**
-: Activate debug log level.
+: Activate debug log level.  
 
 
 ### EXAMPLE: Usage
@@ -232,7 +252,9 @@ The **scriptfile** has to contain valid YAML.
 : Just a name for the process. Does not do anything.
 
 **require_version** _(string)_
-: Minimum required Automatix version for this script to run.
+: The required Automatix version for this script to run. Similar to the
+ [Python version specifiers](https://packaging.python.org/en/latest/specifications/version-specifiers/#version-specifiers).
+ Multiple conditions can be separated by comma. Allowed operators are: "==","!=",">=" (default),"<=",">","<","~="
 
 **systems** _(associative array)_
 : Define some systems. Value has to be a valid SSH destination like an
@@ -253,7 +275,7 @@ You can refer to these systems in the command pipeline in multiple ways:
 : Define some vars. These are accessible in the command pipeline via
  {varname}. Note: Only valid Python variable names are allowed.
  You can use "*FILE_*" prefix followed by a file path to assign the file
- content to the variable.
+ content to the variable, e.g. `myvar: FILE_/path/to/file`.
 
 **secrets** _(associative array)_
 : Define teamvault secrets. Value has to be in this format:
@@ -284,7 +306,9 @@ Here you define the commands automatix shall execute.
  confirm, that automatix may proceed.
 
 2) **local**: Local shell command to execute. Imports will be sourced
- beforehand. /bin/bash will be used for execution.
+ beforehand. The Bash specified in `bash_path` (default: /bin/bash) will
+ be used for execution. The environment is inherited with additional
+ **RUNNING_INSIDE_AUTOMATIX** set to 1.
 
 3) **remote@systemname**: Remote shell command to execute. Systemname
  has to be a defined system. The command will be run via SSH (without
@@ -294,9 +318,7 @@ Here you define the commands automatix shall execute.
   executed sequentially for every node.
 
 4) **python**: Python code to execute.
-   * Notice that there are some modules, constants and functions which
-     are already imported (check command.py): e.g.
-     `re, subprocess, quote(from shlex)`. The variable `vars` is used
+   * Notice that the variable `a_vars` is used
      to store the Automatix variables as a dictionary. You can use it 
      to access or change the variables directly.
    * If bundlewrap is enabled, the Bundlewrap repository object is
@@ -346,7 +368,7 @@ Standard YAML escapes (see also https://yaml.org/spec/1.2/spec.html):
 `'` -> `''`  
 `"` -> `\"`  
 `\ ` -> `\\`  
-`:` -> Please use quotes (double or single).  
+`:` -> Please use quotes (double or single).
 
 
 ### ALWAYS / CLEANUP PIPELINE
@@ -368,19 +390,26 @@ Intended use case for **cleanup**: Remove temporary files or artifacts.
 **AUTOMATIX_CONFIG**: Specify the path to the configuration file.
  Default is "~/.automatix.cfg.yaml".  
 
-**AUTOMATIX_SCRIPT_DIR**: Set or overwrite directory where script files
- are located (and searched in case of autocompletion).  
+**AUTOMATIX_**_config-variable-in-upper-case_: Set or overwrite the 
+ corresponding configuration value. See **CONFIGURATION** section.
+ Works only for string and boolean values!
+ String values (case-insensitive 'true' or 'false') are converted
+ to `True` or `False` in Python, if the fields expects a boolean.
+ **All other values (int, float, dict, list, ...) are ignored!**
 
 **AUTOMATIX_TIME**: Set this to an arbitrary value to print the times
- for the single steps and the whole script.  
-
-**ENCODING**: Specify output encoding. Default is "UTF-8".  
-
-Additionally you can modify the environment to adjust things to your
- needs.
+ for the single steps and the whole script, e.g. `AUTOMATIX_TIME=true`.
 
 
 # TIPS & TRICKS
+
+### YAML Syntax
+
+For multiline commands and variables YAML offers different possibilities
+ to write multiline strings. A look at https://yaml-multiline.info/ might
+ be helpful.  
+
+### PERSISTENT_VARS
 
 If you want to access variables in **python** action you defined in
 preceeding command, you can use the **PERSISTENT_VARS** dictionary
@@ -403,20 +432,27 @@ using the shortcut and the attribute notation:
       - PVARS.cond?local: echo 'This is only printed if "some_function" evaluates to "True"'
       - PVARS.cond!?local: echo 'And this is printed if "some_function" evaluates to "False"'
 
-An alternative is to make variables global, but in most cases using
- PERSISTENT_VARS is more clean. _**CAUTION: Choosing already existing
- (Python) variable names may lead to unexpected behaviour!!!**_ Maybe
-  you want to check the source code (command.py).  
-Explanation: automatix is written in Python and uses 'exec' to
- execute the command in function context. If you declare variables
- globally they remain across commands.
+Since version 2.4.0 making variables global does not work any longer!
+
+### Abort and Skip Exceptions
 
 To abort the current automatix and jump to the next batch item you can
  raise the `SkipBatchItemException`. For aborting the whole automatix
  process raise `AbortException(return_code: int)`. In both cases the
  cleanup pipeline is executed. Same is the case for selecting
  `a`:abort or `c`:continue when asked (interactive or error).
- 
+
+### Logging / Saving the output
+
+**automatix** offers no own capability to log the output to a log file or
+ save it otherwise.  
+
+If you have _GNU screen_ installed, you may start a screen session with
+ `-L` and optional `-Logfile LOGFILE` in which you start **automatix**.
+ (This is how it works with "parallel processing", see **EXTRAS** section.)
+
+A different approach is to use `tee`, e.g. `automatix [script file + options] 2>&1 | tee auto.log`.
+ Different to the screen approach this seems not to capture your input.
 
 # BEST PRACTISES
 
@@ -433,7 +469,8 @@ From **automatix** 1.13.0 on you can use the reload scriptfile feature
  you are in interactive mode) you can use **-R** to reload the
  scriptfile. If lines in the scriptfile have changed, or you need to
  repeat steps, you can use R+/-$number to reload and adjust the
- restart point (available since **automatix** 1.14.0)  
+ restart point (available since **automatix** 1.14.0). NOTICE: If using
+ vars-file, this reloads the script ONLY the active CSV row!
 
 Repeat this procedure to automate more and more and increase quality,
  whenever you feel like it.
@@ -484,7 +521,35 @@ User input questions are of following categories:
 - [RR] **R**emote process still **R**unning
 - [SE] **S**yntax **E**rror
 
+The terminal (T) answer starts an interactive Bash-Shell.
+ Therefore .bashrc is executed, but the command prompt (PS1) is
+ replaced to indicate, that we are still in an automatix process.
+ 
+
 # EXTRAS
+
+## Parallel processing
+Requirement: GNU screen installed and accessible via `screen` command in bash.
+
+This **automatix** version has the option to process multiple **automatix** instances at a time.
+ This is achieved by starting multiple [GNU screen](https://www.gnu.org/software/screen/) sessions.
+ Please make yourself comfortable with the screen controls before using this feature to avoid getting lost.
+
+The main programm stays in a loop while attaching to the screen sessions and you will come back to it
+ if you detach a screen session. The **automatix-manager** runs in its own screen session and is
+ responsible for starting the automatix screens and status updates.
+
+By default the programm starts with 2 parallel automatix instances. Use the main programm loop controls
+ to change the number of allowed parallel sessions (pressing 'm' followed by your desired number).
+
+If you force the programm to terminate (e.g. keyboard interrupt, process kill, ...),
+ check for still running screen processes via `screen -list`. They are independent and may continue
+ running. Cleanup manually, if necessary.
+
+The screens write their output to log files in the specified **logfile_dir** (see **CONFIGURATION** section).
+ These logfiles contain the escape sequences that are used to provide the colored output an the terminal.
+ You can use a pager that supports interpreting these sequences like the terminal to have a similar
+ experience (`more` or `less -r` worked for me).
 
 ## Bash completion (experimental)
 Automatix supports bash completion for parameters and the script directory via [argcomplete](https://github.com/kislyuk/argcomplete).
@@ -502,3 +567,19 @@ or activation for automatix (e.g. in `.bashrc`)
     eval "$(register-python-argcomplete automatix)"
 
 Automatix will recognize the installed module and offer the completion automatically.
+
+## Progress bar (experimental)
+You can activate an "apt-like" progress bar based on the amount of commands
+ by setting the configuration option `progress_bar` to `True` (config file or environment).
+
+The status on the right displays `[elapsed time<remaining time, rate]`,
+ where rate is percentage/second if fast and second/percentage if slow.
+
+Note, that using commands that heavily modify the terminal behaviour/output
+ (such as `top`, `watch`, `glances`, ...), may lead to a unreadable
+ or undesirable output. It might be a better idea to encourage the user
+ to open a separate terminal and type these commands there.
+
+Using automatix itself as command should work, but may lead to confusing
+ output as well. Note, that the progress bar will be overwritten by the
+ new automatix instance for the duration of the automatix command.

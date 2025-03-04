@@ -1,5 +1,52 @@
 # Changelog
 
+# 2.6.0
+- Backport changes from fork
+- Adjustments due to backporting
+
+# 2.5.0
+- Add fine tuning for required version
+
+# 2.4.0
+- Feature: Add RUNNING_INSIDE_AUTOMATIX as environment variable for shell actions
+- Feature: Python debug shell option
+- Refactoring Python action
+- Python action: Global variables are not persistent through commands any longer. Please use PERSISTENT_VARS.
+- Python action: Global imported modules/functions/objects are not available without import any longer (re, quote, ...)
+- Python action: Automatix variables are now available as `a_vars`, replacing `vars` which was shadowing the builtin `vars()` function
+
+# 2.3.1 / 2.3.2
+- Add check for proper screen version for parallel processing
+- Fix: explanation URL
+
+# 2.3.0
+- Feature: Make Bash path configurable
+- Feature: Overwriting configuration by environment variables also for `boolean` type.
+- Refactoring: Integrate progress bar and refactor. External library is not needed anymore.
+
+# 2.2.1
+- Fix: Crash with parallel processing and Bundlewrap support enabled
+
+# 2.2.0
+- Feature: Option to change variables at runtime
+- Warning for conflicting automatix package
+
+# 2.1.0
+- Logging to file for parallel processing and logging section in TIPS & TRICKS
+- Overwriting configuration by environment variables for all configuration values of `string` type.
+
+# 2.0.1
+- Adjusted github workflow
+
+# 2.0.0
+- Decoupled from original repository
+- Rename repo and package: automatix -> automatix_cmd
+- Fix: Manual steps failed always
+- Feature: Interactive shell
+- Feature: Progress bar
+- Feature: Parallel processing
+- Removed deprecated const_, system_ and _node variables (deprecation warnings still remain as hint)
+
 # 1.16.1
 - Fixup for previous release
 

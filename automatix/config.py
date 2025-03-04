@@ -4,10 +4,12 @@ import os
 import re
 import sys
 from collections import OrderedDict
-from importlib import metadata
+from importlib import metadata, import_module
 from time import sleep
 
 import yaml
+
+from .colors import red
 
 yaml.warnings({'YAMLLoadWarning': False})
 
@@ -30,11 +32,12 @@ VERSION = metadata.version('automatix')
 DEPRECATED_SYNTAX = {
     # 0: REGEX pattern
     # 1: replacement, formatted with group = re.Match.groups(), e.g. 'something {group[0]} foo'
-    # 2: special flags (p: python, b: Bundlewrap, s: replace '{s}' with pipe separated system names)
-    (r'({s})_node(?!\w)', 'NODES.{group[0]}', 'bps'),
-    (r'{\s*system_(\w*)\s*}', '{{SYSTEMS.{group[0]}}}', ''),
-    (r'{\s*const_(\w*)\s*}', '{{CONST.{group[0]}}}', ''),
-    (r'(?<!\w)global\s+(\w*)', 'PERSISTENT_VARS[\'{group[0]}\'] = {group[0]}', 'p'),
+    # 2: special flags (p: python, b: Bundlewrap, s: replace '{s}' with pipe separated system names, r: already removed)
+    (r'({s})_node(?!\w)', 'NODES.{group[0]}', 'bpsr'),  # Removed in 2.0.0
+    (r'{\s*system_(\w*)\s*}', '{{SYSTEMS.{group[0]}}}', 'r'),  # Removed in 2.0.0
+    (r'{\s*const_(\w*)\s*}', '{{CONST.{group[0]}}}', 'r'),  # Removed in 2.0.0
+    (r'(?<!\w)global\s+(\w*)', 'PERSISTENT_VARS[\'{group[0]}\'] = {group[0]}', 'pr'),  # Removed in 2.4.0
+    (r'(?<!\w)vars\[([\w\'"]+)\]', 'a_vars[{group[0]}]', 'pr'),  # Changed vars -> a_vars in 2.4.0
 }
 
 SCRIPT_FIELDS = OrderedDict()
@@ -44,13 +47,16 @@ SCRIPT_FIELDS['vars'] = 'Variables'
 CONFIG = {
     'script_dir': '~/automatix-config',
     'constants': {},
-    'encoding': os.getenv('ENCODING', 'utf-8'),
+    'encoding': 'utf-8',
     'import_path': '.',
+    'bash_path': '/bin/bash',
     'ssh_cmd': 'ssh {hostname} sudo ',
     'remote_tmp_dir': 'automatix_tmp',
     'logger': 'automatix',
+    'logfile_dir': 'automatix_logs',
     'bundlewrap': False,
     'teamvault': False,
+    'progress_bar': False,
 }
 
 configfile = os.path.expanduser(os.path.expandvars(os.getenv('AUTOMATIX_CONFIG', '~/.automatix.cfg.yaml')))
@@ -58,8 +64,27 @@ if os.path.isfile(configfile):
     CONFIG.update(read_yaml(configfile))
     CONFIG['config_file'] = configfile
 
-if os.getenv('AUTOMATIX_SCRIPT_DIR'):
-    CONFIG['script_dir'] = os.getenv('AUTOMATIX_SCRIPT_DIR')
+for c_key, c_value in CONFIG.items():
+    env_value = os.getenv(f'AUTOMATIX_{c_key.upper()}')
+    if not env_value:
+        continue
+
+    if isinstance(c_value, bool) and env_value.lower() in ['false', 'true']:
+        CONFIG[c_key] = True if env_value.lower() == 'true' else False
+        continue
+
+    if isinstance(c_value, str):
+        CONFIG[c_key] = env_value
+        continue
+
+    print(red(f'Warning: environment variable "AUTOMATIX_{c_key.upper()}" ignored: wrong value type!'))
+    sleep(2)
+
+if CONFIG.get('logging_lib'):
+    log_lib = import_module(CONFIG.get('logging_lib'))
+    init_logger = log_lib.init_logger  # noqa F401
+else:
+    from .logger import init_logger  # noqa F401
 
 LOG = logging.getLogger(CONFIG['logger'])
 
@@ -99,6 +124,12 @@ def arguments() -> argparse.Namespace:
         help='Path to a CSV file containing variables for batch processing',
     )
     parser.add_argument(
+        '--parallel',
+        action='store_true',
+        help='Run CSV file entries parallel in screen sessions; only valid with --vars-file. '
+             'GNU screen has to be installed. See EXTRAS section in README.',
+    )
+    parser.add_argument(
         '--print-overview', '-p',
         action='store_true',
         help='Just print command pipeline overview with indices then exit without executing the commandline. '
@@ -134,7 +165,7 @@ def arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _overwrite(script: dict, key: str, data: str):
+def _overwrite(script: dict, key: str, data: list[str]):
     script.setdefault(key, {})
     for item in data:
         k, v = item.split('=')
@@ -155,7 +186,7 @@ def get_script(args: argparse.Namespace) -> dict:
         validate_script(script)
     except Exception:
         LOG.exception('Script validation failed! Please fix syntax before retrying!')
-        if input('To reload and proceed after fixing type "R" and press Enter.') == 'R':
+        if input('To reload and proceed after fixing type "R" and press Enter.\a') == 'R':
             return get_script(args=args)
         sys.exit(1)
 
@@ -184,19 +215,51 @@ def check_deprecated_syntax(ckey: str, entry: str, script: dict, prefix: str) ->
             match = re.search(pattern, entry)
         if match:
             warn += 1
-            LOG.warning('{prefix} Using "{match}" is deprecated. Use "{repl}" instead.'.format(
+            LOG.warning('{prefix} Using "{match}" {state}. Use "{repl}" instead.'.format(
                 prefix=prefix,
                 match=match.group(0),
-                repl=replacement.format(group=match.groups())
+                repl=replacement.format(group=match.groups()),
+                state='does not work any longer' if 'r' in flags else 'is deprecated',
             ))
     return warn
 
 
+def check_version(version_str: str):
+    installed_version = _tupelize(VERSION)
+
+    for condition in version_str.split(','):
+        match = re.match(pattern=r'([><=!~]{0,2})\s*((\d+\.){0,3}\d+)', string=condition.strip())
+        operator = match.group(1)
+        required_version = _tupelize(match.group(2))
+
+        match operator:
+            case '==':
+                assert installed_version == required_version
+            case '!=':
+                assert installed_version != required_version
+            case '>=' | '':
+                assert installed_version >= required_version
+            case '<=':
+                assert installed_version <= required_version
+            case '>':
+                assert installed_version > required_version
+            case '<':
+                assert installed_version < required_version
+            case '~=':
+                assert installed_version[:len(required_version) - 1] == required_version[:-1]
+                assert installed_version >= required_version
+            case _:
+                raise SyntaxError(f'Unknown operator "{operator}"')
+
+
 def validate_script(script: dict):
-    script_required_version = script.get('require_version', '0.0.0')
-    if _tupelize(VERSION) < _tupelize(script_required_version):
-        LOG.error(f'The script requires minimum version {script_required_version}. We have {VERSION}.')
-        exit(1)
+    version_str = script.get('require_version', '0.0.0')
+    try:
+        check_version(version_str=version_str)
+    except AssertionError:
+        LOG.error(f'The script requires version {version_str}. We have {VERSION}.')
+        sys.exit(1)
+
     warn = 0
     for pipeline in ['always', 'pipeline', 'cleanup']:
         for index, command in enumerate(script.get(pipeline, [])):
@@ -225,9 +288,6 @@ def collect_vars(script: dict) -> dict:
                 var_dict[key] = bwtv.file(sid)
             else:
                 raise UnknownSecretTypeException(field)
-    for syskey, system in script.get('systems', {}).items():
-        # DEPRECATED, use SYSTEMS instead
-        var_dict[f'system_{syskey}'] = system.replace('hostname!', '')
     return var_dict
 
 

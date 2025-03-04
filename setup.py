@@ -5,27 +5,29 @@ with open("README.md", "r") as fh:
 
 setup(
     name='automatix',
-    version='1.16.1',
+    version='2.5.0',
     description='Automation wrapper for bash and python commands',
     keywords=['bash', 'shell', 'command', 'automation', 'process', 'wrapper', 'devops', 'system administration'],
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/seibert-media/automatix',
-    author='Johannes Paul, //SEIBERT/MEDIA GmbH',
-    author_email='jpaul@seibert-media.net',
+    author='Johannes Paul',
+    author_email='johannes.paul@seibert.group, vanadinit@quantentunnel.de',
     license='MIT',
-    python_requires='>=3.8',
+    python_requires='>=3.10',
     install_requires=[
         'pyyaml>=5.1',
     ],
     extras_require={
-        'tests': ['cython<3.0.0', 'pytest', 'pytest-docker-compose'],
+        'tests': ['cython<3.0.0', 'pytest', 'pytest-docker', 'flake8'],
         'bash completion': ['argcomplete'],
     },
     packages=find_packages(),
     entry_points={
         'console_scripts': [
             'automatix=automatix:main',
+            'automatix-manager=automatix.parallel:run_manager',
+            'automatix-from-file=automatix.parallel:run_auto_from_file',
         ],
     },
     classifiers=[

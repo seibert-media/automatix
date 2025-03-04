@@ -1,6 +1,8 @@
+automatix_logs/
 build/
 dist/
 .automatix.cfg.yaml
 *.egg-info/
+*__pycache__/
 *id_rsa_tests*
 tests/docker-compose.yml

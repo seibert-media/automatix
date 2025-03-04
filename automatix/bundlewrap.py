@@ -17,14 +17,13 @@ class BWCommand(Command):
         for key, value in self.env.systems.items():
             if not value.startswith('hostname!'):
                 try:
-                    # DEPRECATED, use NODES instead
-                    locale_vars[f'{key}_node'] = self.env.config['bw_repo'].get_node(value)
+                    self.env.config['bw_repo'].get_node(value)
                 except NoSuchNode:
                     try:
                         self.env.config['bw_repo'].get_group(value)
                     except NoSuchGroup:
                         self.env.LOG.warning(f'"{value}" is neither a BW node nor a BW group')
-        locale_vars['vars'] = self.env.vars
+        locale_vars['a_vars'] = self.env.vars
         locale_vars['NODES'] = BWNodesWrapper(repo=self.env.config['bw_repo'], systems=self.env.systems)
         return locale_vars
 
@@ -41,9 +40,11 @@ class BWCommand(Command):
                 group: Group = bw_repo.get_group(system)
             except NoSuchGroup:
                 raise exc
-            self.env.LOG.info(f'\n --- Executing command for all nodes in BW group >{group.name}< ---')
+            print()
+            self.env.LOG.info(f' --- Executing command for all nodes in BW group >{group.name}< ---')
             for node in group.nodes:
-                self.env.LOG.info(f'\n- {node.name} -')
+                print()
+                self.env.LOG.info(f'- {node.name} -')
                 self._remote_bw_group_action(node=node)
             return 0
 
@@ -54,7 +55,7 @@ class BWCommand(Command):
             if self.env.cmd_args.force:
                 return
 
-            err_answer = self._ask_user(question='[PF] What should I do?', allowed_options=['p', 'r', 'a'])
+            err_answer = self._ask_user(question='[PF] What should I do?', allowed_options=['p', 'T', 'v', 'r', 'a'])
             # answers 'a' and 'c' are handled by _ask_user, 'p' means just pass
             if err_answer == 'r':
                 return self._remote_bw_group_action(node=node)
