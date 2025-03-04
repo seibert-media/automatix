@@ -52,13 +52,13 @@ def get_script_and_batch_items(args: Namespace) -> (dict, list):
     if args.vars_file:
         with open(args.vars_file) as csvfile:
             batch_items = list(DictReader(csvfile))
-        script['batch_mode'] = False if args.parallel else True
-        script['batch_items_count'] = 1 if args.parallel else len(batch_items)
+        script['_batch_mode'] = False if args.parallel else True
+        script['_batch_items_count'] = 1 if args.parallel else len(batch_items)
         LOG.notice(f'Detected {"parallel" if args.parallel else "batch"} processing from CSV file.')
 
     if args.steps:
-        exclude = script['exclude'] = args.steps.startswith('e')
-        script['steps'] = {int(s) for s in (args.steps[1:] if exclude else args.steps).split(',')}
+        exclude = script['_exclude'] = args.steps.startswith('e')
+        script['_steps'] = {int(s) for s in (args.steps[1:] if exclude else args.steps).split(',')}
 
     return script, batch_items
 

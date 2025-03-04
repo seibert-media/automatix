@@ -28,8 +28,8 @@ class Automatix:
             systems=script.get('systems', {}),
             variables=variables,
             imports=script.get('imports', []),
-            batch_mode=script.get('batch_mode', False),
-            batch_items_count=script.get('batch_items_count', 1),
+            batch_mode=script.get('_batch_mode', False),
+            batch_items_count=script.get('_batch_items_count', 1),
             batch_index=batch_index,
             cmd_args=cmd_args,
         )
@@ -103,10 +103,10 @@ class Automatix:
 
     def _execute_command_list(self, name: str, start_index: int, treat_as_main: bool):
         try:
-            steps = self.script.get('steps')
+            steps = self.script.get('_steps')
             for cmd in self.command_list(name)[start_index:]:
                 if treat_as_main:
-                    if steps and (self.script['exclude'] == (cmd.index in steps)):
+                    if steps and (self.script['_exclude'] == (cmd.index in steps)):
                         # Case 1: exclude is True  and index is in steps => skip
                         # Case 2: exclude is False and index is in steps => execute
                         print()
