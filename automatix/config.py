@@ -209,8 +209,8 @@ def check_deprecated_syntax(ckey: str, entry: str, script: dict, prefix: str) ->
             continue
         if 'p' in flags and 'python' not in ckey:
             continue
-        if 's' in flags:
-            match = re.search(pattern.format(s='|'.join(script.get('systems', {}).keys())), entry)
+        if 's' in flags and script.get('systems'):
+            match = re.search(pattern.format(s='|'.join(script['systems'].keys())), entry)
         else:
             match = re.search(pattern, entry)
         if match:
