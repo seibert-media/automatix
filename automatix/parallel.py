@@ -32,6 +32,7 @@ class Autos:
     status_file: str
     time_id: int
     count: int
+    tempdir: str
 
     max_parallel: int = 2
     waiting: set = field(default_factory=set)
@@ -85,6 +86,7 @@ def print_status(autos: Autos):
 
 
 def print_status_verbose(autos: Autos):
+    print(f'Working directory: {autos.tempdir}')
     print(f'------------------ Screens (max. {autos.max_parallel} running) ------------------')
     print_status(autos=autos)
     print('--------------------------------------------------------------')
@@ -125,7 +127,7 @@ def check_for_status_change(autos: Autos, status_file: str):
 def run_manage_loop(tempdir: str, time_id: int):
     status_file = f'{tempdir}/{time_id}_overview'
     auto_files = get_files(tempdir)
-    autos = Autos(status_file=status_file, time_id=time_id, count=len(auto_files), waiting=auto_files)
+    autos = Autos(status_file=status_file, time_id=time_id, count=len(auto_files), waiting=auto_files, tempdir=tempdir)
     logfile_dir = f'{CONFIG.get("logfile_dir")}/{time_id}'
 
     LOG.info(f'Found {autos.count} files to process. Screens name are like "{time_id}_autoX"')
