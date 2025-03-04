@@ -7,26 +7,27 @@ from .config import init_logger
 class PipelineEnvironment:
     def __init__(
             self,
-            name: str,
             config: dict,
-            systems: dict,
+            script: dict,
             variables: dict,
-            imports: list,
-            batch_mode: bool,
-            batch_items_count: int,
             batch_index: int,
             cmd_args: Namespace,
     ):
-        self.name = name
         self.config = config
-        self.systems = systems
+        self.script = script
         self.vars = variables
-        self.imports = imports
-        self.batch_mode = batch_mode
-        self.batch_items_count = batch_items_count
         self.batch_index = batch_index
         self.cmd_args = cmd_args
+
+        self.name = script['name']
+        self.script_file_path = script['_script_file_path']
+        self.systems = script.get('systems', {})
+        self.imports = script.get('imports', [])
+        self.batch_mode = script.get('_batch_mode', False)
+        self.batch_items_count = script.get('_batch_items_count', 1)
+
         self.LOG = None
+        self.auto_file = None
 
         # This will be set at runtime
         self.command_count = None

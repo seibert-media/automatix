@@ -308,6 +308,7 @@ class Command:
             # builtins are included anyway, if not defined here
             'PERSISTENT_VARS': PERSISTENT_VARS,
             'PVARS': PVARS,
+            'SCRIPT_FILE_PATH': self.env.script_file_path,
             'AbortException': AbortException,
             'SkipBatchItemException': SkipBatchItemException,
         }

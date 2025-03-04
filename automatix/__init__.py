@@ -112,8 +112,9 @@ def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir:
             batch_index=1,
         )
         id = str(i).rjust(digits, '0')
+        auto.env.auto_file = auto_file = f'{tempdir}/auto{id}'
 
-        with open(f'{tempdir}/auto{id}', 'wb') as f:
+        with open(auto_file, 'wb') as f:
             # The auto.cmd_class attribute MUST NOT be called before this!!!
             # Otherwise, the Bundlewrap integration will fail for parallel processing,
             # because the BWCommand is not pickleable.

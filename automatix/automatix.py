@@ -23,13 +23,9 @@ class Automatix:
         self.script = script
         self.script_fields = script_fields
         self.env = PipelineEnvironment(
-            name=script['name'],
             config=config,
-            systems=script.get('systems', {}),
+            script=script,
             variables=variables,
-            imports=script.get('imports', []),
-            batch_mode=script.get('_batch_mode', False),
-            batch_items_count=script.get('_batch_items_count', 1),
             batch_index=batch_index,
             cmd_args=cmd_args,
         )
