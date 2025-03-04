@@ -3,7 +3,7 @@ from bundlewrap.group import Group
 from bundlewrap.node import Node
 from bundlewrap.repo import Repository
 
-from .command import Command
+from .command import Command, PA
 
 
 class AutomatixBwRepo(Repository):
@@ -55,9 +55,14 @@ class BWCommand(Command):
             if self.env.cmd_args.force:
                 return
 
-            err_answer = self._ask_user(question='[PF] What should I do?', allowed_options=['p', 'T', 'v', 'r', 'a'])
-            # answers 'a' and 'c' are handled by _ask_user, 'p' means just pass
-            if err_answer == 'r':
+            err_answer = self._ask_user(
+                question='[PF] What should I do?',
+                allowed_options=[PA.proceed, PA.terminal, PA.variables, PA.retry, PA.abort],
+            )
+            # _ask_user handles are answers but PA.retry, PA.skip, PA.proceed
+            # PA.skip is not in the allowed options'
+            # PA.proceed means 'proceed' so we can just go on
+            if err_answer == PA.retry.answer:
                 return self._remote_bw_group_action(node=node)
 
 

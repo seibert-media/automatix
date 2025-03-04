@@ -3,6 +3,7 @@
 # 2.6.0
 - Backport changes from fork
 - Adjustments due to backporting
+- Refactoring: answer options in command.py
 
 # 2.5.0
 - Add fine tuning for required version
