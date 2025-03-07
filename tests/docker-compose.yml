@@ -1,0 +1,22 @@
+version: "3.7"
+services:
+  openssh-server:
+    image: linuxserver/openssh-server
+    container_name: openssh-server
+    hostname: openssh-server #optional
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+#      - PUBLIC_KEY= #optional
+      - PUBLIC_KEY_FILE=/secrets/id_rsa_tests.pub
+      - SUDO_ACCESS=true #optional
+      - PASSWORD_ACCESS=false #optional
+#      - USER_PASSWORD=geheim #optional
+#      - USER_PASSWORD_FILE=/path/to/file #optional
+      - USER_NAME=${USER} #optional
+    volumes:
+      - ./secrets:/secrets
+    ports:
+      - 2222:2222
+    restart: unless-stopped
