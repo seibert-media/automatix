@@ -7,20 +7,8 @@ from shlex import quote
 from time import time
 from typing import Tuple
 
-from .environment import PipelineEnvironment
+from .environment import PipelineEnvironment, AttributedDict
 from .progress_bar import draw_progress_bar, block_progress_bar
-
-
-class AttributedDict(dict):
-    def __getattr__(self, key: str):
-        return self[key]
-
-    def __hasattr__(self, key: str):
-        return key in self
-
-    def __setattr__(self, key: str, value):
-        self[key] = value
-
 
 PERSISTENT_VARS = PVARS = AttributedDict()
 
@@ -360,7 +348,7 @@ class Command:
         # For BWCommand this method is overridden
         return {
             'a_vars': self.env.vars,  # deprecated, for backwards compatibility
-            'VARS': AttributedDict(self.env.vars),
+            'VARS': self.env.vars,
         }
 
     def _get_python_locals(self) -> dict:

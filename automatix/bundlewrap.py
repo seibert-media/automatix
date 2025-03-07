@@ -3,7 +3,7 @@ from bundlewrap.group import Group
 from bundlewrap.node import Node
 from bundlewrap.repo import Repository
 
-from .command import Command, PA, AttributedDict
+from .command import Command, PA
 
 
 class AutomatixBwRepo(Repository):
@@ -24,7 +24,7 @@ class BWCommand(Command):
                     except NoSuchGroup:
                         self.env.LOG.warning(f'"{value}" is neither a BW node nor a BW group')
         locale_vars['a_vars'] = self.env.vars  # deprecated, for backwards compatibility
-        locale_vars['VARS'] = AttributedDict(self.env.vars)
+        locale_vars['VARS'] = self.env.vars
         locale_vars['NODES'] = BWNodesWrapper(repo=self.env.config['bw_repo'], systems=self.env.systems)
         return locale_vars
 
