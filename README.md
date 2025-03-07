@@ -268,7 +268,9 @@ You can refer to these systems in the command pipeline in multiple ways:
 
 2) via {SYSTEMS.systemname} which will be replaced with the value
 
-3) via NODES.systemname in python actions to use the Bundlewrap node
+3) via SYSTEMS.systemname in python actions which contains the value
+
+4) via NODES.systemname in python actions to use the Bundlewrap node
    object (Bundlewrap nodes only, no groups)
 
 **vars** _(associative array)_
@@ -276,6 +278,7 @@ You can refer to these systems in the command pipeline in multiple ways:
  {varname}. Note: Only valid Python variable names are allowed.
  You can use "*FILE_*" prefix followed by a file path to assign the file
  content to the variable, e.g. `myvar: FILE_/path/to/file`.
+ In python actions you can access these variables directly via `VARS.varname`.
 
 **secrets** _(associative array)_
 : Define teamvault secrets. Value has to be in this format:
@@ -318,9 +321,12 @@ Here you define the commands automatix shall execute.
   executed sequentially for every node.
 
 4) **python**: Python code to execute.
-   * Notice that the variable `a_vars` is used
-     to store the Automatix variables as a dictionary. You can use it 
+   * Notice that the variable `VARS` (deprecated `a_vars`) contains
+     the Automatix variables as a dictionary. `VARS` supports also
+     the attribute notation like `VARS.myvariable`. You can use it 
      to access or change the variables directly.
+   * You can refer to systems and constants via `SYSTEMS.systemname`
+     and `CONST.constantname`.
    * If bundlewrap is enabled, the Bundlewrap repository object is
      available via AUTOMATIX_BW_REPO and system node objects are
      available via NODES.systemname.

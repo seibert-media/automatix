@@ -23,7 +23,8 @@ class BWCommand(Command):
                         self.env.config['bw_repo'].get_group(value)
                     except NoSuchGroup:
                         self.env.LOG.warning(f'"{value}" is neither a BW node nor a BW group')
-        locale_vars['a_vars'] = self.env.vars
+        locale_vars['a_vars'] = self.env.vars  # deprecated, for backwards compatibility
+        locale_vars['VARS'] = self.env.vars
         locale_vars['NODES'] = BWNodesWrapper(repo=self.env.config['bw_repo'], systems=self.env.systems)
         return locale_vars
 

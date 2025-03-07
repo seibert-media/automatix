@@ -4,6 +4,8 @@
 - Backport changes from fork
 - Adjustments due to backporting
 - Refactoring: answer options in command.py
+- Python action: Make SYSTEMS and CONST directly available
+- Python action: Automatix variables are now available as `VARS`, replacing `a_vars` (now deprecated)
 
 # 2.5.0
 - Add fine tuning for required version

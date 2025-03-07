@@ -7,22 +7,10 @@ from shlex import quote
 from time import time
 from typing import Tuple
 
-from .environment import PipelineEnvironment
+from .environment import PipelineEnvironment, AttributedDict
 from .progress_bar import draw_progress_bar, block_progress_bar
 
-
-class PersistentDict(dict):
-    def __getattr__(self, key: str):
-        return self[key]
-
-    def __hasattr__(self, key: str):
-        return key in self
-
-    def __setattr__(self, key: str, value):
-        self[key] = value
-
-
-PERSISTENT_VARS = PVARS = PersistentDict()
+PERSISTENT_VARS = PVARS = AttributedDict()
 
 # Leading red " Automatix \w > " to indicate that this shell is inside a running Automatix execution
 AUTOMATIX_PROMPT = r'\[\033[0;31m\] Automatix \[\033[0m\]\\w > '
@@ -358,7 +346,10 @@ class Command:
 
     def _generate_python_vars(self) -> dict:
         # For BWCommand this method is overridden
-        return {'a_vars': self.env.vars}
+        return {
+            'a_vars': self.env.vars,  # deprecated, for backwards compatibility
+            'VARS': self.env.vars,
+        }
 
     def _get_python_locals(self) -> dict:
         locale_vars = {}
@@ -369,8 +360,10 @@ class Command:
     def _get_python_globals(self) -> dict:
         global_vars = {
             # builtins are included anyway, if not defined here
+            'CONST': ConstantsWrapper(self.env.config['constants']),
             'PERSISTENT_VARS': PERSISTENT_VARS,
             'PVARS': PVARS,
+            'SYSTEMS': SystemsWrapper(self.env.systems),
             'AbortException': AbortException,
             'SkipBatchItemException': SkipBatchItemException,
         }
