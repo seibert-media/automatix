@@ -369,6 +369,7 @@ class Command:
     def _get_python_globals(self) -> dict:
         global_vars = {
             # builtins are included anyway, if not defined here
+            'CONST': ConstantsWrapper(self.env.config['constants']),
             'PERSISTENT_VARS': PERSISTENT_VARS,
             'PVARS': PVARS,
             'SYSTEMS': SystemsWrapper(self.env.systems),
