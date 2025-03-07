@@ -371,6 +371,7 @@ class Command:
             # builtins are included anyway, if not defined here
             'PERSISTENT_VARS': PERSISTENT_VARS,
             'PVARS': PVARS,
+            'SYSTEMS': SystemsWrapper(self.env.systems),
             'AbortException': AbortException,
             'SkipBatchItemException': SkipBatchItemException,
         }
