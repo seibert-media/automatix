@@ -1,0 +1,16 @@
+name: github Test Automatix Script
+systems:
+  just_a_system: nonexistent.com
+vars:
+  test_var1: 'Test123'
+  test_var2: false
+  test_var3: 17
+always:
+  - local: uptime
+  - output=local: who am i
+  - python: PVARS.username = VARS.output.split(' ')[0]
+pipeline:
+  - local: echo "The system is {SYSTEMS.just_a_system}"
+  - python: PERSISTENT_VARS['var2'] = '{test_var2}'
+  - python: print(VARS.test_var1 + SYSTEMS.just_a_system + PVARS.var2)
+  - test_var2?local: echo "This should not be printed"
