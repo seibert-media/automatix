@@ -63,8 +63,8 @@ def ssh_up(docker_services):
                 ' docker-test /bin/true')
         except subprocess.CalledProcessError:
             continue
-        run_command_and_check(cmd='ssh-keygen -R [localhost]:2222 >/dev/null 2>&1')
-        run_command_and_check(cmd='ssh-keygen -R localhost:2222 >/dev/null 2>&1')
-        run_command_and_check(cmd='ssh-keyscan -t ecdsa -p 2222 localhost 2>/dev/null >> ~/.ssh/known_hosts')
+        run_command_and_check(cmd='ssh-keygen -R [localhost]:2222 >/dev/null 2>&1 || true')
+        run_command_and_check(cmd='ssh-keygen -R localhost:2222 >/dev/null 2>&1 || true')
+        run_command_and_check(cmd='ssh-keyscan -t ecdsa -p 2222 localhost 2>/dev/null >> ~/.ssh/known_hosts || true')
         return
     raise Exception('Maximum retries exceeded: SSH test setup could not be created.')

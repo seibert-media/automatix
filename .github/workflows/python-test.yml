@@ -27,12 +27,30 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -e .[tests]
+        sudo apt update
+        sudo apt install podman
+        pip install podman-compose
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with pytest
+    - name: Unit tests with pytest
       run: |
         pytest -k "not integration"
+    - name: Prepare integration tests
+      run: |
+        mkdir -p tests/secrets
+        ssh-keygen -t rsa -N '' -f tests/secrets/id_rsa_tests
+        mkdir -p ~/.ssh
+        touch ~/.ssh/config
+        echo "Host docker-test" >> ~/.ssh/config
+        echo "  Hostname localhost" >> ~/.ssh/config
+        echo "  Port 2222" >> ~/.ssh/config
+        echo "  IdentityFile tests/secrets/id_rsa_tests" >> ~/.ssh/config
+        echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+        echo "" >> ~/.ssh/config
+    - name: Integration tests with pytest and docker-compose" >> ~/.ssh/config
+      run: |
+        pytest -k "integration"
