@@ -191,6 +191,8 @@ def get_script(args: argparse.Namespace) -> dict:
             return get_script(args=args)
         sys.exit(1)
 
+    script['_script_file_path'] = s_file
+
     for field in SCRIPT_FIELDS.keys():
         if vars(args).get(field):
             _overwrite(script=script, key=field, data=vars(args)[field])

@@ -56,13 +56,13 @@ def get_script_and_batch_items(args: Namespace) -> (dict, list):
     if args.vars_file:
         with open(args.vars_file) as csvfile:
             batch_items = list(DictReader(csvfile))
-        script['batch_mode'] = False if args.parallel else True
-        script['batch_items_count'] = 1 if args.parallel else len(batch_items)
+        script['_batch_mode'] = False if args.parallel else True
+        script['_batch_items_count'] = 1 if args.parallel else len(batch_items)
         LOG.notice(f'Detected {"parallel" if args.parallel else "batch"} processing from CSV file.')
 
     if args.steps:
-        exclude = script['exclude'] = args.steps.startswith('e')
-        script['steps'] = {int(s) for s in (args.steps[1:] if exclude else args.steps).split(',')}
+        exclude = script['_exclude'] = args.steps.startswith('e')
+        script['_steps'] = {int(s) for s in (args.steps[1:] if exclude else args.steps).split(',')}
 
     return script, batch_items
 
@@ -116,8 +116,9 @@ def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir:
             batch_index=1,
         )
         id = str(i).rjust(digits, '0')
+        auto.env.auto_file = auto_file = f'{tempdir}/auto{id}'
 
-        with open(f'{tempdir}/auto{id}', 'wb') as f:
+        with open(auto_file, 'wb') as f:
             # The auto.cmd_class attribute MUST NOT be called before this!!!
             # Otherwise, the Bundlewrap integration will fail for parallel processing,
             # because the BWCommand is not pickleable.

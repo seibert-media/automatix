@@ -366,6 +366,7 @@ class Command:
             'CONST': ConstantsWrapper(self.env.config['constants']),
             'PERSISTENT_VARS': PERSISTENT_VARS,
             'PVARS': PVARS,
+            'SCRIPT_FILE_PATH': self.env.script_file_path,
             'SYSTEMS': SystemsWrapper(self.env.systems),
             'AbortException': AbortException,
             'SkipBatchItemException': SkipBatchItemException,

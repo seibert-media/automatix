@@ -321,15 +321,18 @@ Here you define the commands automatix shall execute.
   executed sequentially for every node.
 
 4) **python**: Python code to execute.
+   * `PERSISTENT_VARS`, `PVARS`, `SkipBatchItemException`, `AbortException`
+     are available, see corresponding sections in **TIPS & TRICKS** 
    * Notice that the variable `VARS` (deprecated `a_vars`) contains
      the Automatix variables as a dictionary. `VARS` supports also
      the attribute notation like `VARS.myvariable`. You can use it 
      to access or change the variables directly.
+   * The path to the executed script file is available as `SCRIPT_FILE_PATH`.
    * You can refer to systems and constants via `SYSTEMS.systemname`
      and `CONST.constantname`.
    * If bundlewrap is enabled, the Bundlewrap repository object is
-     available via AUTOMATIX_BW_REPO and system node objects are
-     available via NODES.systemname.
+     available via `AUTOMATIX_BW_REPO` and system node objects are
+     available via `NODES.systemname` (replace "systemname").
      Use `AUTOMATIX_BW_REPO.reload()` to reinitialize the Bundlewrap 
      repository from the file system. This can be useful for using
      newly created nodes (e.g. remote commands).  
