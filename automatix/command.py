@@ -342,7 +342,10 @@ class Command:
                 return answer
             case _:
                 raise RuntimeError(
-                    'This should never happen! Please consult the maintainer and give details about your usage. Most likely it is a bug, which needs to be fixed.')
+                    'This should never happen!'
+                    ' Please consult the maintainer and give details about your usage.'
+                    ' Most likely this is a bug, which needs to be fixed.'
+                )
 
     def _generate_python_vars(self) -> dict:
         # For BWCommand this method is overridden
