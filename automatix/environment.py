@@ -4,6 +4,19 @@ from logging import getLogger
 from .config import init_logger
 
 
+class AttributedDict(dict):
+    def __getattr__(self, key: str):
+        if key in self:
+            return self[key]
+        raise AttributeError
+
+    def __hasattr__(self, key: str):
+        return key in self
+
+    def __setattr__(self, key: str, value):
+        self[key] = value
+
+
 class PipelineEnvironment:
     def __init__(
             self,
@@ -15,7 +28,7 @@ class PipelineEnvironment:
     ):
         self.config = config
         self.script = script
-        self.vars = variables
+        self.vars = AttributedDict(variables)
         self.batch_index = batch_index
         self.cmd_args = cmd_args
 

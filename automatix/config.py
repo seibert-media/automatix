@@ -37,7 +37,8 @@ DEPRECATED_SYNTAX = {
     (r'{\s*system_(\w*)\s*}', '{{SYSTEMS.{group[0]}}}', 'r'),  # Removed in 2.0.0
     (r'{\s*const_(\w*)\s*}', '{{CONST.{group[0]}}}', 'r'),  # Removed in 2.0.0
     (r'(?<!\w)global\s+(\w*)', 'PERSISTENT_VARS[\'{group[0]}\'] = {group[0]}', 'pr'),  # Removed in 2.4.0
-    (r'(?<!\w)vars\[([\w\'"]+)\]', 'a_vars[{group[0]}]', 'pr'),  # Changed vars -> a_vars in 2.4.0
+    (r'(?<!\w)vars\[[\'"](\w+)[\'"]\]', 'VARS.{group[0]}', 'pr'),  # Changed vars -> a_vars in 2.4.0, changed a_vars -> VARS in 2.6.0
+    (r'(?<!\w)a_vars\[[\'"](\w+)[\'"]\]', 'VARS.{group[0]}', 'p'),  # Changed a_vars -> VARS in 2.6.0
 }
 
 SCRIPT_FIELDS = OrderedDict()
@@ -211,8 +212,8 @@ def check_deprecated_syntax(ckey: str, entry: str, script: dict, prefix: str) ->
             continue
         if 'p' in flags and 'python' not in ckey:
             continue
-        if 's' in flags:
-            match = re.search(pattern.format(s='|'.join(script.get('systems', {}).keys())), entry)
+        if 's' in flags and script.get('systems'):
+            match = re.search(pattern.format(s='|'.join(script['systems'].keys())), entry)
         else:
             match = re.search(pattern, entry)
         if match:

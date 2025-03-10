@@ -22,7 +22,7 @@ pipeline:
   - PVARS.moin!?local: echo 'Moin Moin :-)'
   - a=python: re.match(r'\d*', '12345')
   - nonexistent?local: echo 'Hups ...'
-  - python: print(str(uuid4()) + ' test ' + str(a_vars['a'].string))
+  - python: print(str(uuid4()) + ' test ' + str(VARS.a.string))
   - python: del PERSISTENT_VARS['uuid4']
   - a=local: uptime
   - remote@testsystem: whoami

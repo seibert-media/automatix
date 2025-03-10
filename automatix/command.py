@@ -2,26 +2,15 @@ import os
 import re
 import subprocess
 from code import InteractiveConsole
+from dataclasses import dataclass
 from shlex import quote
 from time import time
 from typing import Tuple
 
-from .environment import PipelineEnvironment
+from .environment import PipelineEnvironment, AttributedDict
 from .progress_bar import draw_progress_bar, block_progress_bar
 
-
-class PersistentDict(dict):
-    def __getattr__(self, key: str):
-        return self[key]
-
-    def __hasattr__(self, key: str):
-        return key in self
-
-    def __setattr__(self, key: str, value):
-        self[key] = value
-
-
-PERSISTENT_VARS = PVARS = PersistentDict()
+PERSISTENT_VARS = PVARS = AttributedDict()
 
 # Leading red " Automatix \w > " to indicate that this shell is inside a running Automatix execution
 AUTOMATIX_PROMPT = r'\[\033[0;31m\] Automatix \[\033[0m\]\\w > '
@@ -33,6 +22,8 @@ Same variables as in a python command are available, but locals() and globals() 
 Exit with `exit()` or Ctrl-D.
 """
 AUTOMATIX_PYTHON_EXITMSG = 'Exit Python Debugging Console.'
+
+KEYBOARD_INTERRUPT_MESSAGE = 'Abort command by user key stroke. Exit code is set to 130.'
 
 POSSIBLE_ANSWERS = {
     'p': 'proceed (default)',
@@ -50,7 +41,30 @@ POSSIBLE_ANSWERS = {
     # 'i' -> reserved for handling still running remote processes
 }
 
-KEYBOARD_INTERRUPT_MESSAGE = 'Abort command by user key stroke. Exit code is set to 130.'
+
+@dataclass
+class Answer:
+    answer: str
+
+    @property
+    def description(self):
+        return POSSIBLE_ANSWERS[self.answer]
+
+
+class PossibleAnswers:
+    proceed = Answer(answer='p')
+    terminal = Answer(answer='T')
+    debug_shell = Answer(answer='D')
+    variables = Answer(answer='v')
+    retry = Answer(answer='r')
+    reload = Answer(answer='R')
+    reload_index = Answer(answer='R±X')
+    skip = Answer(answer='s')
+    abort = Answer(answer='a')
+    abort_continue = Answer(answer='c')
+
+
+PA = PossibleAnswers
 
 
 class Command:
@@ -141,7 +155,13 @@ class Command:
         except (KeyError, UnknownCommandException):
             self.env.LOG.exception('Syntax or value error!')
             self.env.LOG.error('Syntax or value error! Please fix your script and reload/restart.')
-            self._ask_user(question='[SE] What should I do?', allowed_options=['R', 'T', 'D', 'v', 's', 'a'])
+            self._ask_user(
+                question='[SE] What should I do?',
+                allowed_options=[PA.reload, PA.terminal, PA.debug_shell, PA.variables, PA.skip, PA.abort],
+            )
+            # _ask_user handles are answers but PA.retry, PA.skip, PA.proceed
+            # PA.retry and PA.proceed are not in allowed options
+            # PA.skip means 'skip' so we can just go on
         if self.env.config['progress_bar']:
             draw_progress_bar(self.progress_portion)
 
@@ -155,9 +175,25 @@ class Command:
         if self.get_type() == 'manual' or interactive:
             self.env.LOG.debug('Ask for user interaction.')
 
-            answer = self._ask_user(question='[MS] Proceed?', allowed_options=['p', 'T', 'D', 'v', 's', 'R', 'a'])
-            # answers 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
-            if answer == 's' or self.get_type() == 'manual':
+            answer = self._ask_user(
+                question='[MS] Proceed?',
+                allowed_options=[
+                    PA.proceed,
+                    PA.terminal,
+                    PA.debug_shell,
+                    PA.variables,
+                    PA.skip,
+                    PA.reload,
+                    PA.reload_index,
+                    PA.abort,
+                ]
+            )
+            # _ask_user handles are answers but PA.retry, PA.skip, PA.proceed
+            # PA.retry is not in allowed options
+            # PA.proceed means 'proceed' so we can just go on
+            if answer == PA.skip.answer or self.get_type() == 'manual':
+                # no further execution is needed for manual steps
+                # PA.skip means 'skip' so we skip execution and return
                 return
 
         steptime = time()
@@ -176,10 +212,21 @@ class Command:
 
             err_answer = self._ask_user(
                 question='[CF] What should I do?',
-                allowed_options=['p', 'T', 'D', 'v', 'r', 'R', 'a'],
+                allowed_options=[
+                    PA.proceed,
+                    PA.terminal,
+                    PA.debug_shell,
+                    PA.variables,
+                    PA.retry,
+                    PA.reload,
+                    PA.reload_index,
+                    PA.abort,
+                ],
             )
-            # answers 'T', 'v', 'a', 'c' and 'R' are handled by _ask_user, 'p' means just pass
-            if err_answer == 'r':
+            # _ask_user handles are answers but PA.retry, PA.skip, PA.proceed
+            # PA.skip is not in allowed options
+            # PA.proceed means 'proceed' so we can just go on
+            if err_answer == PA.retry.answer:
                 return self._execute(interactive)
 
     def _check_condition(self) -> bool:
@@ -224,12 +271,9 @@ class Command:
         :return: answer character
         """
         if self.env.batch_mode:
-            allowed_options.append('c')
+            allowed_options.append(PA.abort_continue)
 
-        if 'R' in allowed_options:
-            allowed_options.insert(allowed_options.index('R') + 1, 'R±X')
-
-        options = '\n'.join([f' {k}: {POSSIBLE_ANSWERS[k]}' for k in allowed_options])
+        options = '\n'.join([f' {k.answer}: {k.description}' for k in allowed_options])
         formatted_options = options.format(bash_path=self.bash_path)
 
         return self._ask_user_with_options(
@@ -238,6 +282,10 @@ class Command:
         )
 
     def _ask_user_with_options(self, question: str, allowed_options: list) -> str:
+        """
+        Asks user and handles all answers except PA.retry, PA.skip and PA.proceed.
+        Retry, skip and proceed require different handling, based on where in the code the function is called.
+        """
         if self.env.config['progress_bar']:
             block_progress_bar(self.progress_portion)
         self.env.send_status('user_input_add')
@@ -245,20 +293,20 @@ class Command:
         self.env.send_status('user_input_remove')
 
         if answer == '':  # default
-            answer = 'p'
+            answer = PA.proceed.answer
 
-        if answer.startswith('R') and 'R' in allowed_options and len(answer) > 1:
+        if answer.startswith('R') and PA.reload_index in allowed_options and len(answer) > 1:
             try:
                 raise ReloadFromFile(index=self.index + int(answer[1:]))
             except ValueError:
                 pass
 
-        if answer not in allowed_options:
+        if answer not in [ao.answer for ao in allowed_options]:
             self.env.LOG.warning('Invalid input. Try again.')
             return self._ask_user_with_options(question=question, allowed_options=allowed_options)
 
         match answer:
-            case 'T':
+            case PA.terminal.answer:
                 print()
                 self.env.LOG.notice('Starting interactive terminal shell')
                 self._run_local_command(
@@ -269,7 +317,7 @@ class Command:
                 )
 
                 return self._ask_user_with_options(question=question, allowed_options=allowed_options)
-            case 'D':
+            case PA.debug_shell.answer:
                 print()
                 if 'readline' not in vars():
                     import readline  # noqa F401
@@ -281,21 +329,30 @@ class Command:
                 pyconsole.interact(banner=AUTOMATIX_PYTHON_BANNER, exitmsg=AUTOMATIX_PYTHON_EXITMSG)
 
                 return self._ask_user_with_options(question=question, allowed_options=allowed_options)
-            case 'v':
+            case PA.variables.answer:
                 self.show_and_change_variables()
                 return self._ask_user_with_options(question=question, allowed_options=allowed_options)
-            case 'a':
+            case PA.abort.answer:
                 raise AbortException(1)
-            case 'R':
+            case PA.reload.answer:
                 raise ReloadFromFile(index=self.index)
-            case 'c':
+            case PA.abort_continue.answer:
                 raise SkipBatchItemException()
-            case _:
+            case PA.retry.answer | PA.skip.answer | PA.proceed.answer:
                 return answer
+            case _:
+                raise RuntimeError(
+                    'This should never happen!'
+                    ' Please consult the maintainer and give details about your usage.'
+                    ' Most likely this is a bug, which needs to be fixed.'
+                )
 
     def _generate_python_vars(self) -> dict:
         # For BWCommand this method is overridden
-        return {'a_vars': self.env.vars}
+        return {
+            'a_vars': self.env.vars,  # deprecated, for backwards compatibility
+            'VARS': self.env.vars,
+        }
 
     def _get_python_locals(self) -> dict:
         locale_vars = {}
@@ -306,9 +363,11 @@ class Command:
     def _get_python_globals(self) -> dict:
         global_vars = {
             # builtins are included anyway, if not defined here
+            'CONST': ConstantsWrapper(self.env.config['constants']),
             'PERSISTENT_VARS': PERSISTENT_VARS,
             'PVARS': PVARS,
             'SCRIPT_FILE_PATH': self.env.script_file_path,
+            'SYSTEMS': SystemsWrapper(self.env.systems),
             'AbortException': AbortException,
             'SkipBatchItemException': SkipBatchItemException,
         }
