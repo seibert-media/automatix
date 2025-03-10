@@ -4,7 +4,8 @@
 - Backport changes from fork
 - Adjustments due to backporting
 - Refactoring: answer options in command.py
-- Python action: Make SYSTEMS and CONST directly available
+- Python action: Make `SYSTEMS` and `CONST` directly available
+- Python action: Path to executed script file available as `SCRIPT_FILE_PATH`
 - Python action: Automatix variables are now available as `VARS`, replacing `a_vars` (now deprecated)
 
 # 2.5.0
