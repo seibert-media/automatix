@@ -16,7 +16,7 @@ from .command import SkipBatchItemException, AbortException
 from .config import (
     arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION, init_logger
 )
-from .parallel import screen_switch_loop
+from .parallel import screen_switch_loop, get_logfile_dir
 from .progress_bar import setup_scroll_area, destroy_scroll_area
 
 
@@ -135,7 +135,7 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
         time_id = round(time())
         os.mkfifo(f'{tempdir}/{time_id}_finished')
 
-        logfile_dir = f'{CONFIG.get("logfile_dir")}/{time_id}'
+        logfile_dir = get_logfile_dir(time_id=time_id, scriptfile=args.scriptfile)
         os.makedirs(logfile_dir)
         LOG.info(f'Created directory for logfiles at {logfile_dir}')
 
