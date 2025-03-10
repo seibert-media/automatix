@@ -25,7 +25,7 @@ LINE_START = '\033[20D'  # Moves cursor 20 times backward, should be sufficient.
 CURSOR_SAVE = '\033[s'
 CURSOR_RESTORE = '\033[u'
 
-LOOP_LINES = 17
+LOOP_LINES = 18
 
 
 @dataclass
@@ -33,6 +33,7 @@ class Autos:
     status_file: str
     time_id: int
     count: int
+    tempdir: str
 
     max_parallel: int = 2
     waiting: set = field(default_factory=set)
@@ -91,6 +92,7 @@ def print_status(autos: Autos):
 
 
 def print_status_verbose(autos: Autos):
+    print(f'Working directory: {autos.tempdir}')
     print(f'------------------ Screens (max. {autos.max_parallel} running) ------------------')
     print_status(autos=autos)
     print('--------------------------------------------------------------')
@@ -131,13 +133,14 @@ def check_for_status_change(autos: Autos, status_file: str):
 def run_manage_loop(tempdir: str, time_id: int):
     status_file = f'{tempdir}/{time_id}_overview'
     auto_files = get_files(tempdir)
-    autos = Autos(status_file=status_file, time_id=time_id, count=len(auto_files), waiting=auto_files)
+    autos = Autos(status_file=status_file, time_id=time_id, count=len(auto_files), waiting=auto_files, tempdir=tempdir)
     with open(f'{tempdir}/{next(iter(auto_files))}', 'rb') as f:
         scriptfile = pickle.load(f).env.cmd_args.scriptfile
 
     LOG.info(f'Found {autos.count} files to process. Screens name are like "{time_id}_autoX"')
     LOG.info('To switch screens detach from this screen via "<ctrl>+a d".')
     LOG.info('To scroll back in history press "<ctrl>+a Esc" to enable "copy mode". Switch back with "Esc".')
+    LOG.info('You can modify this behaviour by screen configuration options (`~/.screenrc`).')
 
     open(status_file, 'a').close()
     try:
@@ -250,6 +253,7 @@ def ask_for_options(autos: Autos) -> str | None:
     print()
     LOG.notice('Please notice: To come back to this selection press "<ctrl>+a d" in a screen session!')
     LOG.notice('To scroll back in history press "<ctrl>+a Esc" to enable "copy mode". Switch back with "Esc".')
+    LOG.notice('You can modify this behaviour by screen configuration options (`~/.screenrc`).')
     print()
     LOG.info('Following options are available:')
     LOG.info(

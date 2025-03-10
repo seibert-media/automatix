@@ -1,3 +1,5 @@
+# PYTHON_ARGCOMPLETE_OK
+
 import os
 import pickle
 import subprocess
@@ -6,7 +8,7 @@ from argparse import Namespace
 from copy import deepcopy
 from csv import DictReader
 from tempfile import TemporaryDirectory
-from time import time
+from time import time, gmtime, strftime
 from typing import List
 
 from .automatix import Automatix
@@ -30,17 +32,21 @@ def check_for_original_automatix():
                 ' THEN reinstall the package you want to use!')
 
 
-def setup(args: Namespace):
+def setup(args: Namespace) -> float:
     """Setup logger and print version information"""
     init_logger(name=CONFIG['logger'], debug=args.debug)
+    starttime = time()
 
     LOG.info(f'Automatix Version {VERSION}')
+    LOG.info(f'Started at: {strftime("%a, %d %b %Y %H:%M:%S UTC", gmtime(starttime))}')
 
     configfile = CONFIG.get('config_file')
     if configfile:
         LOG.info(f'Using configuration from: {configfile}')
     else:
         LOG.warning('Configuration file not found or not configured. Using defaults.')
+
+    return starttime
 
 
 def get_script_and_batch_items(args: Namespace) -> (dict, list):
@@ -50,13 +56,13 @@ def get_script_and_batch_items(args: Namespace) -> (dict, list):
     if args.vars_file:
         with open(args.vars_file) as csvfile:
             batch_items = list(DictReader(csvfile))
-        script['batch_mode'] = False if args.parallel else True
-        script['batch_items_count'] = 1 if args.parallel else len(batch_items)
+        script['_batch_mode'] = False if args.parallel else True
+        script['_batch_items_count'] = 1 if args.parallel else len(batch_items)
         LOG.notice(f'Detected {"parallel" if args.parallel else "batch"} processing from CSV file.')
 
     if args.steps:
-        exclude = script['exclude'] = args.steps.startswith('e')
-        script['steps'] = {int(s) for s in (args.steps[1:] if exclude else args.steps).split(',')}
+        exclude = script['_exclude'] = args.steps.startswith('e')
+        script['_steps'] = {int(s) for s in (args.steps[1:] if exclude else args.steps).split(',')}
 
     return script, batch_items
 
@@ -110,8 +116,9 @@ def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir:
             batch_index=1,
         )
         id = str(i).rjust(digits, '0')
+        auto.env.auto_file = auto_file = f'{tempdir}/auto{id}'
 
-        with open(f'{tempdir}/auto{id}', 'wb') as f:
+        with open(auto_file, 'wb') as f:
             # The auto.cmd_class attribute MUST NOT be called before this!!!
             # Otherwise, the Bundlewrap integration will fail for parallel processing,
             # because the BWCommand is not pickleable.
@@ -174,9 +181,8 @@ def main():
         if answer != 'yes':
             sys.exit(0)
 
-    starttime = time()
     args = arguments()
-    setup(args=args)
+    starttime = setup(args=args)
 
     script, batch_items = get_script_and_batch_items(args=args)
 

@@ -5,4 +5,4 @@ dist/
 *.egg-info/
 *__pycache__/
 *id_rsa_tests*
-tests/docker-compose.yml
+tests/secrets/

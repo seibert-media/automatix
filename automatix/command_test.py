@@ -105,24 +105,20 @@ def test__execute_python_cmd__assignment():
 
     assert env.vars.get('a') == 2
 
-    cmd = Command(
-        cmd={'myvar=python': 'a_vars["a"] == 2'}, index=2, pipeline='pipeline', env=env, position=1)
+    cmd = Command(cmd={'myvar=python': 'VARS.a == 2'}, index=2, pipeline='pipeline', env=env, position=1)
     cmd.execute()
 
     assert env.vars.get('myvar') is True
 
-    cmd = Command(
-        cmd={'python': 'a_vars["a"] = "new_value"'}, index=2, pipeline='pipeline', env=env, position=1)
+    cmd = Command(cmd={'python': 'VARS.a = "new_value"'}, index=2, pipeline='pipeline', env=env, position=1)
     cmd.execute()
 
     assert env.vars.get('a') == "new_value"
 
     # Ensure vars is not shadowed (it was before refactoring)
-    cmd = Command(
-        cmd={'python': 'assert "vars" not in locals()'}, index=2, pipeline='pipeline', env=env, position=1)
+    cmd = Command(cmd={'python': 'assert "vars" not in locals()'}, index=2, pipeline='pipeline', env=env, position=1)
     cmd.execute()
-    cmd = Command(
-        cmd={'python': 'assert "vars" not in globals()'}, index=2, pipeline='pipeline', env=env, position=1)
+    cmd = Command(cmd={'python': 'assert "vars" not in globals()'}, index=2, pipeline='pipeline', env=env, position=1)
     cmd.execute()
 
 
