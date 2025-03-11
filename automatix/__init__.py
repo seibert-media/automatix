@@ -60,10 +60,6 @@ def get_script_and_batch_items(args: Namespace) -> (dict, list):
         script['_batch_items_count'] = 1 if args.parallel else len(batch_items)
         LOG.notice(f'Detected {"parallel" if args.parallel else "batch"} processing from CSV file.')
 
-    if args.steps:
-        exclude = script['_exclude'] = args.steps.startswith('e')
-        script['_steps'] = {int(s) for s in (args.steps[1:] if exclude else args.steps).split(',')}
-
     return script, batch_items
 
 
