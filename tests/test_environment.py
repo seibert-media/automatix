@@ -18,6 +18,7 @@ default_args = Namespace(
     secrets=None,
     print_overview=False,
     jump_to=0,
+    steps=None,
     interactive=False,
     force=False,
     debug=False,
