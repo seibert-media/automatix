@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.6.1
+- Fix: Reloading while using steps
+
 # 2.6.0
 - Backport changes from fork
 - Adjustments due to backporting
