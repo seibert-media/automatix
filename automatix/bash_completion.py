@@ -21,10 +21,7 @@ class ScriptFileCompleter(object):
         completion = []
         pre_len = len(self.script_path) + 1
         directories = _call(["bash", "-c", f"compgen -A directory -- '{self.script_path}/{prefix}'"])
-        for directory in directories:
-            for ext in ['yaml', 'yml']:
-                files = _call(["bash", "-c", f"compgen -A file -X '!*.{ext}' -- '{directory}/'"])
-                completion += [f[pre_len:] for f in files]
+        completion += [f'{d[pre_len:]}/' for d in directories]
         for ext in ['yaml', 'yml']:
             files = _call(["bash", "-c", f"compgen -A file -X '!*.{ext}' -- '{self.script_path}/{prefix}'"])
             completion += [f[pre_len:] for f in files]
