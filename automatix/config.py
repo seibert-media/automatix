@@ -7,21 +7,12 @@ from collections import OrderedDict
 from importlib import metadata, import_module
 from time import sleep
 
-import yaml
-
 from .colors import red
-
-yaml.warnings({'YAMLLoadWarning': False})
-
-
-def read_yaml(yamlfile: str) -> dict:
-    with open(yamlfile) as file:
-        return yaml.load(file.read(), Loader=yaml.SafeLoader)
-
+from .helpers import read_yaml
 
 try:
     from argcomplete import autocomplete
-    from .bash_completion import ScriptFileCompleter
+    from .bash_completion import ScriptFileCompleter, ScriptFieldCompleter
 
     bash_completion = True
 except ImportError:
@@ -114,12 +105,14 @@ def arguments() -> argparse.Namespace:
         scriptfile_action.completer = ScriptFileCompleter(script_path=SCRIPT_PATH)
 
     for field in SCRIPT_FIELDS.keys():
-        parser.add_argument(
+        field_action = parser.add_argument(
             f'--{field}',
-            nargs='*',
+            nargs='+',
             help=f'Use this to set {field} without adding them to the script or to overwrite them. '
                  f'You can specify multiple {field} like: --{field} v1=string1 v2=string2 v3=string3',
         )
+        if bash_completion:
+            field_action.completer = ScriptFieldCompleter(script_path=SCRIPT_PATH)
     parser.add_argument(
         '--vars-file',
         help='Path to a CSV file containing variables for batch processing',
