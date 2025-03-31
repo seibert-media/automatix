@@ -48,7 +48,7 @@ class ScriptFieldCompleter:
                 s_file = f'{self.script_path}/{parsed_args.scriptfile}'
 
             script = read_yaml(s_file)
-            completion = script.get(action.dest, {}).keys()
+            completion = [f'{key}=' for key in script.get(action.dest, {}).keys()]
 
             return completion
         except Exception as exc:
