@@ -1,5 +1,9 @@
 # Changelog
 
+# 2.7.0
+- Feature: Shell completion works now for vars, systems, secrets
+- Feature: Shell completion for the script files works now even for deep directory trees
+
 # 2.6.1
 - Fix: Reloading while using steps
 
