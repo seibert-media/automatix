@@ -25,11 +25,20 @@ class ScriptFileCompleter:
 
     def __call__(self, prefix: str, **kwargs):
         completion = []
-        pre_len = len(self.script_path) + 1
-        directories = _call(["bash", "-c", f"compgen -A directory -- '{self.script_path}/{prefix}'"])
+        try:
+            completion.extend(self.find_dirs_and_files(root_path='.', prefix=prefix))
+            completion.extend(self.find_dirs_and_files(root_path=self.script_path, prefix=prefix))
+        except Exception as exc:
+            warn(f'Shell completion failed: {repr(exc)}')
+        return completion
+
+    def find_dirs_and_files(self, root_path: str, prefix: str) -> list:
+        completion = []
+        pre_len = len(root_path) + 1
+        directories = _call(["bash", "-c", f"compgen -A directory -- '{root_path}/{prefix}'"])
         completion += [f'{d[pre_len:]}/' for d in directories]
         for ext in ['yaml', 'yml']:
-            files = _call(["bash", "-c", f"compgen -A file -X '!*.{ext}' -- '{self.script_path}/{prefix}'"])
+            files = _call(["bash", "-c", f"compgen -A file -X '!*.{ext}' -- '{root_path}/{prefix}'"])
             completion += [f[pre_len:] for f in files]
         return completion
 
