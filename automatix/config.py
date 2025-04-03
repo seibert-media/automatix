@@ -51,6 +51,8 @@ CONFIG = {
     'progress_bar': False,
 }
 
+MAGIC_SELECTION_INT = -999999999  # Some number nobody would normally type to mark that selection is wanted.
+
 configfile = os.path.expanduser(os.path.expandvars(os.getenv('AUTOMATIX_CONFIG', '~/.automatix.cfg.yaml')))
 if os.path.isfile(configfile):
     CONFIG.update(read_yaml(configfile))
@@ -131,8 +133,10 @@ def arguments() -> argparse.Namespace:
     )
     parser.add_argument(
         '--jump-to', '-j',
-        help='Jump to step instead of starting at the beginning',
+        help='Jump to step instead of starting at the beginning. Empty argument shows an interactive selection',
         type=int,
+        nargs='?',
+        const=MAGIC_SELECTION_INT,  # This is to provide selection.
         default=0,
     )
     parser.add_argument(
