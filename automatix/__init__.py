@@ -14,8 +14,10 @@ from typing import List
 from .automatix import Automatix
 from .command import SkipBatchItemException, AbortException
 from .config import (
-    arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION, init_logger
+    arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION, init_logger,
+    MAGIC_SELECTION_INT
 )
+from .helpers import selector
 from .parallel import screen_switch_loop, get_logfile_dir
 from .progress_bar import setup_scroll_area, destroy_scroll_area
 
@@ -181,6 +183,16 @@ def main():
     starttime = setup(args=args)
 
     script, batch_items = get_script_and_batch_items(args=args)
+
+    if args.jump_to == MAGIC_SELECTION_INT:
+        pipeline_items = [next(iter(pi.items())) for pi in script['pipeline']]
+        args.jump_to = selector(
+            entries=[
+                (i, f'[{v[0]}]: {v[1]}')
+                for i, v in enumerate(pipeline_items)
+            ],
+            message='Please choose index of desired start command:'
+        )
 
     if args.vars_file and args.parallel:
         check_screen()
