@@ -122,6 +122,7 @@ class Command:
 
         variables['CONST'] = ConstantsWrapper(self.env.config['constants'])
         variables['SYSTEMS'] = SystemsWrapper(self.env.systems)
+        variables['PVARS'] = PVARS
         return self.value.format(**variables)
 
     def print_command(self):
