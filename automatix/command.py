@@ -7,7 +7,7 @@ from shlex import quote
 from time import time
 from typing import Tuple
 
-from .environment import PipelineEnvironment, AttributedDict
+from .environment import PipelineEnvironment, AttributedDict, AttributedDummyDict
 from .progress_bar import draw_progress_bar, block_progress_bar
 
 PERSISTENT_VARS = PVARS = AttributedDict()
@@ -110,7 +110,7 @@ class Command:
             return self.env.systems[re.search(r'remote@(.*)', self.key).group(1)]
         return 'localhost'
 
-    def get_resolved_value(self):
+    def get_resolved_value(self, dummy: bool = False):
         variables = self.env.vars.copy()
         for key, value in variables.items():
             if not isinstance(value, str):
@@ -122,7 +122,7 @@ class Command:
 
         variables['CONST'] = ConstantsWrapper(self.env.config['constants'])
         variables['SYSTEMS'] = SystemsWrapper(self.env.systems)
-        variables['PVARS'] = PVARS
+        variables['PVARS'] = AttributedDummyDict('PVARS', PVARS) if dummy else PVARS
         return self.value.format(**variables)
 
     def print_command(self):
@@ -382,7 +382,7 @@ class Command:
         try:
             self.env.LOG.debug(f'Run python command: {cmd}')
             if self.assignment_var:
-                exec(f'a_vars["{self.assignment_var}"] = {cmd}', self._get_python_globals(), self._get_python_locals())
+                exec(f'VARS["{self.assignment_var}"] = {cmd}', self._get_python_globals(), self._get_python_locals())
                 self.env.LOG.info(f'Variable {self.assignment_var} = {repr(self.env.vars[self.assignment_var])}')
             else:
                 exec(cmd, self._get_python_globals(), self._get_python_locals())

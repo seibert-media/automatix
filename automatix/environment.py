@@ -17,6 +17,21 @@ class AttributedDict(dict):
         self[key] = value
 
 
+class AttributedDummyDict(AttributedDict):
+    def __init__(self, name: str, *args):
+        super().__init__(*args)
+        self.__name__ = name
+
+    def __getattr__(self, key: str):
+        return self[key]
+
+    def __getitem__(self, item):
+        try:
+            return super().__getitem__(item)
+        except KeyError:
+            return f'{{{self.__name__}.{item}}}'
+
+
 class PipelineEnvironment:
     def __init__(
             self,
