@@ -3,7 +3,6 @@ import sys
 from argparse import Namespace
 from collections import OrderedDict
 from functools import cached_property
-from typing import List
 
 from .command import Command, AbortException, SkipBatchItemException, PERSISTENT_VARS, ReloadFromFile
 from .config import get_script
@@ -63,7 +62,7 @@ class Automatix:
                 self.command_list('always') + self.command_list('main') + self.command_list('cleanup')
             )
 
-    def build_command_list(self, pipeline: str) -> List[Command]:
+    def build_command_list(self, pipeline: str) -> list[Command]:
         command_list = []
         for index, cmd in enumerate(self.script.get(pipeline, [])):
             new_cmd = self.cmd_class(
@@ -91,7 +90,7 @@ class Automatix:
             for key, value in self.script.get(field_key, {}).items():
                 self.env.LOG.info(f" {key}: {value}")
 
-    def print_command_line_steps(self, command_list: List[Command]):
+    def print_command_line_steps(self, command_list: list[Command]):
         print()
         self.env.LOG.info('Commandline Steps:')
         for cmd in command_list:
