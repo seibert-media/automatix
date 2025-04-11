@@ -1,5 +1,10 @@
 # Changelog
 
+# 2.8.0
+- Fix: Also shell complete relative paths
+- Feature: Show steps for selection if --jump-to/-j is empty
+- Feature: Support PVARS in the bracket notation (useful for shell commands)
+
 # 2.7.0
 - Feature: Shell completion works now for vars, systems, secrets
 - Feature: Shell completion for the script files works now even for deep directory trees
