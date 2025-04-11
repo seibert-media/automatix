@@ -9,7 +9,6 @@ from copy import deepcopy
 from csv import DictReader
 from tempfile import TemporaryDirectory
 from time import time, gmtime, strftime
-from typing import List
 
 from .automatix import Automatix
 from .command import SkipBatchItemException, AbortException
@@ -52,7 +51,7 @@ def setup(args: Namespace) -> float:
 def get_script_and_batch_items(args: Namespace) -> (dict, list):
     script = get_script(args=args)
 
-    batch_items: List[dict] = [{}]
+    batch_items: list[dict] = [{}]
     if args.vars_file:
         with open(args.vars_file) as csvfile:
             batch_items = list(DictReader(csvfile))
