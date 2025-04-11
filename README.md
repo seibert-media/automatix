@@ -163,9 +163,8 @@ All (string) configuration values can be overwritten by the
 
 **--jump-to** _JUMP_TO_, **-j** _JUMP_TO_
 : Jump to step with index _JUMP_TO_ instead of starting at the
- beginning. Use **-p** or the output messages to determine the
- desired step index. You can use negative numbers to start counting
- from the end.  
+ beginning. Use this option without argument to get an interactive selection.
+ You can also use negative numbers to start counting from the end.  
 
 **--steps** _STEPS_, **-s** _STEPS_
 : Only execute these steps (comma-separated indices) or exclude steps
