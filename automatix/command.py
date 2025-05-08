@@ -126,7 +126,7 @@ class Command:
 
     def print_command(self):
         print()
-        self.env.LOG.notice(f'({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
+        self.env.LOG.notice(f'({self.index}) [{self.orig_key}]: {self.get_resolved_value(dummy=True)}')
 
     def show_and_change_variables(self):
         print()
@@ -488,6 +488,13 @@ class Command:
                 self.env.LOG.notice(
                     'Remote command seems still to be running! Found PIDs: {}'.format(','.join(ps_pids))
                 )
+                if len(ps_pids) > 1:
+                    self.env.LOG.warning(
+                        'WARNING: Normally there should be at most 1 automatix process on the system.'
+                        f' We found {len(ps_pids)} !!! \n\nThis might be a sign,'
+                        ' that PID determination did nasty things and returned the wrong process IDs.'
+                        ' Please double check the PIDs and proceed very carefully!'
+                    )
                 self.env.send_status('user_input_add')
                 answer = input(
                     '[RR] What should I do? '
@@ -514,10 +521,10 @@ class Command:
         self.env.LOG.info('Keystroke interrupt handled.\n')
 
     def get_remote_pids(self, hostname, cmd) -> []:
-        ps_cmd = f"ps axu | grep {quote(cmd)} | grep -v 'grep' | awk '{{print $2}}'"
-        cmd = f'ssh {hostname} {quote(ps_cmd)} 2>&1'
+        ps_cmd = f"ps axu | grep RUNNING_INSIDE_AUTOMATIX | grep -v 'grep' | awk '{{print $2}}'"
+        remote_ps_cmd = f'ssh {hostname} {quote(ps_cmd)} 2>&1'
         pids = subprocess.check_output(
-            cmd,
+            remote_ps_cmd,
             shell=True,
             executable=self.bash_path,
         ).decode(self.env.config["encoding"]).split()
