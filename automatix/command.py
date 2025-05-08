@@ -126,7 +126,7 @@ class Command:
 
     def print_command(self):
         print()
-        self.env.LOG.notice(f'({self.index}) [{self.orig_key}]: {self.get_resolved_value()}')
+        self.env.LOG.notice(f'({self.index}) [{self.orig_key}]: {self.get_resolved_value(dummy=True)}')
 
     def show_and_change_variables(self):
         print()
