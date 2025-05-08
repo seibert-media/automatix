@@ -1,5 +1,9 @@
 # Changelog
 
+# 2.8.1
+- Fix: Determination of PIDs of still running remote commands
+- Fix: Printing of undefined variables
+
 # 2.8.0
 - Fix: Also shell complete relative paths
 - Feature: Show steps for selection if --jump-to/-j is empty
