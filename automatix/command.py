@@ -490,10 +490,13 @@ class Command:
                 )
                 if len(ps_pids) > 1:
                     self.env.LOG.warning(
-                        'WARNING: Normally there should be at most 1 automatix process on the system.'
+                        'WARNING: Normally there should be at most 1 Automatix process on the system.'
                         f' We found {len(ps_pids)} !!! \n\nThis might be a sign,'
                         ' that PID determination did nasty things and returned the wrong process IDs.'
-                        ' Please double check the PIDs and proceed very carefully!'
+                        ' Please double check the PIDs and proceed very carefully!\n\n'
+                        'If the determination is correct and you have other Automatix commands running in'
+                        ' parallel or in background, be aware that the signals chosen are sent to ALL'
+                        ' identified processes. This is probably not what you want!'
                     )
                 self.env.send_status('user_input_add')
                 answer = input(
