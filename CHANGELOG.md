@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.8.2
+- Fix: No "autofilling" of user input, if one has pressed keys during commands
+
 # 2.8.1
 - Fix: Determination of PIDs of still running remote commands
 - Fix: Printing of undefined variables
