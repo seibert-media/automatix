@@ -135,7 +135,8 @@ def test__parse_key():
     assert parse_key('is_jira!?python') == ('is_jira!', None, 'python')
 
 
-def test__show_and_change_variables():
+@mock.patch('automatix.command.empty_queued_input_data')
+def test__show_and_change_variables(mock_empty_queued_input_data: mock.MagicMock):
     cmd = Command(cmd={'python': 'pass'}, index=2, pipeline='pipeline', env=deepcopy(environment), position=1)
     assert cmd.env.vars == {
         'a': '{a}',
@@ -161,3 +162,5 @@ def test__show_and_change_variables():
         'cond2': '!dgkls=432',
         'var1': 'xyz',
     }
+
+    mock_empty_queued_input_data.assert_called()

@@ -525,7 +525,7 @@ class Command:
         self.env.LOG.info('Keystroke interrupt handled.\n')
 
     def get_remote_pids(self, hostname, cmd) -> []:
-        ps_cmd = f"ps axu | grep RUNNING_INSIDE_AUTOMATIX | grep -v 'grep' | awk '{{print $2}}'"
+        ps_cmd = "ps axu | grep RUNNING_INSIDE_AUTOMATIX | grep -v 'grep' | awk '{print $2}'"
         remote_ps_cmd = f'ssh {hostname} {quote(ps_cmd)} 2>&1'
         pids = subprocess.check_output(
             remote_ps_cmd,
