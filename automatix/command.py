@@ -7,6 +7,7 @@ from shlex import quote
 from time import time
 
 from .environment import PipelineEnvironment, AttributedDict, AttributedDummyDict
+from .helpers import empty_queued_input_data
 from .progress_bar import draw_progress_bar, block_progress_bar
 
 PERSISTENT_VARS = PVARS = AttributedDict()
@@ -138,6 +139,7 @@ class Command:
         self.env.LOG.info('Example: var1=xyz')
         self.env.LOG.info('Notice: You can only change 1 variable at a time. Repeat if necessary.')
         self.env.LOG.info('To not change anything just press "ENTER".')
+        empty_queued_input_data()
         answer = input('\n')
         try:
             key, value = answer.split('=', maxsplit=1)
@@ -289,6 +291,7 @@ class Command:
         if self.env.config['progress_bar']:
             block_progress_bar(self.progress_portion)
         self.env.send_status('user_input_add')
+        empty_queued_input_data()
         answer = input(question)
         self.env.send_status('user_input_remove')
 
@@ -496,6 +499,7 @@ class Command:
                         ' Please double check the PIDs and proceed very carefully!'
                     )
                 self.env.send_status('user_input_add')
+                empty_queued_input_data()
                 answer = input(
                     '[RR] What should I do? '
                     '(i: send SIGINT (default), t: send SIGTERM, k: send SIGKILL, p: do nothing and proceed) \n\a')
