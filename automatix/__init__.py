@@ -16,7 +16,7 @@ from .config import (
     arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION, init_logger,
     MAGIC_SELECTION_INT
 )
-from .helpers import selector
+from .helpers import selector, empty_queued_input_data
 from .parallel import screen_switch_loop, get_logfile_dir
 from .progress_bar import setup_scroll_area, destroy_scroll_area
 
@@ -174,6 +174,7 @@ def main():
 
     if os.getenv('AUTOMATIX_SHELL'):
         print('You are running Automatix from an interactive shell of an already running Automatix!')
+        empty_queued_input_data()
         answer = input('Do you really want to proceed? Then type "yes" and ENTER.\n')
         if answer != 'yes':
             sys.exit(0)
