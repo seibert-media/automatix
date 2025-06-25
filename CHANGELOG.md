@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.9.0
+- Feature: Defined process order for parallel processing
+
 # 2.8.2
 - Fix: No "autofilling" of user input, if one has pressed keys during commands
 
