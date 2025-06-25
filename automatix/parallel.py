@@ -36,7 +36,7 @@ class Autos:
     tempdir: str
 
     max_parallel: int = 2
-    waiting: set = field(default_factory=set)
+    waiting: list = field(default_factory=list)
     running: set = field(default_factory=set)
     user_input: set = field(default_factory=set)
     finished: set = field(default_factory=set)
@@ -132,7 +132,7 @@ def check_for_status_change(autos: Autos, status_file: str):
 
 def run_manage_loop(tempdir: str, time_id: int):
     status_file = f'{tempdir}/{time_id}_overview'
-    auto_files = get_files(tempdir)
+    auto_files = sorted(get_files(tempdir))
     autos = Autos(status_file=status_file, time_id=time_id, count=len(auto_files), waiting=auto_files, tempdir=tempdir)
     with open(f'{tempdir}/{next(iter(auto_files))}', 'rb') as f:
         scriptfile = pickle.load(f).env.cmd_args.scriptfile
@@ -146,7 +146,7 @@ def run_manage_loop(tempdir: str, time_id: int):
     try:
         while len(autos.finished) < autos.count:
             if len(autos.running) < autos.max_parallel and autos.waiting:
-                auto_file = autos.waiting.pop()
+                auto_file = autos.waiting.pop(0)
                 autos.running.add(auto_file)
                 LOG.info(f'Starting new screen at {time_id}_{auto_file}')
                 subprocess.run(
