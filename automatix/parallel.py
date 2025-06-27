@@ -10,23 +10,13 @@ from os.path import isfile
 from pathlib import Path
 from time import sleep, strftime, gmtime
 
-import select
-
 from .automatix import Automatix
 from .colors import yellow, green, red, cyan
 from .command import AbortException
 from .config import LOG, init_logger, CONFIG
 from .progress_bar import setup_scroll_area, destroy_scroll_area
 
-# See https://en.wikipedia.org/wiki/ANSI_escape_code
-LINE_UP = '\033[1A'
-LINE_CLEAR = '\033[2K'
-LINE_END = '\033[20C'  # Moves cursor 20 times forward, should be sufficient.
-LINE_START = '\033[20D'  # Moves cursor 20 times backward, should be sufficient.
-CURSOR_SAVE = '\033[s'
-CURSOR_RESTORE = '\033[u'
-
-LOOP_LINES = 18
+STATUS_TEMPLATE = 'waiting: {w}, running: {r}, user input required: {u}, finished: {f}'
 
 
 @dataclass
@@ -83,24 +73,12 @@ def get_files(tempdir: str) -> set:
 
 
 def print_status(autos: Autos):
-    tmpl = 'waiting: {w}, running: {r}, user input required: {u}, finished: {f}'
-    print(tmpl.format(
+    print(STATUS_TEMPLATE.format(
         w=yellow(len(autos.waiting)),
         r=cyan(len(autos.running)),
         u=red(len(autos.user_input)),
         f=green(f'{len(autos.finished)}/{autos.count}'),
     ))
-
-
-def print_status_verbose(autos: Autos):
-    print(f'Working directory: {autos.tempdir}')
-    print(f'------------------ Screens (max. {autos.max_parallel} running) ------------------')
-    print_status(autos=autos)
-    print('--------------------------------------------------------------')
-    print(f'waiting:             {sorted(autos.waiting)}')
-    print(f'running:             {sorted(autos.running)}')
-    print(f'user input required: {red(sorted(autos.user_input))}')
-    print(f'finished:            {sorted(autos.finished)}')
 
 
 def check_for_status_change(autos: Autos, status_file: str):
@@ -243,253 +221,175 @@ def run_auto_from_file():
             destroy_scroll_area()
 
 
-def clear_loop():
-    print(CURSOR_SAVE, end='', flush=True)
-    print(LINE_START, end='')
-    for _ in range(LOOP_LINES):
-        print(LINE_UP, end=LINE_CLEAR)
-
-
-def ask_for_options(autos: Autos) -> str | None:
-    print()
-    LOG.notice('Please notice: To come back to this selection press "<ctrl>+a d" in a screen session!')
-    LOG.notice('To scroll back in history press "<ctrl>+a Esc" to enable "copy mode". Switch back with "Esc".')
-    LOG.notice('You can modify this behaviour by screen configuration options (`~/.screenrc`).')
-    print()
-    LOG.info('Following options are available:')
-    LOG.info(
-        ' o: overview / manager loop\n'
-        ' n: next user input required\n'
-        ' X (number): switch to autoX\n'
-        f' mX: set max parallel screens to X (actual {autos.max_parallel})\n'
-    )
-    print(CURSOR_RESTORE, end='', flush=True)
-
-
-def check_for_option(autos: Autos) -> str | None:
-    i, _, _ = select.select([sys.stdin], [], [], 1)
-    if i:
-        answer = sys.stdin.readline().strip()
-        print(LINE_UP, end=LINE_CLEAR)
+def handle_exit(exc: Exception | None = None) -> str:
+    if exc:
+        LOG.exception(exc)
+        print()
+        LOG.info('An unexpected error occurred. Please decide what to do:')
     else:
-        return None
+        LOG.info('You decided to quit the UI, but screens are most likely still running. Please decide what to do:')
+    match input(
+        'Press "q" and Enter to quit.'
+        ' This will cause this programm to terminate.'
+        ' Check "screen -list" afterwards for still running screens.\n'
+        ' Press something else to restart the UI, where you can switch to the different screens.\n'
+    ):
+        case 'q':
+            raise SystemExit(130)
+        case _:
+            return 'restart'
 
-    if answer == '':
-        return None
 
-    if answer == 'o':
-        return f'{autos.time_id}_overview'
-
-    if answer == 'n' and autos.user_input:
-        return f'{autos.time_id}_{next(iter(autos.user_input))}'
-
-    if answer.startswith('m'):
+def screen_switch_loop(tempdir: str):
+    while True:
         try:
-            max_parallel = int(answer[1:])
-            with FileWithLock(autos.status_file, 'a') as sf:
-                sf.write(f'{max_parallel}:max_parallel\n')
-            return None
-        except ValueError:
-            LOG.warning(f'Invalid answer: {answer}')
-            sleep(1)
-            return None
+            exit_reason = curses.wrapper(parallel_ui, tempdir)
+        except curses.error as e:
+            LOG.error(f"Curses error: {e}")
+            LOG.error("Could not start the curses interface. Is the terminal compatible?")
+            raise
+        except (KeyboardInterrupt, Exception) as exc:
+            exit_reason = handle_exit(exc=exc)
 
-    try:
-        number = int(answer)
-        return f'{autos.time_id}_auto{str(number).rjust(len(str(autos.count)), "0")}'
-    except ValueError:
-        LOG.warning(f'Invalid answer: {answer}')
-        sleep(1)
-        print(LINE_UP, end=LINE_CLEAR, flush=True)
+        if exit_reason != 'restart':
+            break
+
+
+class CursesWriter:
+    def __init__(self, stdscr: curses.window):
+        self.stdscr = stdscr
+
+        # Terminal setup
+        curses.curs_set(0)  # Hide cursor
+        stdscr.nodelay(True)  # Make getch() non-blocking
+
+        # Initialize colors
+        curses.start_color()
+        curses.use_default_colors()
+        curses.init_pair(1, curses.COLOR_YELLOW, -1)  # -1 for default background
+        curses.init_pair(2, curses.COLOR_CYAN, -1)
+        curses.init_pair(3, curses.COLOR_RED, -1)
+        curses.init_pair(4, curses.COLOR_GREEN, -1)
+
+        self.yellow = curses.color_pair(1)
+        self.cyan = curses.color_pair(2)
+        self.red = curses.color_pair(3)
+        self.green = curses.color_pair(4)
+
+        self.h, self.w = stdscr.getmaxyx()
+
+        self.input_buffer = ''
+
+
+def draw_status(cw: CursesWriter, autos: Autos):
+    cw.stdscr.clear()
+
+    cw.stdscr.addstr(0, 0, f'Automatix Status (max parallel: {autos.max_parallel})')
+    cw.stdscr.addstr(1, 0, f'Working directory: {autos.tempdir}')
+    cw.stdscr.addstr(2, 0, '-' * (cw.w - 1))
+
+    cw.stdscr.addstr(3, 0, 'waiting: ')
+    cw.stdscr.addstr(str(len(autos.waiting)), cw.yellow)
+    cw.stdscr.addstr(', running: ')
+    cw.stdscr.addstr(str(len(autos.running)), cw.cyan)
+    cw.stdscr.addstr(', user input required: ')
+    cw.stdscr.addstr(str(len(autos.user_input)), cw.red)
+    cw.stdscr.addstr(', finished: ')
+    cw.stdscr.addstr(str(len(autos.finished)), cw.green)
+
+    cw.stdscr.addstr(4, 0, '-' * (cw.w - 1))
+
+    cw.stdscr.addstr(6, 2, 'Waiting:             ')
+    cw.stdscr.addstr(6, 22, str(sorted(autos.waiting)))
+    cw.stdscr.addstr(7, 2, 'Running:             ')
+    cw.stdscr.addstr(7, 22, str(sorted(autos.running)))
+    cw.stdscr.addstr(8, 2, 'User input needed:   ')
+    cw.stdscr.addstr(8, 22, str(sorted(autos.user_input)), cw.red)
+    cw.stdscr.addstr(9, 2, 'Finished:            ')
+    cw.stdscr.addstr(9, 22, str(sorted(autos.finished)))
+
+    help_y = cw.h - 5
+    cw.stdscr.addstr(help_y, 0, "-" * (cw.w - 1))
+    cw.stdscr.addstr(
+        help_y + 1, 2,
+        'Options: [o] Overview | [n] Next Input | [X] to autoX | [mX] max parallel to X | [q] Quit'
+    )
+    cw.stdscr.addstr(help_y + 2, 2, f'Input: {cw.input_buffer}')
+
+    cw.stdscr.refresh()
+
+
+def process_user_input(cw: CursesWriter, autos: Autos) -> str | None:
+    key = cw.stdscr.getch()
+    if key == -1:  # No input
         return None
 
+    char = chr(key)
+    if key in [curses.KEY_ENTER, 10, 13]:
+        answer = cw.input_buffer.lower()
+        cw.input_buffer = ''
 
-def screen_switch_loop(tempdir: str, time_id: int):
-    try:
-        while not isfile(f'{tempdir}/autos'):
-            sleep(1)
-        print('\n' * LOOP_LINES)  # some initial space for the loop
-        while True:
-            with FileWithLock(f'{tempdir}/autos', 'rb') as f:
-                autos = pickle.load(file=f)
+        if answer == 'q':
+            raise KeyboardInterrupt('Quit UI by user')
+        elif answer == 'o':
+            return f'{autos.time_id}_overview'
+        elif answer == 'n' and autos.user_input:
+            return f'{autos.time_id}_{next(iter(autos.user_input))}'
+        elif answer.startswith('m'):
+            try:
+                max_parallel = int(answer[1:])
+                with FileWithLock(autos.status_file, 'a') as sf:
+                    sf.write(f'{max_parallel}:max_parallel\n')
+            except (ValueError, IndexError):
+                pass  # Ignore invalid input
+        else:
+            try:
+                number = int(answer)
+                return f'{autos.time_id}_auto{str(number).rjust(len(str(autos.count)), "0")}'
+            except ValueError:
+                pass  # Ignore invalid input
 
-            if screen_id := check_for_option(autos=autos):
-                subprocess.run(f'screen -r {screen_id}', shell=True)
-                sleep(1)
-
-            clear_loop()
-            print_status_verbose(autos=autos)
-
-            if len(autos.running) + len(autos.waiting) + len(autos.user_input) == 0:
-                break
-
-            ask_for_options(autos=autos)
-
-    except (KeyboardInterrupt, Exception) as exc:
-        print('\n' * 8)
-        LOG.exception(exc)
-        print()
-        LOG.info('An exception occurred! Please decide what to do:')
-        match input(
-            'Press "r" and Enter to reraise.'
-            ' This will cause this programm to terminate.'
-            ' Check "screen -list" afterwards for still running screens.\n'
-            ' Press something else to restart the loop, where you can switch to the different screens.\n'
-        ):
-            case 'r':
-                raise
-            case _:
-                screen_switch_loop_curses(tempdir=tempdir, time_id=time_id)
+    elif key in [curses.KEY_BACKSPACE, 127]:
+        cw.input_buffer = cw.input_buffer[:-1]
+    elif char.isalnum():
+        cw.input_buffer += char
 
 
-def screen_switch_loop_curses(tempdir: str, time_id: int):
-    """
-    An improved implementation of the screen_switch_loop using curses for a
-    flicker-free and robust TUI.
-    """
-    try:
-        while True:
-            exit_reason = curses.wrapper(main_curses_loop, tempdir, time_id)
-            if exit_reason != 'restart':
-                break
-
-            print("UI wird neu gestartet...")
-            sleep(1)
-    except curses.error as e:
-        LOG.error(f"Curses error: {e}")
-        LOG.error("Could not start the curses interface. Is the terminal compatible?")
-        # Fallback to the old method or just exit.
-        # screen_switch_loop(tempdir, time_id)
-    except (KeyboardInterrupt, Exception) as exc:
-        # Exception handling can be done more centrally and cleanly here.
-        print('\n' * 8)
-        LOG.exception(exc)
-        print()
-        LOG.info('An unexpected error occurred. The program will be terminated.')
-        LOG.info('Check for running sessions with "screen -list".')
-
-
-def main_curses_loop(stdscr, tempdir: str, time_id: int):
-    # Terminal setup
-    curses.curs_set(0)  # Hide cursor
-    stdscr.nodelay(True)  # Make getch() non-blocking
-
-    # Initialize colors
-    curses.start_color()
-    curses.use_default_colors()
-    curses.init_pair(1, curses.COLOR_YELLOW, -1) # -1 for default background
-    curses.init_pair(2, curses.COLOR_CYAN, -1)
-    curses.init_pair(3, curses.COLOR_RED, -1)
-    curses.init_pair(4, curses.COLOR_GREEN, -1)
-
-    COLOR_YELLOW = curses.color_pair(1)
-    COLOR_CYAN = curses.color_pair(2)
-    COLOR_RED = curses.color_pair(3)
-    COLOR_GREEN = curses.color_pair(4)
+def parallel_ui(stdscr: curses.window, tempdir: str):
+    cw = CursesWriter(stdscr=stdscr)
 
     # Wait until the first status file exists
     while not isfile(f'{tempdir}/autos'):
         stdscr.clear()
-        stdscr.addstr(0, 0, "Waiting for the manager process to start...")
+        stdscr.addstr(0, 0, 'Waiting for the manager process to start...')
         stdscr.refresh()
         sleep(0.5)
-
-    input_buffer = ""
 
     while True:
         # 1. Load data
         with FileWithLock(f'{tempdir}/autos', 'rb') as f:
             autos = pickle.load(file=f)
 
-        # 2. Clear and redraw the screen
-        stdscr.clear()
+        # 2. Draw status
+        draw_status(cw=cw, autos=autos)
 
-        # --- Draw status ---
-        h, w = stdscr.getmaxyx()
-        status_line = ' | '.join([
-            f'Waiting: {len(autos.waiting)}',
-            f'Running: {len(autos.running)}',
-            f'Input needed: {len(autos.user_input)}',
-            f'Finished: {len(autos.finished)}/{autos.count}'
-        ])
-        stdscr.addstr(0, 0, f"Automatix Status (max parallel: {autos.max_parallel})")
-        stdscr.addstr(1, 0, "-" * (w - 1))
-
-        stdscr.addstr(3, 2, "Waiting:             ", COLOR_YELLOW)
-        stdscr.addstr(3, 22, str(sorted(autos.waiting)))
-        stdscr.addstr(4, 2, "Running:             ", COLOR_CYAN)
-        stdscr.addstr(4, 22, str(sorted(autos.running)))
-        stdscr.addstr(5, 2, "User input needed:   ", COLOR_RED)
-        stdscr.addstr(5, 22, str(sorted(autos.user_input)), COLOR_RED)
-        stdscr.addstr(6, 2, "Finished:            ", COLOR_GREEN)
-        stdscr.addstr(6, 22, str(sorted(autos.finished)))
-
-        # --- Draw help and input prompt ---
-        help_y = h - 5
-        stdscr.addstr(help_y, 0, "-" * (w-1))
-        stdscr.addstr(help_y + 1, 2, "Options: [o] Overview | [n] Next Input | [X] to autoX | [mX] max parallel to X | [q] Quit")
-        stdscr.addstr(help_y + 2, 2, f"Input: {input_buffer}")
-
-        # 3. Refresh the screen
-        stdscr.refresh()
-
-        # 4. Check if everything is finished
+        # 3. Check if all processes have finished
         if len(autos.running) + len(autos.waiting) + len(autos.user_input) == 0:
-            stdscr.addstr(help_y + 4, 2, "All processes have finished. Press 'q' to exit.", COLOR_GREEN)
-            stdscr.refresh()
+            cw.stdscr.addstr(cw.h - 1, 2, 'All processes have finished. Press "q" to exit.', cw.green)
+            cw.stdscr.refresh()
             # Wait until the user presses 'q'
-            stdscr.nodelay(False)
-            while stdscr.getch() not in [ord('q'), ord('Q')]:
+            cw.stdscr.nodelay(False)
+            while cw.stdscr.getch() not in [ord('q'), ord('Q')]:
                 pass
             return 'quit'
 
-        # 5. Process user input
-        key = stdscr.getch()
-        if key != -1:
-            char = chr(key)
-            if key in [curses.KEY_ENTER, 10, 13]:
-                screen_to_switch = None
-                answer = input_buffer.lower()
-                input_buffer = ""
+        # 4. Process user input
+        screen_to_switch = process_user_input(cw=cw, autos=autos)
+        if screen_to_switch:
+            # Important: End curses before an external program takes control of the terminal
+            curses.endwin()
+            print(f"Switching to screen '{screen_to_switch}'... (Return with <ctrl>+a d)")
+            subprocess.run(f'screen -r {screen_to_switch}', shell=True)
+            return 'restart'
 
-                if answer == 'q':
-                    return 'quit'
-                if answer == 'o':
-                    screen_to_switch = f'{autos.time_id}_overview'
-                elif answer == 'n' and autos.user_input:
-                    screen_to_switch = f'{autos.time_id}_{next(iter(autos.user_input))}'
-                elif answer.startswith('m'):
-                    try:
-                        max_parallel = int(answer[1:])
-                        with FileWithLock(autos.status_file, 'a') as sf:
-                            sf.write(f'{max_parallel}:max_parallel\n')
-                    except (ValueError, IndexError):
-                        pass # Ignore invalid input
-                else:
-                    try:
-                        number = int(answer)
-                        screen_to_switch = f'{autos.time_id}_auto{str(number).rjust(len(str(autos.count)), "0")}'
-                    except ValueError:
-                        pass # Ignore invalid input
-
-                if screen_to_switch:
-                    # Important: End curses before an external program takes control of the terminal
-                    curses.endwin()
-                    print(f"Switching to screen '{screen_to_switch}'... (Return with <ctrl>+a d)")
-                    subprocess.run(f'screen -r {screen_to_switch}', shell=True)
-
-                    # After returning, the loop needs to re-initialize the screen.
-                    # The curses.wrapper handles this, but we need to exit this function
-                    # so the wrapper can clean up and be called again if needed.
-                    # The easiest way is to simply exit the loop and let the calling script
-                    # decide whether to restart the UI.
-                    print("Back in the main script. Restart the UI to continue monitoring.")
-                    sleep(1)
-                    return 'restart'
-
-            elif key == curses.KEY_BACKSPACE or key == 127:
-                input_buffer = input_buffer[:-1]
-            elif char.isalnum():
-                input_buffer += char
-
-        sleep(0.2) # Short pause to reduce CPU load
+        sleep(0.2)  # Short pause to reduce CPU load
