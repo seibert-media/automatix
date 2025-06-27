@@ -1,4 +1,5 @@
 import argparse
+import curses
 import os
 import pickle
 import subprocess
@@ -338,4 +339,157 @@ def screen_switch_loop(tempdir: str, time_id: int):
             case 'r':
                 raise
             case _:
-                screen_switch_loop(tempdir=tempdir, time_id=time_id)
+                screen_switch_loop_curses(tempdir=tempdir, time_id=time_id)
+
+
+def screen_switch_loop_curses(tempdir: str, time_id: int):
+    """
+    An improved implementation of the screen_switch_loop using curses for a
+    flicker-free and robust TUI.
+    """
+    try:
+        while True:
+            exit_reason = curses.wrapper(main_curses_loop, tempdir, time_id)
+            if exit_reason != 'restart':
+                break
+
+            print("UI wird neu gestartet...")
+            sleep(1)
+    except curses.error as e:
+        LOG.error(f"Curses error: {e}")
+        LOG.error("Could not start the curses interface. Is the terminal compatible?")
+        # Fallback to the old method or just exit.
+        # screen_switch_loop(tempdir, time_id)
+    except (KeyboardInterrupt, Exception) as exc:
+        # Exception handling can be done more centrally and cleanly here.
+        print('\n' * 8)
+        LOG.exception(exc)
+        print()
+        LOG.info('An unexpected error occurred. The program will be terminated.')
+        LOG.info('Check for running sessions with "screen -list".')
+
+
+def main_curses_loop(stdscr, tempdir: str, time_id: int):
+    # Terminal setup
+    curses.curs_set(0)  # Hide cursor
+    stdscr.nodelay(True)  # Make getch() non-blocking
+
+    # Initialize colors
+    curses.start_color()
+    curses.use_default_colors()
+    curses.init_pair(1, curses.COLOR_YELLOW, -1) # -1 for default background
+    curses.init_pair(2, curses.COLOR_CYAN, -1)
+    curses.init_pair(3, curses.COLOR_RED, -1)
+    curses.init_pair(4, curses.COLOR_GREEN, -1)
+
+    COLOR_YELLOW = curses.color_pair(1)
+    COLOR_CYAN = curses.color_pair(2)
+    COLOR_RED = curses.color_pair(3)
+    COLOR_GREEN = curses.color_pair(4)
+
+    # Wait until the first status file exists
+    while not isfile(f'{tempdir}/autos'):
+        stdscr.clear()
+        stdscr.addstr(0, 0, "Waiting for the manager process to start...")
+        stdscr.refresh()
+        sleep(0.5)
+
+    input_buffer = ""
+
+    while True:
+        # 1. Load data
+        with FileWithLock(f'{tempdir}/autos', 'rb') as f:
+            autos = pickle.load(file=f)
+
+        # 2. Clear and redraw the screen
+        stdscr.clear()
+
+        # --- Draw status ---
+        h, w = stdscr.getmaxyx()
+        status_line = ' | '.join([
+            f'Waiting: {len(autos.waiting)}',
+            f'Running: {len(autos.running)}',
+            f'Input needed: {len(autos.user_input)}',
+            f'Finished: {len(autos.finished)}/{autos.count}'
+        ])
+        stdscr.addstr(0, 0, f"Automatix Status (max parallel: {autos.max_parallel})")
+        stdscr.addstr(1, 0, "-" * (w - 1))
+
+        stdscr.addstr(3, 2, "Waiting:             ", COLOR_YELLOW)
+        stdscr.addstr(3, 22, str(sorted(autos.waiting)))
+        stdscr.addstr(4, 2, "Running:             ", COLOR_CYAN)
+        stdscr.addstr(4, 22, str(sorted(autos.running)))
+        stdscr.addstr(5, 2, "User input needed:   ", COLOR_RED)
+        stdscr.addstr(5, 22, str(sorted(autos.user_input)), COLOR_RED)
+        stdscr.addstr(6, 2, "Finished:            ", COLOR_GREEN)
+        stdscr.addstr(6, 22, str(sorted(autos.finished)))
+
+        # --- Draw help and input prompt ---
+        help_y = h - 5
+        stdscr.addstr(help_y, 0, "-" * (w-1))
+        stdscr.addstr(help_y + 1, 2, "Options: [o] Overview | [n] Next Input | [X] to autoX | [mX] max parallel to X | [q] Quit")
+        stdscr.addstr(help_y + 2, 2, f"Input: {input_buffer}")
+
+        # 3. Refresh the screen
+        stdscr.refresh()
+
+        # 4. Check if everything is finished
+        if len(autos.running) + len(autos.waiting) + len(autos.user_input) == 0:
+            stdscr.addstr(help_y + 4, 2, "All processes have finished. Press 'q' to exit.", COLOR_GREEN)
+            stdscr.refresh()
+            # Wait until the user presses 'q'
+            stdscr.nodelay(False)
+            while stdscr.getch() not in [ord('q'), ord('Q')]:
+                pass
+            return 'quit'
+
+        # 5. Process user input
+        key = stdscr.getch()
+        if key != -1:
+            char = chr(key)
+            if key in [curses.KEY_ENTER, 10, 13]:
+                screen_to_switch = None
+                answer = input_buffer.lower()
+                input_buffer = ""
+
+                if answer == 'q':
+                    return 'quit'
+                if answer == 'o':
+                    screen_to_switch = f'{autos.time_id}_overview'
+                elif answer == 'n' and autos.user_input:
+                    screen_to_switch = f'{autos.time_id}_{next(iter(autos.user_input))}'
+                elif answer.startswith('m'):
+                    try:
+                        max_parallel = int(answer[1:])
+                        with FileWithLock(autos.status_file, 'a') as sf:
+                            sf.write(f'{max_parallel}:max_parallel\n')
+                    except (ValueError, IndexError):
+                        pass # Ignore invalid input
+                else:
+                    try:
+                        number = int(answer)
+                        screen_to_switch = f'{autos.time_id}_auto{str(number).rjust(len(str(autos.count)), "0")}'
+                    except ValueError:
+                        pass # Ignore invalid input
+
+                if screen_to_switch:
+                    # Important: End curses before an external program takes control of the terminal
+                    curses.endwin()
+                    print(f"Switching to screen '{screen_to_switch}'... (Return with <ctrl>+a d)")
+                    subprocess.run(f'screen -r {screen_to_switch}', shell=True)
+
+                    # After returning, the loop needs to re-initialize the screen.
+                    # The curses.wrapper handles this, but we need to exit this function
+                    # so the wrapper can clean up and be called again if needed.
+                    # The easiest way is to simply exit the loop and let the calling script
+                    # decide whether to restart the UI.
+                    print("Back in the main script. Restart the UI to continue monitoring.")
+                    sleep(1)
+                    return 'restart'
+
+            elif key == curses.KEY_BACKSPACE or key == 127:
+                input_buffer = input_buffer[:-1]
+            elif char.isalnum():
+                input_buffer += char
+
+        sleep(0.2) # Short pause to reduce CPU load

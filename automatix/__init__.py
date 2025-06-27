@@ -17,7 +17,7 @@ from .config import (
     MAGIC_SELECTION_INT
 )
 from .helpers import selector, empty_queued_input_data
-from .parallel import screen_switch_loop, get_logfile_dir
+from .parallel import screen_switch_loop, get_logfile_dir, screen_switch_loop_curses
 from .progress_bar import setup_scroll_area, destroy_scroll_area
 
 
@@ -145,7 +145,7 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
         LOG.info(f'Overview / manager screen started at "{time_id}_overview".')
 
         LOG.info('Start loop with information to switch between running screens.\n')
-        screen_switch_loop(tempdir=tempdir, time_id=time_id)
+        screen_switch_loop_curses(tempdir=tempdir, time_id=time_id)
 
         with open(f'{tempdir}/{time_id}_finished') as fifo:
             print()
