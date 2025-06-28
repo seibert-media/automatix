@@ -1,6 +1,7 @@
 import curses
 import pickle
 import subprocess
+from textwrap import wrap
 from os.path import isfile
 from time import sleep
 
@@ -35,14 +36,38 @@ class CursesWriter:
         self.input_buffer = ''
         self.current_line = 0
 
-    def add_line(self, text: str):
-        self.stdscr.addstr(self.current_line, 0, text)
+    def add_text(self, text: str, start: int = 0, attr: int | None = None, append_line: bool = False):
+        if append_line:
+            self.current_line, x = self.stdscr.getyx()
+            start = start if start else x + 1
+
+        available_width = self.w - start - 1
+        if available_width <= 0:  # Not enough space to print anything
+            # Move to the next line anyway to avoid infinite loops on tiny screens
+            self.current_line += 1
+            self.stdscr.addstr('')
+            return
+
+        wrapped_lines = wrap(text, width=available_width)
+
+        # If the original text was empty, textwrap returns an empty list.
+        # Ensure we "print" an empty line to advance the cursor.
+        if not wrapped_lines:
+            wrapped_lines.append('')
+
+        for line in wrapped_lines:
+            if attr is not None:
+                self.stdscr.addstr(self.current_line, start, line, attr)
+            else:
+                self.stdscr.addstr(self.current_line, start, line)
+            self.current_line += 1
+
+    def add_empty_line(self):
         self.current_line += 1
 
     def clear(self):
         self.stdscr.clear()
         self.current_line = 0
-
 
 
 def handle_exit(exc: Exception | None = None) -> str:
@@ -65,39 +90,40 @@ def handle_exit(exc: Exception | None = None) -> str:
 
 
 def draw_status(cw: CursesWriter, autos: Autos):
-    cw.stdscr.clear()
+    cw.clear()
 
-    cw.stdscr.addstr(0, 0, f'Automatix Status (max parallel: {autos.max_parallel})')
-    cw.stdscr.addstr(1, 0, f'Working directory: {autos.tempdir}')
-    cw.stdscr.addstr(2, 0, '-' * (cw.w - 1))
+    cw.add_text(f'Automatix Status (max parallel: {autos.max_parallel})')
+    cw.add_text('-' * (cw.w - 2))
 
-    cw.stdscr.addstr(3, 0, 'waiting: ')
-    cw.stdscr.addstr(str(len(autos.waiting)), cw.yellow)
-    cw.stdscr.addstr(', running: ')
-    cw.stdscr.addstr(str(len(autos.running)), cw.cyan)
-    cw.stdscr.addstr(', user input required: ')
-    cw.stdscr.addstr(str(len(autos.user_input)), cw.red)
-    cw.stdscr.addstr(', finished: ')
-    cw.stdscr.addstr(str(len(autos.finished)), cw.green)
+    cw.add_text('waiting: ')
+    cw.add_text(str(len(autos.waiting)), attr=cw.yellow, append_line=True)
+    cw.add_text(', running: ', append_line=True)
+    cw.add_text(str(len(autos.running)), attr=cw.cyan, append_line=True)
+    cw.add_text(', user input required: ', append_line=True)
+    cw.add_text(str(len(autos.user_input)), attr=cw.red, append_line=True)
+    cw.add_text(', finished: ', append_line=True)
+    cw.add_text(f'{len(autos.finished)}/{autos.count}', attr=cw.green, append_line=True)
 
-    cw.stdscr.addstr(4, 0, '-' * (cw.w - 1))
+    cw.add_text('-' * (cw.w - 2))
+    cw.add_empty_line()
 
-    cw.stdscr.addstr(6, 2, 'Waiting:             ')
-    cw.stdscr.addstr(6, 22, str(sorted(autos.waiting)))
-    cw.stdscr.addstr(7, 2, 'Running:             ')
-    cw.stdscr.addstr(7, 22, str(sorted(autos.running)))
-    cw.stdscr.addstr(8, 2, 'User input needed:   ')
-    cw.stdscr.addstr(8, 22, str(sorted(autos.user_input)), cw.red)
-    cw.stdscr.addstr(9, 2, 'Finished:            ')
-    cw.stdscr.addstr(9, 22, str(sorted(autos.finished)))
+    cw.add_text('Waiting:             ', start=2)
+    cw.add_text(', '.join(autos.waiting), start=22, append_line=True)
+    cw.add_text('Running:             ', start=2)
+    cw.add_text(', '.join(autos.running), start=22, append_line=True)
+    cw.add_text('User input needed: ', attr=cw.red, start=2)
+    cw.add_text(', '.join(autos.user_input), attr=cw.red, start=22, append_line=True)
+    cw.add_text('Finished:            ', start=2)
+    cw.add_text(', '.join(autos.finished), start=22, append_line=True)
 
-    help_y = cw.h - 5
-    cw.stdscr.addstr(help_y, 0, "-" * (cw.w - 1))
-    cw.stdscr.addstr(
-        help_y + 1, 2,
-        'Options: [o] Overview | [n] Next Input | [X] to autoX | [mX] max parallel to X | [q] Quit'
+    cw.current_line = cw.h - 6
+    cw.add_text(f'Working directory: {autos.tempdir}')
+    cw.add_text("-" * (cw.w - 1))
+    cw.add_text(
+        'Options: [o] Overview | [n] Next Input | [X] to autoX | [mX] max parallel to X | [q] Quit',
+        start=2,
     )
-    cw.stdscr.addstr(help_y + 2, 2, f'Input: {cw.input_buffer}')
+    cw.add_text(f'Input: {cw.input_buffer}', start=2)
 
     cw.stdscr.refresh()
 
