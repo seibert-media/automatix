@@ -102,17 +102,17 @@ def run_manage_loop(tempdir: str, time_id: int):
                     auto: Automatix = pickle.load(file=f)
                     label = yellow(f'### {auto.script["name"]}')
 
-                LOG.info(f'Starting new screen at {time_id}_{auto_file}')
-                subprocess.run(
-                    f'screen -d -m -S {time_id}_{auto_file}'
-                    f' -L -Logfile {get_logfile_dir(time_id=time_id, scriptfile=scriptfile)}/{auto_file}.log'
-                    f' automatix-from-file {tempdir} {time_id} {auto_file}',
-                    # for debugging replace line above with:
-                    # f' bash -c "automatix-from-file {tempdir} {time_id} {auto_file} || bash"',
-                    shell=True,
-                )
-                subprocess.run(f'screen -S {time_id}_{auto_file} -X hardstatus alwayslastline', shell=True)
-                subprocess.run(f'screen -S {time_id}_{auto_file} -X hardstatus string \'{label}\'', shell=True)
+                session_name = f'{time_id}_{auto_file}'
+                logfile_path = f'{get_logfile_dir(time_id=time_id, scriptfile=scriptfile)}/{auto_file}.log'
+
+                LOG.info(f'Starting new screen at {session_name}')
+                subprocess.run([
+                    'screen', '-d', '-m', '-S', session_name,
+                    '-L', '-Logfile', logfile_path,
+                    'automatix-from-file', tempdir, str(time_id), auto_file
+                ])
+                subprocess.run(['screen', '-S', session_name, '-X', 'hardstatus', 'alwayslastline'])
+                subprocess.run(['screen', '-S', session_name, '-X', 'hardstatus', 'string', label])
 
             check_for_status_change(autos=autos, status_file=status_file)
 
