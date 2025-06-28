@@ -198,7 +198,7 @@ def parallel_ui(stdscr: curses.window, tempdir: str):
             # Important: End curses before an external program takes control of the terminal
             curses.endwin()
             print(f"Switching to screen '{screen_to_switch}'... (Return with <ctrl>+a d)")
-            subprocess.run(f'screen -r {screen_to_switch}', shell=True)
+            subprocess.run(['screen', '-r', screen_to_switch])
             return 'restart'
 
         sleep(0.2)  # Short pause to reduce CPU load
