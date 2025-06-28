@@ -44,8 +44,7 @@ class CursesWriter:
         available_width = self.w - start - 1
         if available_width <= 0:  # Not enough space to print anything
             # Move to the next line anyway to avoid infinite loops on tiny screens
-            self.current_line += 1
-            self.stdscr.addstr('')
+            self.add_empty_line()
             return
 
         wrapped_lines = wrap(text, width=available_width)
@@ -64,6 +63,7 @@ class CursesWriter:
 
     def add_empty_line(self):
         self.current_line += 1
+        self.stdscr.move(self.current_line, 0)
 
     def clear(self):
         self.stdscr.clear()
