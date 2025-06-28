@@ -208,10 +208,10 @@ def screen_switch_loop(tempdir: str):
     while True:
         try:
             exit_reason = curses.wrapper(parallel_ui, tempdir)
-        except curses.error as e:
-            LOG.error(f"Curses error: {e}")
+        except curses.error as exc:
+            LOG.error(f"Curses error: {exc}")
             LOG.error("Could not start the curses interface. Is the terminal compatible?")
-            raise
+            exit_reason = handle_exit(exc=exc)
         except (KeyboardInterrupt, Exception) as exc:
             exit_reason = handle_exit(exc=exc)
 
