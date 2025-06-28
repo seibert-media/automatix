@@ -1,4 +1,6 @@
+import os
 from sys import stdin
+from time import sleep
 from typing import List
 
 import yaml
@@ -37,3 +39,33 @@ def selector(entries: List[tuple], message: str = 'Found multiple entries, pleas
             except (ValueError, IndexError):
                 print('Invalid answer! Please try again and type the number of your desired answer.')
                 return selector(entries)
+
+
+class FileWithLock:
+    def __init__(self, file_path: str, method: str):
+        self.file_path = file_path
+        self.method = method
+        self.file_obj = None
+
+    def __enter__(self):
+        get_lock(self.file_path)
+        self.file_obj = open(self.file_path, self.method)
+        return self.file_obj
+
+    def __exit__(self, type, value, traceback):
+        self.file_obj.close()
+        release_lock(self.file_path)
+
+
+def get_lock(file_path: str):
+    while True:
+        try:
+            os.mkdir(f'{file_path}.lock')
+        except FileExistsError:
+            sleep(1)
+            continue
+        break
+
+
+def release_lock(file_path: str):
+    os.rmdir(f'{file_path}.lock')
