@@ -17,7 +17,8 @@ from .config import (
     MAGIC_SELECTION_INT
 )
 from .helpers import selector, empty_queued_input_data
-from .parallel import screen_switch_loop, get_logfile_dir
+from .parallel import get_logfile_dir
+from .parallel_ui import screen_switch_loop
 from .progress_bar import setup_scroll_area, destroy_scroll_area
 
 
