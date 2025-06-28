@@ -28,9 +28,9 @@ class Autos:
 
     max_parallel: int = 2
     waiting: list = field(default_factory=list)
-    running: set = field(default_factory=set)
-    user_input: set = field(default_factory=set)
-    finished: set = field(default_factory=set)
+    running: list = field(default_factory=list)
+    user_input: list = field(default_factory=list)
+    finished: list = field(default_factory=list)
 
 
 class FileWithLock:
@@ -98,11 +98,11 @@ def check_for_status_change(autos: Autos, status_file: str):
                 case 'user_input_remove':
                     autos.user_input.remove(auto_file)
                 case 'user_input_add':
-                    autos.user_input.add(auto_file)
+                    autos.user_input.append(auto_file)
                     LOG.info(f'{auto_file} is waiting for user input')
                 case 'finished':
                     autos.running.remove(auto_file)
-                    autos.finished.add(auto_file)
+                    autos.finished.append(auto_file)
                     LOG.info(f'{auto_file} finished')
                 case _:
                     LOG.warning(f'[{auto_file}] Unrecognized status "{status}"\n')
@@ -126,7 +126,7 @@ def run_manage_loop(tempdir: str, time_id: int):
         while len(autos.finished) < autos.count:
             if len(autos.running) < autos.max_parallel and autos.waiting:
                 auto_file = autos.waiting.pop(0)
-                autos.running.add(auto_file)
+                autos.running.append(auto_file)
                 LOG.info(f'Starting new screen at {time_id}_{auto_file}')
                 subprocess.run(
                     f'screen -d -m -S {time_id}_{auto_file}'
@@ -358,7 +358,7 @@ def process_user_input(cw: CursesWriter, autos: Autos) -> str | None:
 def parallel_ui(stdscr: curses.window, tempdir: str):
     cw = CursesWriter(stdscr=stdscr)
 
-    # Wait until the first status file exists
+    # Wait until the status file exists
     while not isfile(f'{tempdir}/autos'):
         stdscr.clear()
         stdscr.addstr(0, 0, 'Waiting for the manager process to start...')
@@ -380,7 +380,7 @@ def parallel_ui(stdscr: curses.window, tempdir: str):
             # Wait until the user presses 'q'
             cw.stdscr.nodelay(False)
             while cw.stdscr.getch() not in [ord('q'), ord('Q')]:
-                pass
+                sleep(0.1)
             return 'quit'
 
         # 4. Process user input
