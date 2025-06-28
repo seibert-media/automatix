@@ -257,6 +257,7 @@ class Command:
             return self._python_action()
         if self.get_type() == 'remote':
             return self._remote_action()
+        raise SyntaxError('Unknown command type')
 
     def _ask_user(self, question: str, allowed_options: list) -> str:
         """
@@ -486,7 +487,7 @@ class Command:
         ssh_cmd = self.env.config["ssh_cmd"].format(hostname=hostname)
 
         try:
-            ps_pids = self.get_remote_pids(hostname=hostname, cmd=self.get_resolved_value())
+            ps_pids = self.get_remote_pids(hostname=hostname)
             while ps_pids:
                 self.env.LOG.notice(
                     'Remote command seems still to be running! Found PIDs: {}'.format(','.join(ps_pids))
@@ -521,13 +522,13 @@ class Command:
                     self.env.LOG.info(f'Kill {pid} on {hostname}')
                     subprocess.run(kill_cmd, shell=True)
 
-                ps_pids = self.get_remote_pids(hostname=hostname, cmd=self.get_resolved_value())
+                ps_pids = self.get_remote_pids(hostname=hostname)
         except subprocess.CalledProcessError:
             self.env.LOG.warning('Could not check for remaining remote processes.')
 
         self.env.LOG.info('Keystroke interrupt handled.\n')
 
-    def get_remote_pids(self, hostname, cmd) -> []:
+    def get_remote_pids(self, hostname) -> list:
         ps_cmd = "ps axu | grep RUNNING_INSIDE_AUTOMATIX | grep -v 'grep' | awk '{print $2}'"
         remote_ps_cmd = f'ssh {hostname} {quote(ps_cmd)} 2>&1'
         pids = subprocess.check_output(
