@@ -1,8 +1,8 @@
 import curses
 import pickle
 import subprocess
-from textwrap import wrap
 from os.path import isfile
+from textwrap import wrap
 from time import sleep
 
 from automatix import LOG

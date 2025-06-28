@@ -124,6 +124,16 @@ def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir:
             pickle.dump(obj=auto, file=f)
 
 
+def display_screen_control_hints():
+    LOG.notice('--- Please read and understand these hints for controlling screen sessions before you proceed ---')
+    LOG.notice('- If you switched to a screen session you can detach the session with "<ctrl>+a d".'
+               ' This takes you back to the information interface.')
+    LOG.notice('- To scroll back in history press "<ctrl>+a Esc" to enable "copy mode". Switch back with "Esc".')
+    LOG.notice('- You can modify this behaviour by screen configuration options (`~/.screenrc`).')
+    LOG.notice('- To suppress this message set the `AUTOMATIX_SUPPRESS_SCREEN_CONTROL_NOTICE` environment variable.')
+    input('Press ENTER to continue...')
+
+
 def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
     LOG.info('Preparing automatix objects for parallel processing')
 
@@ -146,6 +156,9 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
         LOG.info(f'Overview / manager screen started at "{time_id}_overview".')
 
         LOG.info('Start loop with information to switch between running screens.\n')
+        if not os.getenv('AUTOMATIX_SUPPRESS_SCREEN_CONTROL_NOTICE'):
+            display_screen_control_hints()
+
         screen_switch_loop(tempdir=tempdir)
 
         with open(f'{tempdir}/{time_id}_finished') as fifo:
