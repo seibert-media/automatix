@@ -68,4 +68,5 @@ class PipelineEnvironment:
         init_logger(name=self.LOG.name, debug=self.cmd_args.debug)
 
     def send_status(self, status: str):
+        # In parallel processing this method is overwritten to communicate with the UI
         return

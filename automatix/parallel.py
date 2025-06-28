@@ -75,6 +75,7 @@ def check_for_status_change(autos: Autos, status_file: str):
                     LOG.info(f'{auto_file} finished')
                 case _:
                     LOG.warning(f'[{auto_file}] Unrecognized status "{status}"\n')
+        # Empty status file as all status have been processed
         sf.truncate(0)
 
 
