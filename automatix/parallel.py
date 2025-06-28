@@ -97,6 +97,11 @@ def run_manage_loop(tempdir: str, time_id: int):
             if len(autos.running) < autos.max_parallel and autos.waiting:
                 auto_file = autos.waiting.pop(0)
                 autos.running.append(auto_file)
+                auto_path = f'{tempdir}/{auto_file}'
+                with open(auto_path, 'rb') as f:
+                    auto: Automatix = pickle.load(file=f)
+                    label = yellow(f'### {auto.script["name"]}')
+
                 LOG.info(f'Starting new screen at {time_id}_{auto_file}')
                 subprocess.run(
                     f'screen -d -m -S {time_id}_{auto_file}'
@@ -106,6 +111,8 @@ def run_manage_loop(tempdir: str, time_id: int):
                     # f' bash -c "automatix-from-file {tempdir} {time_id} {auto_file} || bash"',
                     shell=True,
                 )
+                subprocess.run(f'screen -S {time_id}_{auto_file} -X hardstatus alwayslastline', shell=True)
+                subprocess.run(f'screen -S {time_id}_{auto_file} -X hardstatus string \'{label}\'', shell=True)
 
             check_for_status_change(autos=autos, status_file=status_file)
 
