@@ -17,7 +17,8 @@ from .config import (
     MAGIC_SELECTION_INT
 )
 from .helpers import selector, empty_queued_input_data
-from .parallel import screen_switch_loop, get_logfile_dir
+from .parallel import get_logfile_dir
+from .parallel_ui import screen_switch_loop
 from .progress_bar import setup_scroll_area, destroy_scroll_area
 
 
@@ -123,6 +124,16 @@ def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir:
             pickle.dump(obj=auto, file=f)
 
 
+def display_screen_control_hints():
+    LOG.notice('--- Please read and understand these hints for controlling screen sessions before you proceed ---')
+    LOG.notice('- If you switched to a screen session you can detach the session with "<ctrl>+a d".'
+               ' This takes you back to the information interface.')
+    LOG.notice('- To scroll back in history press "<ctrl>+a Esc" to enable "copy mode". Switch back with "Esc".')
+    LOG.notice('- You can modify this behaviour by screen configuration options (`~/.screenrc`).')
+    LOG.notice('- To suppress this message set the `AUTOMATIX_SUPPRESS_SCREEN_CONTROL_NOTICE` environment variable.')
+    input('Press ENTER to continue...')
+
+
 def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
     LOG.info('Preparing automatix objects for parallel processing')
 
@@ -145,7 +156,10 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
         LOG.info(f'Overview / manager screen started at "{time_id}_overview".')
 
         LOG.info('Start loop with information to switch between running screens.\n')
-        screen_switch_loop(tempdir=tempdir, time_id=time_id)
+        if not os.getenv('AUTOMATIX_SUPPRESS_SCREEN_CONTROL_NOTICE'):
+            display_screen_control_hints()
+
+        screen_switch_loop(tempdir=tempdir)
 
         with open(f'{tempdir}/{time_id}_finished') as fifo:
             print()
@@ -185,11 +199,12 @@ def main():
     script, batch_items = get_script_and_batch_items(args=args)
 
     if args.jump_to == MAGIC_SELECTION_INT:
+        # next(iter(pi.items())) is here needed, because the pipeline items are all dictionaries with only one key.
         pipeline_items = [next(iter(pi.items())) for pi in script['pipeline']]
         args.jump_to = selector(
             entries=[
-                (i, f'[{v[0]}]: {v[1]}')
-                for i, v in enumerate(pipeline_items)
+                (i, f'[{key}]: {cmd}')
+                for i, (key, cmd) in enumerate(pipeline_items)
             ],
             message='Please choose index of desired start command:'
         )

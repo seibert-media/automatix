@@ -1,5 +1,10 @@
 # Changelog
 
+# 2.10.0
+- Parallel: Rewrite UI with curses
+- Parallel: Status bar witch label inside screen session
+- Parallel: Defined process order for all process status (was only waiting before)
+
 # 2.9.0
 - Feature: Defined process order for parallel processing
 

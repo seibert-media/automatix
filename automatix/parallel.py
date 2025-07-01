@@ -1,5 +1,4 @@
 import argparse
-import os
 import pickle
 import subprocess
 import sys
@@ -9,23 +8,14 @@ from os.path import isfile
 from pathlib import Path
 from time import sleep, strftime, gmtime
 
-import select
-
 from .automatix import Automatix
 from .colors import yellow, green, red, cyan
 from .command import AbortException
 from .config import LOG, init_logger, CONFIG
+from .helpers import FileWithLock
 from .progress_bar import setup_scroll_area, destroy_scroll_area
 
-# See https://en.wikipedia.org/wiki/ANSI_escape_code
-LINE_UP = '\033[1A'
-LINE_CLEAR = '\033[2K'
-LINE_END = '\033[20C'  # Moves cursor 20 times forward, should be sufficient.
-LINE_START = '\033[20D'  # Moves cursor 20 times backward, should be sufficient.
-CURSOR_SAVE = '\033[s'
-CURSOR_RESTORE = '\033[u'
-
-LOOP_LINES = 18
+STATUS_TEMPLATE = 'waiting: {w}, running: {r}, user input required: {u}, finished: {f}'
 
 
 @dataclass
@@ -37,39 +27,9 @@ class Autos:
 
     max_parallel: int = 2
     waiting: list = field(default_factory=list)
-    running: set = field(default_factory=set)
-    user_input: set = field(default_factory=set)
-    finished: set = field(default_factory=set)
-
-
-class FileWithLock:
-    def __init__(self, file_path: str, method: str):
-        self.file_path = file_path
-        self.method = method
-        self.file_obj = None
-
-    def __enter__(self):
-        get_lock(self.file_path)
-        self.file_obj = open(self.file_path, self.method)
-        return self.file_obj
-
-    def __exit__(self, type, value, traceback):
-        self.file_obj.close()
-        release_lock(self.file_path)
-
-
-def get_lock(file_path: str):
-    while True:
-        try:
-            os.mkdir(f'{file_path}.lock')
-        except FileExistsError:
-            sleep(1)
-            continue
-        break
-
-
-def release_lock(file_path: str):
-    os.rmdir(f'{file_path}.lock')
+    running: list = field(default_factory=list)
+    user_input: list = field(default_factory=list)
+    finished: list = field(default_factory=list)
 
 
 def get_logfile_dir(time_id: int, scriptfile: str) -> str:
@@ -82,24 +42,12 @@ def get_files(tempdir: str) -> set:
 
 
 def print_status(autos: Autos):
-    tmpl = 'waiting: {w}, running: {r}, user input required: {u}, finished: {f}'
-    print(tmpl.format(
+    print(STATUS_TEMPLATE.format(
         w=yellow(len(autos.waiting)),
         r=cyan(len(autos.running)),
         u=red(len(autos.user_input)),
         f=green(f'{len(autos.finished)}/{autos.count}'),
     ))
-
-
-def print_status_verbose(autos: Autos):
-    print(f'Working directory: {autos.tempdir}')
-    print(f'------------------ Screens (max. {autos.max_parallel} running) ------------------')
-    print_status(autos=autos)
-    print('--------------------------------------------------------------')
-    print(f'waiting:             {sorted(autos.waiting)}')
-    print(f'running:             {sorted(autos.running)}')
-    print(f'user input required: {red(sorted(autos.user_input))}')
-    print(f'finished:            {sorted(autos.finished)}')
 
 
 def check_for_status_change(autos: Autos, status_file: str):
@@ -119,14 +67,15 @@ def check_for_status_change(autos: Autos, status_file: str):
                 case 'user_input_remove':
                     autos.user_input.remove(auto_file)
                 case 'user_input_add':
-                    autos.user_input.add(auto_file)
+                    autos.user_input.append(auto_file)
                     LOG.info(f'{auto_file} is waiting for user input')
                 case 'finished':
                     autos.running.remove(auto_file)
-                    autos.finished.add(auto_file)
+                    autos.finished.append(auto_file)
                     LOG.info(f'{auto_file} finished')
                 case _:
                     LOG.warning(f'[{auto_file}] Unrecognized status "{status}"\n')
+        # Empty status file as all status have been processed
         sf.truncate(0)
 
 
@@ -147,16 +96,27 @@ def run_manage_loop(tempdir: str, time_id: int):
         while len(autos.finished) < autos.count:
             if len(autos.running) < autos.max_parallel and autos.waiting:
                 auto_file = autos.waiting.pop(0)
-                autos.running.add(auto_file)
-                LOG.info(f'Starting new screen at {time_id}_{auto_file}')
-                subprocess.run(
-                    f'screen -d -m -S {time_id}_{auto_file}'
-                    f' -L -Logfile {get_logfile_dir(time_id=time_id, scriptfile=scriptfile)}/{auto_file}.log'
-                    f' automatix-from-file {tempdir} {time_id} {auto_file}',
-                    # for debugging replace line above with:
-                    # f' bash -c "automatix-from-file {tempdir} {time_id} {auto_file} || bash"',
-                    shell=True,
-                )
+                autos.running.append(auto_file)
+                auto_path = f'{tempdir}/{auto_file}'
+                with open(auto_path, 'rb') as f:
+                    auto: Automatix = pickle.load(file=f)
+
+                status_line = yellow(f'### {auto.script["name"]}')
+                status_line += f' | detach: {cyan("<ctrl>+a d")}'
+                status_line += f' | copy mode: {cyan("<ctrl>+a Esc")}'
+                status_line += f' | abort copy mode: {cyan("Esc ")}'  # It seems we need the space after Esc, otherwise the color reset escape sequence stops working.
+
+                session_name = f'{time_id}_{auto_file}'
+                logfile_path = f'{get_logfile_dir(time_id=time_id, scriptfile=scriptfile)}/{auto_file}.log'
+
+                LOG.info(f'Starting new screen at {session_name}')
+                subprocess.run([
+                    'screen', '-d', '-m', '-S', session_name,
+                    '-L', '-Logfile', logfile_path,
+                    'automatix-from-file', tempdir, str(time_id), auto_file
+                ])
+                subprocess.run(['screen', '-S', session_name, '-X', 'hardstatus', 'alwayslastline'])
+                subprocess.run(['screen', '-S', session_name, '-X', 'hardstatus', 'string', status_line])
 
             check_for_status_change(autos=autos, status_file=status_file)
 
@@ -240,102 +200,3 @@ def run_auto_from_file():
     finally:
         if CONFIG['progress_bar']:
             destroy_scroll_area()
-
-
-def clear_loop():
-    print(CURSOR_SAVE, end='', flush=True)
-    print(LINE_START, end='')
-    for _ in range(LOOP_LINES):
-        print(LINE_UP, end=LINE_CLEAR)
-
-
-def ask_for_options(autos: Autos) -> str | None:
-    print()
-    LOG.notice('Please notice: To come back to this selection press "<ctrl>+a d" in a screen session!')
-    LOG.notice('To scroll back in history press "<ctrl>+a Esc" to enable "copy mode". Switch back with "Esc".')
-    LOG.notice('You can modify this behaviour by screen configuration options (`~/.screenrc`).')
-    print()
-    LOG.info('Following options are available:')
-    LOG.info(
-        ' o: overview / manager loop\n'
-        ' n: next user input required\n'
-        ' X (number): switch to autoX\n'
-        f' mX: set max parallel screens to X (actual {autos.max_parallel})\n'
-    )
-    print(CURSOR_RESTORE, end='', flush=True)
-
-
-def check_for_option(autos: Autos) -> str | None:
-    i, _, _ = select.select([sys.stdin], [], [], 1)
-    if i:
-        answer = sys.stdin.readline().strip()
-        print(LINE_UP, end=LINE_CLEAR)
-    else:
-        return None
-
-    if answer == '':
-        return None
-
-    if answer == 'o':
-        return f'{autos.time_id}_overview'
-
-    if answer == 'n' and autos.user_input:
-        return f'{autos.time_id}_{next(iter(autos.user_input))}'
-
-    if answer.startswith('m'):
-        try:
-            max_parallel = int(answer[1:])
-            with FileWithLock(autos.status_file, 'a') as sf:
-                sf.write(f'{max_parallel}:max_parallel\n')
-            return None
-        except ValueError:
-            LOG.warning(f'Invalid answer: {answer}')
-            sleep(1)
-            return None
-
-    try:
-        number = int(answer)
-        return f'{autos.time_id}_auto{str(number).rjust(len(str(autos.count)), "0")}'
-    except ValueError:
-        LOG.warning(f'Invalid answer: {answer}')
-        sleep(1)
-        print(LINE_UP, end=LINE_CLEAR, flush=True)
-        return None
-
-
-def screen_switch_loop(tempdir: str, time_id: int):
-    try:
-        while not isfile(f'{tempdir}/autos'):
-            sleep(1)
-        print('\n' * LOOP_LINES)  # some initial space for the loop
-        while True:
-            with FileWithLock(f'{tempdir}/autos', 'rb') as f:
-                autos = pickle.load(file=f)
-
-            if screen_id := check_for_option(autos=autos):
-                subprocess.run(f'screen -r {screen_id}', shell=True)
-                sleep(1)
-
-            clear_loop()
-            print_status_verbose(autos=autos)
-
-            if len(autos.running) + len(autos.waiting) + len(autos.user_input) == 0:
-                break
-
-            ask_for_options(autos=autos)
-
-    except (KeyboardInterrupt, Exception) as exc:
-        print('\n' * 8)
-        LOG.exception(exc)
-        print()
-        LOG.info('An exception occurred! Please decide what to do:')
-        match input(
-            'Press "r" and Enter to reraise.'
-            ' This will cause this programm to terminate.'
-            ' Check "screen -list" afterwards for still running screens.\n'
-            ' Press something else to restart the loop, where you can switch to the different screens.\n'
-        ):
-            case 'r':
-                raise
-            case _:
-                screen_switch_loop(tempdir=tempdir, time_id=time_id)
