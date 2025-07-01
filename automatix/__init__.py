@@ -199,11 +199,12 @@ def main():
     script, batch_items = get_script_and_batch_items(args=args)
 
     if args.jump_to == MAGIC_SELECTION_INT:
+        # next(iter(pi.items())) is here needed, because the pipeline items are all dictionaries with only one key.
         pipeline_items = [next(iter(pi.items())) for pi in script['pipeline']]
         args.jump_to = selector(
             entries=[
-                (i, f'[{v[0]}]: {v[1]}')
-                for i, v in enumerate(pipeline_items)
+                (i, f'[{key}]: {cmd}')
+                for i, (key, cmd) in enumerate(pipeline_items)
             ],
             message='Please choose index of desired start command:'
         )

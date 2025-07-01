@@ -70,13 +70,13 @@ class CursesWriter:
         self.current_line = 0
 
 
-def handle_exit(exc: Exception | None = None) -> str:
-    if exc:
+def handle_exit(exc: Exception) -> str:
+    if isinstance(exc, KeyboardInterrupt):
+        LOG.error('You decided to quit the UI, but screens are most likely still running. Please decide what to do:')
+    else:
         LOG.exception(exc)
         print()
-        LOG.info('An unexpected error occurred. Please decide what to do:')
-    else:
-        LOG.info('You decided to quit the UI, but screens are most likely still running. Please decide what to do:')
+        LOG.error('An unexpected error occurred. Please decide what to do:')
     match input(
         'Press "q" and Enter to quit.'
         ' This will cause this programm to terminate.'

@@ -100,10 +100,11 @@ def run_manage_loop(tempdir: str, time_id: int):
                 auto_path = f'{tempdir}/{auto_file}'
                 with open(auto_path, 'rb') as f:
                     auto: Automatix = pickle.load(file=f)
-                    label = yellow(f'### {auto.script["name"]}')
-                    label += f' | detach: {cyan("<ctrl>+a d")}'
-                    label += f' | copy mode: {cyan("<ctrl>+a Esc")}'
-                    label += f' | abort copy mode: {cyan("Esc ")}'  # It seems we need the space after Esc, otherwise the color reset escape sequence stops working.
+
+                status_line = yellow(f'### {auto.script["name"]}')
+                status_line += f' | detach: {cyan("<ctrl>+a d")}'
+                status_line += f' | copy mode: {cyan("<ctrl>+a Esc")}'
+                status_line += f' | abort copy mode: {cyan("Esc ")}'  # It seems we need the space after Esc, otherwise the color reset escape sequence stops working.
 
                 session_name = f'{time_id}_{auto_file}'
                 logfile_path = f'{get_logfile_dir(time_id=time_id, scriptfile=scriptfile)}/{auto_file}.log'
@@ -115,7 +116,7 @@ def run_manage_loop(tempdir: str, time_id: int):
                     'automatix-from-file', tempdir, str(time_id), auto_file
                 ])
                 subprocess.run(['screen', '-S', session_name, '-X', 'hardstatus', 'alwayslastline'])
-                subprocess.run(['screen', '-S', session_name, '-X', 'hardstatus', 'string', label])
+                subprocess.run(['screen', '-S', session_name, '-X', 'hardstatus', 'string', status_line])
 
             check_for_status_change(autos=autos, status_file=status_file)
 
