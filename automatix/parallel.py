@@ -1,16 +1,14 @@
 import argparse
 import pickle
 import subprocess
-import sys
 from dataclasses import dataclass, field
 from os import listdir, unlink
 from os.path import isfile
 from pathlib import Path
 from time import sleep, strftime, gmtime
 
-from .automatix import Automatix
+from .batch_runner import run_automatix_list
 from .colors import yellow, green, red, cyan
-from .command import AbortException
 from .config import LOG, init_logger, CONFIG
 from .helpers import FileWithLock
 from .progress_bar import setup_scroll_area, destroy_scroll_area
@@ -99,9 +97,9 @@ def run_manage_loop(tempdir: str, time_id: int):
                 autos.running.append(auto_file)
                 auto_path = f'{tempdir}/{auto_file}'
                 with open(auto_path, 'rb') as f:
-                    auto: Automatix = pickle.load(file=f)
+                    auto_file_data = pickle.load(file=f)
 
-                status_line = yellow(f'### {auto.script["name"]}')
+                status_line = yellow(f'### {auto_file_data["label"]}')
                 status_line += f' | detach: {cyan("<ctrl>+a d")}'
                 status_line += f' | copy mode: {cyan("<ctrl>+a Esc")}'
                 status_line += f' | abort copy mode: {cyan("Esc ")}'  # It seems we need the space after Esc, otherwise the color reset escape sequence stops working.
@@ -163,20 +161,9 @@ def run_auto(tempdir: str, time_id: int, auto_file: str):
             sf.write(f'{auto_file}:{status}\n')
 
     with open(auto_path, 'rb') as f:
-        auto: Automatix = pickle.load(file=f)
-    auto.set_command_count()
-    auto.env.attach_logger()
-    auto.env.reinit_logger()
-    auto.env.send_status = send_status
-
+        auto_file_data = pickle.load(file=f)
     try:
-        auto.run()
-    except AbortException as exc:
-        sys.exit(int(exc))
-    except KeyboardInterrupt:
-        print()
-        LOG.warning('Aborted by user. Exiting.')
-        sys.exit(130)
+        run_automatix_list(automatix_list=auto_file_data['autolist'], send_status_callback=send_status)
     finally:
         send_status('finished')
         unlink(auto_path)

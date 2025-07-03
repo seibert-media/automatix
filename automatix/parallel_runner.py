@@ -2,42 +2,41 @@ import os
 import pickle
 import subprocess
 from argparse import Namespace
-from copy import deepcopy
 from tempfile import TemporaryDirectory
 from time import time
 
-from .automatix import Automatix
-from .config import CONFIG, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS
+from .batch_runner import create_automatix_list
+from .config import LOG
 from .parallel import get_logfile_dir
 from .parallel_ui import screen_switch_loop
 
 
+def get_batch_groups(batch_items: list) -> dict:
+    batch_groups = {'_default': []}
+    for batch_item in batch_items:
+        if group := batch_item.get('group'):
+            assert group != '_default', 'The group name "_default" is reserved. Please use something different.'
+            if group not in batch_groups:
+                batch_groups[group] = []
+            batch_groups[group].append(batch_item)
+        else:
+            batch_groups['_default'].append(batch_item)
+    return batch_groups
+
+
 def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir: str):
     LOG.info(f'Using temporary directory to save object files: {tempdir}')
-    digits = len(str(len(batch_items)))
-    for i, row in enumerate(batch_items, start=1):
-        script_copy = deepcopy(script)
-        update_script_from_row(row=row, script=script_copy, index=i)
-
-        variables = collect_vars(script_copy)
-
-        auto = Automatix(
-            script=script_copy,
-            variables=variables,
-            config=CONFIG,
-            script_fields=SCRIPT_FIELDS,
-            cmd_args=args,
-            batch_index=1,
-        )
+    batch_groups = get_batch_groups(batch_items=batch_items)
+    digits = len(str(len(batch_groups)))
+    for i, (group, items) in enumerate(batch_groups.items()):
+        autolist = create_automatix_list(script=script, batch_items=items, args=args)
         id = str(i).rjust(digits, '0')
-        auto.env.auto_file = auto_file = f'{tempdir}/auto{id}'
-
-        with open(auto_file, 'wb') as f:
-            # The auto.cmd_class attribute MUST NOT be called before this!!!
-            # Otherwise, the Bundlewrap integration will fail for parallel processing,
-            # because the BWCommand is not pickleable.
-
-            pickle.dump(obj=auto, file=f)
+        with open(f'{tempdir}/auto{id}', 'wb') as f:
+            pickle.dump(obj={
+                'autolist': autolist,
+                'auto_file': f'{tempdir}/auto{id}',
+                'label': group if len(items) != 1 else items[0]['name'],
+            }, file=f)
 
 
 def display_screen_control_hints():
