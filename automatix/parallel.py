@@ -115,6 +115,7 @@ def run_manage_loop(tempdir: str, time_id: int):
                 LOG.info(f'Starting new screen at {session_name}')
                 subprocess.run([
                     'screen', '-d', '-m', '-S', session_name,
+                    '-h', '100000',
                     '-L', '-Logfile', logfile_path,
                     'automatix-from-file', tempdir, str(time_id), auto_file
                 ])

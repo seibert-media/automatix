@@ -67,6 +67,7 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
 
         cmds = [
             'screen', '-d', '-m', '-S', f'{time_id}_overview',
+            '-h', '100000',
             '-L', '-Logfile', f'{logfile_dir}/overview.log',
             'automatix-manager', tempdir, str(time_id),
         ]
