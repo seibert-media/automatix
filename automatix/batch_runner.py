@@ -16,6 +16,7 @@ def get_script_and_batch_items(args: Namespace) -> (dict, list):
     if args.vars_file:
         with open(args.vars_file) as csvfile:
             batch_items = list(DictReader(csvfile))
+
         script['_batch_mode'] = False if args.parallel else True
         script['_batch_items_count'] = 1 if args.parallel else len(batch_items)
         LOG.notice(f'Detected {"parallel" if args.parallel else "batch"} processing from CSV file.')
@@ -27,6 +28,9 @@ def create_automatix_list(script: dict, batch_items: list, args: Namespace) -> l
     automatix_list = []
     for i, row in enumerate(batch_items, start=1):
         script_copy = deepcopy(script)
+        script_copy['_batch_mode'] = len(batch_items) > 1
+        script_copy['_batch_items_count'] = len(batch_items)
+
         update_script_from_row(row=row, script=script_copy, index=i)
 
         variables = collect_vars(script_copy)

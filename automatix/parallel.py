@@ -48,6 +48,14 @@ def print_status(autos: Autos):
     ))
 
 
+def get_screen_status_line(label: str) -> str:
+    status_line = yellow(f'### {label}')
+    status_line += f' | detach: {cyan("<ctrl>+a d")}'
+    status_line += f' | copy mode: {cyan("<ctrl>+a Esc")}'
+    status_line += f' | abort copy mode: {cyan("Esc ")}'  # It seems we need the space after Esc, otherwise the color reset escape sequence stops working.
+    return status_line
+
+
 def check_for_status_change(autos: Autos, status_file: str):
     with FileWithLock(status_file, 'r+') as sf:
         for line in sf:
@@ -82,7 +90,7 @@ def run_manage_loop(tempdir: str, time_id: int):
     auto_files = sorted(get_files(tempdir))
     autos = Autos(status_file=status_file, time_id=time_id, count=len(auto_files), waiting=auto_files, tempdir=tempdir)
     with open(f'{tempdir}/{next(iter(auto_files))}', 'rb') as f:
-        scriptfile = pickle.load(f).env.cmd_args.scriptfile
+        logfile_dir = pickle.load(f)['logfile_dir']
 
     LOG.info(f'Found {autos.count} files to process. Screens name are like "{time_id}_autoX"')
     LOG.info('To switch screens detach from this screen via "<ctrl>+a d".')
@@ -95,17 +103,14 @@ def run_manage_loop(tempdir: str, time_id: int):
             if len(autos.running) < autos.max_parallel and autos.waiting:
                 auto_file = autos.waiting.pop(0)
                 autos.running.append(auto_file)
+
                 auto_path = f'{tempdir}/{auto_file}'
                 with open(auto_path, 'rb') as f:
                     auto_file_data = pickle.load(file=f)
-
-                status_line = yellow(f'### {auto_file_data["label"]}')
-                status_line += f' | detach: {cyan("<ctrl>+a d")}'
-                status_line += f' | copy mode: {cyan("<ctrl>+a Esc")}'
-                status_line += f' | abort copy mode: {cyan("Esc ")}'  # It seems we need the space after Esc, otherwise the color reset escape sequence stops working.
+                status_line = get_screen_status_line(label=auto_file_data['label'])
 
                 session_name = f'{time_id}_{auto_file}'
-                logfile_path = f'{get_logfile_dir(time_id=time_id, scriptfile=scriptfile)}/{auto_file}.log'
+                logfile_path = f'{logfile_dir}/{auto_file}.log'
 
                 LOG.info(f'Starting new screen at {session_name}')
                 subprocess.run([

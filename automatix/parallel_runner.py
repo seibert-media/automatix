@@ -7,28 +7,30 @@ from time import time
 
 from .batch_runner import create_automatix_list
 from .config import LOG
-from .parallel import get_logfile_dir
+from .parallel import get_logfile_dir, get_screen_status_line
 from .parallel_ui import screen_switch_loop
 
 
 def get_batch_groups(batch_items: list) -> dict:
-    batch_groups = {'_default': []}
+    batch_groups = {'_default_': []}
     for batch_item in batch_items:
         if group := batch_item.get('group'):
-            assert group != '_default', 'The group name "_default" is reserved. Please use something different.'
+            assert group != '_default_', 'The group name "_default" is reserved. Please use something different.'
             if group not in batch_groups:
                 batch_groups[group] = []
             batch_groups[group].append(batch_item)
         else:
-            batch_groups['_default'].append(batch_item)
+            batch_groups['_default_'].append(batch_item)
+    if not batch_groups['_default_']:
+        del batch_groups['_default_']
     return batch_groups
 
 
-def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir: str):
+def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir: str, logfile_dir: str):
     LOG.info(f'Using temporary directory to save object files: {tempdir}')
     batch_groups = get_batch_groups(batch_items=batch_items)
     digits = len(str(len(batch_groups)))
-    for i, (group, items) in enumerate(batch_groups.items()):
+    for i, (group, items) in enumerate(batch_groups.items(), start=1):
         autolist = create_automatix_list(script=script, batch_items=items, args=args)
         id = str(i).rjust(digits, '0')
         with open(f'{tempdir}/auto{id}', 'wb') as f:
@@ -36,6 +38,7 @@ def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir:
                 'autolist': autolist,
                 'auto_file': f'{tempdir}/auto{id}',
                 'label': group if len(items) != 1 else items[0]['name'],
+                'logfile_dir': logfile_dir,
             }, file=f)
 
 
@@ -53,20 +56,28 @@ def run_parallel_screens(script: dict, batch_items: list, args: Namespace):
     LOG.info('Preparing automatix objects for parallel processing')
 
     with TemporaryDirectory() as tempdir:
-        create_auto_files(script=script, batch_items=batch_items, args=args, tempdir=tempdir)
-
         time_id = round(time())
-        os.mkfifo(f'{tempdir}/{time_id}_finished')
-
         logfile_dir = get_logfile_dir(time_id=time_id, scriptfile=args.scriptfile)
         os.makedirs(logfile_dir)
+        os.mkfifo(f'{tempdir}/{time_id}_finished')
+
+        create_auto_files(script=script, batch_items=batch_items, args=args, tempdir=tempdir, logfile_dir=logfile_dir)
+
         LOG.info(f'Created directory for logfiles at {logfile_dir}')
 
-        subprocess.run(
-            f'screen -d -m -S {time_id}_overview'
-            f' automatix-manager {tempdir} {time_id} {"--debug" if args.debug else ""}',
-            shell=True,
-        )
+        cmds = [
+            'screen', '-d', '-m', '-S', f'{time_id}_overview',
+            '-L', '-Logfile', f'{logfile_dir}/overview.log',
+            'automatix-manager', tempdir, str(time_id),
+        ]
+        if args.debug:
+            cmds.append('--debug')
+
+        subprocess.run(cmds)
+
+        status_line = get_screen_status_line(label='Manager screen')
+        subprocess.run(['screen', '-S', f'{time_id}_overview', '-X', 'hardstatus', 'alwayslastline'])
+        subprocess.run(['screen', '-S', f'{time_id}_overview', '-X', 'hardstatus', 'string', status_line])
 
         LOG.info(f'Overview / manager screen started at "{time_id}_overview".')
 
