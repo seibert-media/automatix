@@ -5,9 +5,9 @@ from os.path import isfile
 from textwrap import wrap
 from time import sleep
 
-from automatix import LOG
-from automatix.helpers import FileWithLock
-from automatix.parallel import Autos
+from .config import LOG
+from .helpers import FileWithLock
+from .parallel import Autos
 
 
 class CursesWriter:
