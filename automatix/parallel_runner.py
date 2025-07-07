@@ -16,7 +16,7 @@ def get_batch_groups(batch_items: list) -> dict:
     for batch_item in batch_items:
         if group := batch_item.get('group'):
             assert group != '_default_', 'The group name "_default_" is reserved. Please use something different.'
-            if group not in batch_groups:
+            if group not in batch_groups.keys():
                 batch_groups[group] = []
             batch_groups[group].append(batch_item)
         else:
@@ -24,8 +24,7 @@ def get_batch_groups(batch_items: list) -> dict:
     return batch_groups
 
 
-def write_auto_file(index: int, label: str, autolist: list, tempdir: str, digits: int, logfile_dir: str):
-    auto_id = str(index).rjust(digits, '0')
+def write_auto_file(auto_id: str, label: str, autolist: list, tempdir: str, logfile_dir: str):
     with open(f'{tempdir}/auto{auto_id}', 'wb') as f:
         pickle.dump(obj={
             'autolist': autolist,
@@ -41,22 +40,22 @@ def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir:
     batch_groups = get_batch_groups(batch_items=batch_items)
     default_group = batch_groups.pop('_default_')
 
-    auto_file_config = {
-        'tempdir': tempdir,
-        'digits': len(str(len(batch_groups) + len(default_group))),
-        'logfile_dir': logfile_dir,
-    }
+    digits = len(str(len(batch_groups) + len(default_group)))
 
     i = 1
-    for i, batch_item in enumerate(default_group, start=1):
-        # All rows/batch_items in the default group get their own automatix file and screen
-        label = batch_item.get('label', f'auto{i}')
-        autolist = create_automatix_list(script=script, batch_items=[batch_item], args=args)
-        write_auto_file(index=i, autolist=autolist, label=label, **auto_file_config)
-
-    for j, (group, items) in enumerate(batch_groups.items(), start=i):
+    for i, (group, items) in enumerate(batch_groups.items(), start=1):
+        auto_id = str(i).rjust(digits, '0')
         autolist = create_automatix_list(script=script, batch_items=items, args=args)
-        write_auto_file(index=j, autolist=autolist, label=f'Group: {group}', **auto_file_config)
+        write_auto_file(auto_id=auto_id, autolist=autolist, label=f'Group: {group}', tempdir=tempdir,
+                        logfile_dir=logfile_dir)
+
+    for j, batch_item in enumerate(default_group, start=i + 1):
+        auto_id = str(j).rjust(digits, '0')
+        # All rows/batch_items in the default group get their own automatix file and screen
+        # Get label before create_automatix_list, where the label field is removed
+        label = batch_item.get('label', f'auto{auto_id}')
+        autolist = create_automatix_list(script=script, batch_items=[batch_item], args=args)
+        write_auto_file(auto_id=auto_id, autolist=autolist, label=label, tempdir=tempdir, logfile_dir=logfile_dir)
 
 
 def display_screen_control_hints():
