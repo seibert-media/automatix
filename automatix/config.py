@@ -302,8 +302,8 @@ def update_script_from_row(row: dict, script: dict, index: int):
     group = row.pop('group', None)
     label = row.pop('label', None)
 
-    ids = [_id for _id in [group, str(index), label] if _id is not None]
-    script['name'] += f" ({' | '.join(ids)})"
+    ids = [_id for _id in [group, str(index), label] if _id]
+    script['name'] += f" ({' | '.join(ids)})" #FIXME
 
     for key, value in row.items():
         assert len(key.split(':')) == 2, \

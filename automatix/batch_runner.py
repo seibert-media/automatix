@@ -12,14 +12,11 @@ from .config import CONFIG, get_script, LOG, update_script_from_row, collect_var
 def get_script_and_batch_items(args: Namespace) -> (dict, list):
     script = get_script(args=args)
 
+    # Empty item means: there is nothing to update, take the script as it is
     batch_items: list[dict] = [{}]
     if args.vars_file:
         with open(args.vars_file) as csvfile:
             batch_items = list(DictReader(csvfile))
-
-        script['_batch_mode'] = False if args.parallel else True
-        script['_batch_items_count'] = 1 if args.parallel else len(batch_items)
-        LOG.notice(f'Detected {"parallel" if args.parallel else "batch"} processing from CSV file.')
 
     return script, batch_items
 

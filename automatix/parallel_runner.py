@@ -15,29 +15,42 @@ def get_batch_groups(batch_items: list) -> dict:
     batch_groups = {'_default_': []}
     for batch_item in batch_items:
         if group := batch_item.get('group'):
-            assert group != '_default_', 'The group name "_default" is reserved. Please use something different.'
+            assert group != '_default_', 'The group name "_default_" is reserved. Please use something different.'
             if group not in batch_groups:
                 batch_groups[group] = []
             batch_groups[group].append(batch_item)
         else:
             batch_groups['_default_'].append(batch_item)
-    if not batch_groups['_default_']:
-        del batch_groups['_default_']
     return batch_groups
 
 
 def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir: str, logfile_dir: str):
     LOG.info(f'Using temporary directory to save object files: {tempdir}')
     batch_groups = get_batch_groups(batch_items=batch_items)
-    digits = len(str(len(batch_groups)))
-    for i, (group, items) in enumerate(batch_groups.items(), start=1):
-        autolist = create_automatix_list(script=script, batch_items=items, args=args)
+    default_group = batch_groups.pop('_default_')
+    digits = len(str(len(batch_groups) + len(default_group)))
+
+    i = 1
+    for i, batch_item in enumerate(default_group, start=1):
+        label = batch_item.get('label', f'auto{i}')
+        autolist = create_automatix_list(script=script, batch_items=[batch_item], args=args)
         id = str(i).rjust(digits, '0')
         with open(f'{tempdir}/auto{id}', 'wb') as f:
             pickle.dump(obj={
                 'autolist': autolist,
                 'auto_file': f'{tempdir}/auto{id}',
-                'label': group if len(items) != 1 else items[0]['name'],
+                'label': label,
+                'logfile_dir': logfile_dir,
+            }, file=f)
+
+    for j, (group, items) in enumerate(batch_groups.items(), start=i):
+        autolist = create_automatix_list(script=script, batch_items=items, args=args)
+        id = str(j).rjust(digits, '0')
+        with open(f'{tempdir}/auto{id}', 'wb') as f:
+            pickle.dump(obj={
+                'autolist': autolist,
+                'auto_file': f'{tempdir}/auto{id}',
+                'label': f'Group: {group}',
                 'logfile_dir': logfile_dir,
             }, file=f)
 
