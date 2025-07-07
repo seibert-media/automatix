@@ -24,35 +24,39 @@ def get_batch_groups(batch_items: list) -> dict:
     return batch_groups
 
 
+def write_auto_file(index: int, label: str, autolist: list, tempdir: str, digits: int, logfile_dir: str):
+    auto_id = str(index).rjust(digits, '0')
+    with open(f'{tempdir}/auto{auto_id}', 'wb') as f:
+        pickle.dump(obj={
+            'autolist': autolist,
+            'auto_file': f'{tempdir}/auto{auto_id}',
+            'label': label,
+            'logfile_dir': logfile_dir,
+        }, file=f)
+
+
 def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir: str, logfile_dir: str):
     LOG.info(f'Using temporary directory to save object files: {tempdir}')
+
     batch_groups = get_batch_groups(batch_items=batch_items)
     default_group = batch_groups.pop('_default_')
-    digits = len(str(len(batch_groups) + len(default_group)))
+
+    auto_file_config = {
+        'tempdir': tempdir,
+        'digits': len(str(len(batch_groups) + len(default_group))),
+        'logfile_dir': logfile_dir,
+    }
 
     i = 1
     for i, batch_item in enumerate(default_group, start=1):
+        # All rows/batch_items in the default group get their own automatix file and screen
         label = batch_item.get('label', f'auto{i}')
         autolist = create_automatix_list(script=script, batch_items=[batch_item], args=args)
-        id = str(i).rjust(digits, '0')
-        with open(f'{tempdir}/auto{id}', 'wb') as f:
-            pickle.dump(obj={
-                'autolist': autolist,
-                'auto_file': f'{tempdir}/auto{id}',
-                'label': label,
-                'logfile_dir': logfile_dir,
-            }, file=f)
+        write_auto_file(index=i, autolist=autolist, label=label, **auto_file_config)
 
     for j, (group, items) in enumerate(batch_groups.items(), start=i):
         autolist = create_automatix_list(script=script, batch_items=items, args=args)
-        id = str(j).rjust(digits, '0')
-        with open(f'{tempdir}/auto{id}', 'wb') as f:
-            pickle.dump(obj={
-                'autolist': autolist,
-                'auto_file': f'{tempdir}/auto{id}',
-                'label': f'Group: {group}',
-                'logfile_dir': logfile_dir,
-            }, file=f)
+        write_auto_file(index=j, autolist=autolist, label=f'Group: {group}', **auto_file_config)
 
 
 def display_screen_control_hints():
