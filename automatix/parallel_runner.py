@@ -43,19 +43,31 @@ def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir:
     digits = len(str(len(batch_groups) + len(default_group)))
 
     i = 1
+    # Create grouped automatix files for each "real" group
     for i, (group, items) in enumerate(batch_groups.items(), start=1):
-        auto_id = str(i).rjust(digits, '0')
-        autolist = create_automatix_list(script=script, batch_items=items, args=args)
-        write_auto_file(auto_id=auto_id, autolist=autolist, label=f'Group: {group}', tempdir=tempdir,
-                        logfile_dir=logfile_dir)
+        write_auto_file(
+            auto_id=str(i).rjust(digits, '0'),
+            autolist=create_automatix_list(script=script, batch_items=items, args=args),
+            label=f'Group: {group}',
+            tempdir=tempdir,
+            logfile_dir=logfile_dir,
+        )
 
+    # All rows/batch_items in the default group get their own automatix file and screen
     for j, batch_item in enumerate(default_group, start=i + 1):
         auto_id = str(j).rjust(digits, '0')
-        # All rows/batch_items in the default group get their own automatix file and screen
+
         # Get label before create_automatix_list, where the label field is removed
         label = batch_item.get('label', f'auto{auto_id}')
+
         autolist = create_automatix_list(script=script, batch_items=[batch_item], args=args)
-        write_auto_file(auto_id=auto_id, autolist=autolist, label=label, tempdir=tempdir, logfile_dir=logfile_dir)
+        write_auto_file(
+            auto_id=auto_id,
+            autolist=autolist,
+            label=label,
+            tempdir=tempdir,
+            logfile_dir=logfile_dir,
+        )
 
 
 def display_screen_control_hints():
