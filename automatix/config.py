@@ -90,10 +90,6 @@ if CONFIG['teamvault']:
     SCRIPT_FIELDS['secrets'] = 'Secrets'
 
 
-    class UnknownSecretTypeException(Exception):
-        pass
-
-
 def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description='Automation wrapper for bash and python commands.',
@@ -303,7 +299,7 @@ def update_script_from_row(row: dict, script: dict, index: int):
     label = row.pop('label', None)
 
     ids = [_id for _id in [group, str(index), label] if _id]
-    script['name'] += f" ({' | '.join(ids)})" #FIXME
+    script['name'] += f" ({' | '.join(ids)})"
 
     for key, value in row.items():
         assert len(key.split(':')) == 2, \
@@ -313,3 +309,7 @@ def update_script_from_row(row: dict, script: dict, index: int):
         assert key_type in SCRIPT_FIELDS.keys(), \
             f'First row in CSV: Field name is \'{key_type}\', but has to be one of {list(SCRIPT_FIELDS.keys())}.'
         script[key_type][key_name] = value
+
+
+class UnknownSecretTypeException(Exception):
+    pass

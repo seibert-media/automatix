@@ -52,7 +52,9 @@ def get_screen_status_line(label: str) -> str:
     status_line = yellow(f'### {label}')
     status_line += f' | detach: {cyan("<ctrl>+a d")}'
     status_line += f' | copy mode: {cyan("<ctrl>+a Esc")}'
-    status_line += f' | abort copy mode: {cyan("Esc ")}'  # It seems we need the space after Esc, otherwise the color reset escape sequence stops working.
+    status_line += f' | abort copy mode: {cyan("Esc ")}'
+    # It seems we need the space after this Esc,  ^^^
+    # otherwise the color reset escape sequence stops working.
     return status_line
 
 
