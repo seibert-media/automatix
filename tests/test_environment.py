@@ -5,8 +5,8 @@ from time import sleep
 
 import pytest
 
-from automatix import get_script, collect_vars, CONFIG, SCRIPT_FIELDS
 from automatix.automatix import Automatix
+from automatix.config import get_script, collect_vars, CONFIG, SCRIPT_FIELDS
 from automatix.logger import init_logger
 
 SELFDIR = dirname(abspath(__file__))

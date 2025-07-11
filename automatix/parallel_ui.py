@@ -5,9 +5,9 @@ from os.path import isfile
 from textwrap import wrap
 from time import sleep
 
-from automatix import LOG
-from automatix.helpers import FileWithLock
-from automatix.parallel import Autos
+from .config import LOG
+from .helpers import FileWithLock
+from .parallel import Autos
 
 
 class CursesWriter:
@@ -128,6 +128,28 @@ def draw_status(cw: CursesWriter, autos: Autos):
     cw.stdscr.refresh()
 
 
+def handle_answer(answer: str, autos: Autos) -> str | None:
+    if answer == 'q':
+        raise KeyboardInterrupt('Quit UI by user')
+    elif answer == 'o':
+        return f'{autos.time_id}_overview'
+    elif answer == 'n' and autos.user_input:
+        return f'{autos.time_id}_{next(iter(autos.user_input))}'
+    elif answer.startswith('m'):
+        try:
+            max_parallel = int(answer[1:])
+            with FileWithLock(autos.status_file, 'a') as sf:
+                sf.write(f'{max_parallel}:max_parallel\n')
+        except (ValueError, IndexError):
+            pass  # Ignore invalid input
+    else:
+        try:
+            number = int(answer)
+            return f'{autos.time_id}_auto{str(number).rjust(len(str(autos.count)), "0")}'
+        except ValueError:
+            pass  # Ignore invalid input
+
+
 def process_user_input(cw: CursesWriter, autos: Autos) -> str | None:
     key = cw.stdscr.getch()
     if key == -1:  # No input
@@ -138,26 +160,8 @@ def process_user_input(cw: CursesWriter, autos: Autos) -> str | None:
         answer = cw.input_buffer.lower()
         cw.input_buffer = ''
 
-        if answer == 'q':
-            raise KeyboardInterrupt('Quit UI by user')
-        elif answer == 'o':
-            return f'{autos.time_id}_overview'
-        elif answer == 'n' and autos.user_input:
-            return f'{autos.time_id}_{next(iter(autos.user_input))}'
-        elif answer.startswith('m'):
-            try:
-                max_parallel = int(answer[1:])
-                with FileWithLock(autos.status_file, 'a') as sf:
-                    sf.write(f'{max_parallel}:max_parallel\n')
-            except (ValueError, IndexError):
-                pass  # Ignore invalid input
-        else:
-            try:
-                number = int(answer)
-                return f'{autos.time_id}_auto{str(number).rjust(len(str(autos.count)), "0")}'
-            except ValueError:
-                pass  # Ignore invalid input
-
+        if new_screen := handle_answer(answer=answer, autos=autos):
+            return new_screen
     elif key in [curses.KEY_BACKSPACE, 127]:
         cw.input_buffer = cw.input_buffer[:-1]
     elif char.isalnum():
