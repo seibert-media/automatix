@@ -37,6 +37,9 @@ def check_for_original_automatix():
 
 
 def run_startup_script(parser: argparse.ArgumentParser):
+    if not CONFIG.get('startup_script'):
+        return
+    
     automatix_cmdline = parser.prog + ' ' + ' '.join(sys.argv[1:])
     subprocess.run(
         f'{CONFIG["startup_script"]} {quote(automatix_cmdline)}',
@@ -207,8 +210,7 @@ def main():
     parser = arguments_parser()
     args = parser.parse_args()
 
-    if CONFIG.get('startup_script'):
-        run_startup_script(parser=parser)
+    run_startup_script(parser=parser)
 
     starttime = setup(args=args)
 
