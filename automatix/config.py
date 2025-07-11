@@ -49,6 +49,7 @@ CONFIG = {
     'bundlewrap': False,
     'teamvault': False,
     'progress_bar': False,
+    'startup_script': '',
 }
 
 MAGIC_SELECTION_INT = -999999999  # Some number nobody would normally type to mark that selection is wanted.
@@ -94,7 +95,7 @@ if CONFIG['teamvault']:
         pass
 
 
-def arguments() -> argparse.Namespace:
+def arguments_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description='Automation wrapper for bash and python commands.',
         epilog='Explanations and README at https://github.com/seibert-media/automatix',
@@ -160,7 +161,7 @@ def arguments() -> argparse.Namespace:
     )
     if bash_completion:
         autocomplete(parser)
-    return parser.parse_args()
+    return parser
 
 
 def _overwrite(script: dict, key: str, data: list[str]):
