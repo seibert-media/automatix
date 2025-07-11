@@ -1,5 +1,5 @@
 # PYTHON_ARGCOMPLETE_OK
-
+import argparse
 import os
 import pickle
 import subprocess
@@ -7,19 +7,21 @@ import sys
 from argparse import Namespace
 from copy import deepcopy
 from csv import DictReader
+from shlex import quote
 from tempfile import TemporaryDirectory
-from time import time, gmtime, strftime
+from time import gmtime, strftime, time
 
 from .automatix import Automatix
-from .command import SkipBatchItemException, AbortException
+from .command import AbortException, SkipBatchItemException
 from .config import (
-    arguments, CONFIG, get_script, LOG, update_script_from_row, collect_vars, SCRIPT_FIELDS, VERSION, init_logger,
-    MAGIC_SELECTION_INT
+    CONFIG, LOG, MAGIC_SELECTION_INT, SCRIPT_FIELDS, VERSION,
+    arguments_parser, collect_vars, get_script, init_logger,
+    update_script_from_row
 )
-from .helpers import selector, empty_queued_input_data
+from .helpers import empty_queued_input_data, selector
 from .parallel import get_logfile_dir
 from .parallel_ui import screen_switch_loop
-from .progress_bar import setup_scroll_area, destroy_scroll_area
+from .progress_bar import destroy_scroll_area, setup_scroll_area
 
 
 def check_for_original_automatix():
@@ -32,6 +34,15 @@ def check_for_original_automatix():
                 ' Both packages use the same entry point and module names and therefore'
                 ' are conflicting. Please uninstall automatix AND automatix_cmd first,'
                 ' THEN reinstall the package you want to use!')
+
+
+def run_startup_script(parser: argparse.ArgumentParser):
+    automatix_cmdline = parser.prog + ' ' + ' '.join(sys.argv[1:])
+    subprocess.run(
+        f'{CONFIG["startup_script"]} {quote(automatix_cmdline)}',
+        env=os.environ.copy(),
+        shell=True,
+    )
 
 
 def setup(args: Namespace) -> float:
@@ -193,7 +204,12 @@ def main():
         if answer != 'yes':
             sys.exit(0)
 
-    args = arguments()
+    parser = arguments_parser()
+    args = parser.parse_args()
+
+    if CONFIG.get('startup_script'):
+        run_startup_script(parser=parser)
+
     starttime = setup(args=args)
 
     script, batch_items = get_script_and_batch_items(args=args)

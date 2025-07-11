@@ -36,3 +36,7 @@ bundlewrap: true
 
 # Teamvault / Secret support, bundlewrap-teamvault has to be installed (default: false)
 teamvault: true
+
+# Startup script, which is triggered on every start of Automatix.
+# The whole Automatix call with all arguments is appended as argument.
+startup_script: '/some/path/bin/automatix_startup.sh'
