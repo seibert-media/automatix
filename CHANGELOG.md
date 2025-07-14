@@ -1,5 +1,10 @@
 # Changelog
 
+# 2.11.0
+- Feature: Option to set a startup script, which is triggered on every automatix execution
+- Feature: Search subdirs for the script name, if not found at the relative path or top level
+- Feature: Execution groups for parallel processing
+
 # 2.10.0
 - Parallel: Rewrite UI with curses
 - Parallel: Status bar witch label inside screen session

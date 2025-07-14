@@ -17,5 +17,6 @@
 - Import (source) Bash functions
 - Bundlewrap + Teamvault support
 
-- Bash completion
+- Shell completion
 - Progress bar
+- Startup script trigger
