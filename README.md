@@ -103,7 +103,7 @@ All (string) configuration values can be overwritten by the
     progress_bar: true
 
     # Startup script, which is triggered on every start of Automatix.
-    # The whole Automatix call with all arguments is appended as argument.
+    # The whole Automatix call with all arguments is passed through as arguments.
     startup_script: '/some/path/bin/automatix_startup.sh'
 
 # SYNOPSIS
