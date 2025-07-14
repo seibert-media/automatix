@@ -3,11 +3,10 @@ import argparse
 import os
 import subprocess
 import sys
-from shlex import quote
 from time import time, strftime, gmtime
 
 from .batch_runner import get_script_and_batch_items, run_batch_items
-from .config import init_logger, CONFIG, LOG, VERSION, arguments_parser, MAGIC_SELECTION_INT
+from .config import init_logger, CONFIG, LOG, VERSION, arguments, MAGIC_SELECTION_INT
 from .helpers import empty_queued_input_data, selector
 from .parallel_runner import run_parallel_screens
 from .progress_bar import setup_scroll_area, destroy_scroll_area
@@ -25,16 +24,13 @@ def check_for_original_automatix():
                 ' THEN reinstall the package you want to use!')
 
 
-def run_startup_script(parser: argparse.ArgumentParser):
+def run_startup_script():
     if not CONFIG.get('startup_script'):
         return
 
-    automatix_cmdline = parser.prog + ' ' + ' '.join(sys.argv[1:])
-    subprocess.run(
-        f'{CONFIG["startup_script"]} {quote(automatix_cmdline)}',
-        env=os.environ.copy(),
-        shell=True,
-    )
+    cmds = [os.path.expandvars(CONFIG["startup_script"])]
+    cmds.extend(sys.argv)
+    subprocess.run(cmds)
 
 
 def setup(args: argparse.Namespace) -> float:
@@ -77,10 +73,8 @@ def main():
         if answer != 'yes':
             sys.exit(0)
 
-    parser = arguments_parser()
-    args = parser.parse_args()
-
-    run_startup_script(parser=parser)
+    args = arguments()
+    run_startup_script()
 
     starttime = setup(args=args)
 
