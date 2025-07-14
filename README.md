@@ -102,6 +102,10 @@ All (string) configuration values can be overwritten by the
     # Activate progress bar, python_progress_bar has to be installed (default: false)
     progress_bar: true
 
+    # Startup script, which is triggered on every start of Automatix.
+    # The whole Automatix call with all arguments is passed through as arguments.
+    startup_script: '/some/path/bin/automatix_startup.sh'
+
 # SYNOPSIS
 
 **automatix**

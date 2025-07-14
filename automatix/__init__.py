@@ -1,8 +1,8 @@
 # PYTHON_ARGCOMPLETE_OK
+import argparse
 import os
 import subprocess
 import sys
-from argparse import Namespace
 from time import time, strftime, gmtime
 
 from .batch_runner import get_script_and_batch_items, run_batch_items
@@ -24,7 +24,16 @@ def check_for_original_automatix():
                 ' THEN reinstall the package you want to use!')
 
 
-def setup(args: Namespace) -> float:
+def run_startup_script():
+    if not CONFIG.get('startup_script'):
+        return
+
+    cmds = [os.path.expandvars(CONFIG["startup_script"])]
+    cmds.extend(sys.argv)
+    subprocess.run(cmds)
+
+
+def setup(args: argparse.Namespace) -> float:
     """Setup logger and print version information"""
     init_logger(name=CONFIG['logger'], debug=args.debug)
     starttime = time()
@@ -65,6 +74,8 @@ def main():
             sys.exit(0)
 
     args = arguments()
+    run_startup_script()
+
     starttime = setup(args=args)
 
     script, batch_items = get_script_and_batch_items(args=args)
