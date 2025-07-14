@@ -91,7 +91,7 @@ if CONFIG['teamvault']:
     SCRIPT_FIELDS['secrets'] = 'Secrets'
 
 
-def arguments() -> argparse.Namespace:
+def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description='Automation wrapper for bash and python commands.',
         epilog='Explanations and README at https://github.com/seibert-media/automatix',
@@ -157,7 +157,11 @@ def arguments() -> argparse.Namespace:
     )
     if bash_completion:
         autocomplete(parser)
-    return parser.parse_args()
+    return parser
+
+
+def arguments(args: list[str] = None) -> argparse.Namespace:
+    return create_parser().parse_args(args=args)
 
 
 def _overwrite(script: dict, key: str, data: list[str]):
