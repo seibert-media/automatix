@@ -20,14 +20,14 @@ class ScriptFileCompleter:
     Scriptfile completer
     """
 
-    def __init__(self, script_path: str):
-        self.script_path = script_path
+    def __init__(self, script_dir: str):
+        self.script_dir = script_dir
 
     def __call__(self, prefix: str, **kwargs):
         completion = []
         try:
             completion.extend(self.find_dirs_and_files(root_path='.', prefix=prefix))
-            completion.extend(self.find_dirs_and_files(root_path=self.script_path, prefix=prefix))
+            completion.extend(self.find_dirs_and_files(root_path=self.script_dir, prefix=prefix))
         except Exception as exc:
             warn(f'Shell completion failed: {repr(exc)}')
         return completion
@@ -44,8 +44,8 @@ class ScriptFileCompleter:
 
 
 class ScriptFieldCompleter:
-    def __init__(self, script_path):
-        self.script_path = script_path
+    def __init__(self, script_dir: str):
+        self.script_dir = script_dir
 
     def __call__(self, action: Action, parsed_args: Namespace, **kwargs):
         try:
@@ -54,7 +54,7 @@ class ScriptFieldCompleter:
 
             s_file = parsed_args.scriptfile
             if not os.path.isfile(parsed_args.scriptfile):
-                s_file = f'{self.script_path}/{parsed_args.scriptfile}'
+                s_file = f'{self.script_dir}/{parsed_args.scriptfile}'
 
             script = read_yaml(s_file)
             completion = [f'{key}=' for key in script.get(action.dest, {}).keys()]

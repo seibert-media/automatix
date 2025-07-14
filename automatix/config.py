@@ -8,7 +8,7 @@ from importlib import metadata, import_module
 from time import sleep
 
 from .colors import red
-from .helpers import read_yaml
+from .helpers import read_yaml, selector
 
 try:
     from argcomplete import autocomplete
@@ -83,16 +83,12 @@ else:
 
 LOG = logging.getLogger(CONFIG['logger'])
 
-SCRIPT_PATH = os.path.expanduser(os.path.expandvars(CONFIG['script_dir']))
+SCRIPT_DIR = os.path.expanduser(os.path.expandvars(CONFIG['script_dir']))
 
 if CONFIG['teamvault']:
     import bwtv
 
     SCRIPT_FIELDS['secrets'] = 'Secrets'
-
-
-    class UnknownSecretTypeException(Exception):
-        pass
 
 
 def arguments_parser() -> argparse.ArgumentParser:
@@ -105,7 +101,7 @@ def arguments_parser() -> argparse.ArgumentParser:
         help='Path to scriptfile (yaml), use " -- " if needed to delimit this from argument fields',
     )
     if bash_completion:
-        scriptfile_action.completer = ScriptFileCompleter(script_path=SCRIPT_PATH)
+        scriptfile_action.completer = ScriptFileCompleter(script_dir=SCRIPT_DIR)
 
     for field in SCRIPT_FIELDS.keys():
         field_action = parser.add_argument(
@@ -115,7 +111,7 @@ def arguments_parser() -> argparse.ArgumentParser:
                  f'You can specify multiple {field} like: --{field} v1=string1 v2=string2 v3=string3',
         )
         if bash_completion:
-            field_action.completer = ScriptFieldCompleter(script_path=SCRIPT_PATH)
+            field_action.completer = ScriptFieldCompleter(script_dir=SCRIPT_DIR)
     parser.add_argument(
         '--vars-file',
         help='Path to a CSV file containing variables for batch processing',
@@ -175,10 +171,37 @@ def _tupelize(string) -> tuple:
     return tuple([int(i) for i in string.split('.')])
 
 
+def search_script(name: str) -> str:
+    paths = []
+    for dirpath, dirnames, filenames in os.walk(SCRIPT_DIR):
+        for filename in filenames:
+            if filename == name:
+                path = str(os.path.join(dirpath, filename))
+                paths.append((path, path))  # Second one is the label for the selector
+    return selector(entries=paths, message='Script found at multiple locations. Please choose:')
+
+
+def get_script_path(name: str):
+    s_file = name
+    LOG.debug(f'Scriptfile input: {s_file}')
+    # First try relative path
+    if not os.path.isfile(s_file):
+        LOG.debug('Script not found at relative path')
+        s_file = f'{SCRIPT_DIR}/{name}'
+    # Second try relative path from SCRIPT_DIR
+    if not os.path.isfile(s_file):
+        LOG.debug('Script not found at relative path from SCRIPT_DIR')
+        # Third search and offer selection
+        s_file = search_script(name=name)
+    if not s_file:
+        LOG.debug('Script not found at all.')
+        raise ValueError('Script not found')
+    LOG.notice(f'Script found at {s_file}.')
+    return s_file
+
+
 def get_script(args: argparse.Namespace) -> dict:
-    s_file = args.scriptfile
-    if not os.path.isfile(args.scriptfile):
-        s_file = f'{SCRIPT_PATH}/{args.scriptfile}'
+    s_file = get_script_path(name=args.scriptfile)
 
     try:
         script = read_yaml(s_file)
@@ -299,10 +322,13 @@ def collect_vars(script: dict) -> dict:
 def update_script_from_row(row: dict, script: dict, index: int):
     if not row:
         return
-    try:
-        script['name'] += f" ({index} {row.pop('label')})"
-    except KeyError:
-        script['name'] += f" ({index})"
+
+    group = row.pop('group', None)
+    label = row.pop('label', None)
+
+    ids = [_id for _id in [group, str(index), label] if _id]
+    script['name'] += f" ({' | '.join(ids)})"
+
     for key, value in row.items():
         assert len(key.split(':')) == 2, \
             'First row in CSV must contain "label" or the field name and key seperated by colons' \
@@ -311,3 +337,7 @@ def update_script_from_row(row: dict, script: dict, index: int):
         assert key_type in SCRIPT_FIELDS.keys(), \
             f'First row in CSV: Field name is \'{key_type}\', but has to be one of {list(SCRIPT_FIELDS.keys())}.'
         script[key_type][key_name] = value
+
+
+class UnknownSecretTypeException(Exception):
+    pass

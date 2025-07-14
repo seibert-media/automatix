@@ -152,9 +152,20 @@ All (string) configuration values can be overwritten by the
 **--vars-file** _VARS_FILE_PATH_
 : Use this to specify a CSV file from where **automatix** reads
   systems, variables and secrets. First row must contain the field
-  types and names. You may also specify an `label` field.
-  Example: `label,systems:mysystem,vars:myvar`. The automatix script will
-  be processed for each row sequentially.  
+  types and names. You may also specify an `label` and `group` field.
+  
+  The `label` field can be to achieve a better overview and which row
+  is currently executed. It is used, when printing error messages or
+  as status line in screens for parallel processing. Without label
+  the row number is displayed.
+
+  The `group` field is only relevant for parallel processing. Row of
+  the same group are grouped together in a single screen and processed
+  sequentially there. Different groups are processed parallel.
+  Rows without specified group are run each in a parallel screen.
+  These rows are processed after the groups.
+
+  Example header: `label,group,systems:mysystem,vars:myvar`.
   
 **--parallel**
 : Run CSV file entries parallel in screen sessions; only valid with --vars-file.
