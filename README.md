@@ -448,14 +448,17 @@ dictonary keys are also available as attributes.
   or `PERSISTENT_VARS.v2 = v2`
 - Use the shortcut like `PVARS.v2 = v2`
 
-You can use variables in PERSISTENT_VARS also as condition by
-using the shortcut and the attribute notation:
+**Note: Following works ONLY with the shortcut "PVARS"**:
+
+You can use these variables also as condition or as normal automatix
+variable in curly brackets by using the shortcut and the attribute notation:
     
       - python: PVARS.cond = some_function()
       - PVARS.cond?local: echo 'This is only printed if "some_function" evaluates to "True"'
       - PVARS.cond!?local: echo 'And this is printed if "some_function" evaluates to "False"'
+      - local: echo "The condition variable contains the value '{PVARS.cond}'."
 
-Since version 2.4.0 making variables global does not work any longer!
+*Since version 2.4.0 making variables global does not work any longer!*
 
 ### Abort and Skip Exceptions
 
