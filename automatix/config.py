@@ -263,7 +263,6 @@ def check_version(version_str: str):
         match = re.match(pattern=r'([><=!~]{0,2})\s*((\d+\.){0,3}\d+)', string=condition.strip())
         operator = match.group(1)
         required_version = _tupelize(match.group(2))
-        check_passed = False
 
         match operator:
             case '==':
@@ -286,16 +285,24 @@ def check_version(version_str: str):
                 raise SyntaxError(f'Unknown operator "{operator}"')
 
         if not check_passed:
-            raise VersionError(f'Condition failed: {operator} {required_version} (installed: {installed_version})')
+            raise VersionError()
 
 
 def validate_script(script: dict):
     version_str = script.get('require_version', '0.0.0')
     try:
         check_version(version_str=version_str)
-    except AssertionError:
+    except VersionError:
         LOG.error(f'The script requires version {version_str}. We have {VERSION}.')
         sys.exit(1)
+
+    # This would collide with the command.SystemsWrapper.
+    if 'systems' in script.get('systems'):
+        raise ValidationError('"systems" is not allowed as name for a system. Please choose a different name.')
+
+    # This would collide with the command.ConstantsWrapper.
+    if 'constants' in script.get('constants'):
+        raise ValidationError('"constants" is not allowed as name for a constant. Please choose a different name.')
 
     warn = 0
     for pipeline in ['always', 'pipeline', 'cleanup']:
@@ -353,4 +360,8 @@ class UnknownSecretTypeException(Exception):
 
 
 class VersionError(Exception):
+    pass
+
+
+class ValidationError(Exception):
     pass
