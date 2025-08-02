@@ -297,11 +297,11 @@ def validate_script(script: dict):
         sys.exit(1)
 
     # This would collide with the command.SystemsWrapper.
-    if 'systems' in script.get('systems'):
+    if 'systems' in script.get('systems', []):
         raise ValidationError('"systems" is not allowed as name for a system. Please choose a different name.')
 
     # This would collide with the command.ConstantsWrapper.
-    if 'constants' in script.get('constants'):
+    if 'constants' in script.get('constants', []):
         raise ValidationError('"constants" is not allowed as name for a constant. Please choose a different name.')
 
     warn = 0
