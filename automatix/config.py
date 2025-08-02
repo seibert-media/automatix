@@ -263,25 +263,30 @@ def check_version(version_str: str):
         match = re.match(pattern=r'([><=!~]{0,2})\s*((\d+\.){0,3}\d+)', string=condition.strip())
         operator = match.group(1)
         required_version = _tupelize(match.group(2))
+        check_passed = False
 
         match operator:
             case '==':
-                assert installed_version == required_version
+                check_passed = installed_version == required_version
             case '!=':
-                assert installed_version != required_version
+                check_passed = installed_version != required_version
             case '>=' | '':
-                assert installed_version >= required_version
+                check_passed = installed_version >= required_version
             case '<=':
-                assert installed_version <= required_version
+                check_passed = installed_version <= required_version
             case '>':
-                assert installed_version > required_version
+                check_passed = installed_version > required_version
             case '<':
-                assert installed_version < required_version
+                check_passed = installed_version < required_version
             case '~=':
-                assert installed_version[:len(required_version) - 1] == required_version[:-1]
-                assert installed_version >= required_version
+                check1 = installed_version[:len(required_version) - 1] == required_version[:-1]
+                check2 = installed_version >= required_version
+                check_passed = check1 and check2
             case _:
                 raise SyntaxError(f'Unknown operator "{operator}"')
+
+        if not check_passed:
+            raise VersionError(f'Condition failed: {operator} {required_version} (installed: {installed_version})')
 
 
 def validate_script(script: dict):
@@ -344,4 +349,8 @@ def update_script_from_row(row: dict, script: dict, index: int):
 
 
 class UnknownSecretTypeException(Exception):
+    pass
+
+
+class VersionError(Exception):
     pass
