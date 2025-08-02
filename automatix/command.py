@@ -568,18 +568,18 @@ def parse_key(key) -> tuple[str, ...]:
 
 class SystemsWrapper:
     def __init__(self, systems: dict):
-        self.systems = systems
+        self._systems = systems
 
     def __getattr__(self, name):
-        return self.systems[name].replace('hostname!', '')
+        return self._systems[name].replace('hostname!', '')
 
 
 class ConstantsWrapper:
     def __init__(self, constants: dict):
-        self.constants = constants
+        self._constants = constants
 
     def __getattr__(self, name):
-        return self.constants[name]
+        return self._constants[name]
 
 
 class AbortException(Exception):

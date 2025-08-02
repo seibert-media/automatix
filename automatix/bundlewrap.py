@@ -69,8 +69,8 @@ class BWCommand(Command):
 
 class BWNodesWrapper:
     def __init__(self, repo: Repository, systems: dict):
-        self.repo = repo
-        self.systems = systems
+        self._repo = repo
+        self._systems = systems
 
     def __getattr__(self, name):
-        return self.repo.get_node(self.systems[name])
+        return self._repo.get_node(self._systems[name])
