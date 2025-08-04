@@ -306,7 +306,7 @@ def validate_script(script: dict):
 
     warn = 0
     for key, value in script.get('vars', {}).items():
-        if value.startswith('FILE_'):
+        if str(value).startswith('FILE_'):
             LOG.warning(f'[vars:{key}] FILE_ feature was removed in 2.12.0.'
                         f' Please use: "- {key}=local: cat {value[5:]}" instead')
             warn += 1
