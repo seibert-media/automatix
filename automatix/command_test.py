@@ -141,7 +141,6 @@ def test__show_and_change_variables(mock_empty_queued_input_data: mock.MagicMock
     assert cmd.env.vars == {
         'a': '{a}',
         'myvar': 'huhu',
-        'myvar2': 'FILE_tests/test_var_input_file',
         'cond': '{cond}',
         'cond2': '{cond2}',
     }
@@ -157,7 +156,6 @@ def test__show_and_change_variables(mock_empty_queued_input_data: mock.MagicMock
     assert cmd.env.vars == {
         'a': '{a}',
         'myvar': 'hallo',
-        'myvar2': 'FILE_tests/test_var_input_file',
         'cond': '{cond}',
         'cond2': '!dgkls=432',
         'var1': 'xyz',

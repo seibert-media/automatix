@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.12.0
+- Removed FILE_ Feature for variables (introduced in 1.2.0)
+
 # 2.11.0
 - Feature: Option to set a startup script, which is triggered on every automatix execution
 - Feature: Search subdirs for the script name, if not found at the relative path or top level

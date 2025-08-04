@@ -112,14 +112,6 @@ class Command:
 
     def get_resolved_value(self, dummy: bool = False):
         variables = self.env.vars.copy()
-        for key, value in variables.items():
-            if not isinstance(value, str):
-                continue
-            file_match = re.match(r'FILE_(.*)', value)
-            if file_match:
-                with open(os.path.expanduser(file_match.group(1))) as file:
-                    variables[key] = file.read().strip()
-
         variables['CONST'] = ConstantsWrapper(self.env.config['constants'])
         variables['SYSTEMS'] = SystemsWrapper(self.env.systems)
         variables['PVARS'] = AttributedDummyDict('PVARS', PVARS) if dummy else PVARS

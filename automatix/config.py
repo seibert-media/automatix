@@ -305,6 +305,12 @@ def validate_script(script: dict):
         raise ValidationError('"_constants" is not allowed as name for a constant. Please choose a different name.')
 
     warn = 0
+    for key, value in script.get('vars', {}).items():
+        if value.startswith('FILE_'):
+            LOG.warning(f'[vars:{key}] FILE_ feature was removed in 2.12.0.'
+                        f' Please use: "- {key}=local: cat {value[5:]}" instead')
+            warn += 1
+
     for pipeline in ['always', 'pipeline', 'cleanup']:
         for index, command in enumerate(script.get(pipeline, [])):
             for ckey, entry in command.items():

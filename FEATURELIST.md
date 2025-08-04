@@ -8,7 +8,6 @@
 - Exception / error catching and interactive handling (retry, reload from file, jump forward/backward, skip, abort, terminal, change variable)
 - Beforehand (always) and cleanup commands
 
-- Read Automatix variables from file (FILE_)
 - Assign Automatix variables from command output
 - Keep python variables between commands (PERSISTENT_VARS, PVARS)
 - Conditions
