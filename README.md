@@ -290,8 +290,6 @@ You can refer to these systems in the command pipeline in multiple ways:
 **vars** _(associative array)_
 : Define some vars. These are accessible in the command pipeline via
  {varname}. Note: Only valid Python variable names are allowed.
- You can use "*FILE_*" prefix followed by a file path to assign the file
- content to the variable, e.g. `myvar: FILE_/path/to/file`.
  In python actions you can access these variables directly via `VARS.varname`.
 
 **secrets** _(associative array)_

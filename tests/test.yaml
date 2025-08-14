@@ -1,40 +1,78 @@
-name: Automatix Test
-required_version: '~=2.5'
+# All values in this file (except Automatix's own control structures) should be strings!
+name: Automatix Test  # Just give it a name.
+# Here it might be good practice to give some type of usage information as comment, like
+# USAGE: automatix tests/test.yaml
+required_version: '~=2.5'  # Allowed operators are '==', '!=', '>=', '<=', '>', '<', '~='
 systems:
-  testsystem: docker-test
+  # To avoid unexpected behaviour
+  # the systems, vars and secrets KEYS (left side)
+  # should start with a letter character [a-zA-Z]
+  # followed by alphanumeric characters [a-zA-Z_0-9]
+  testsystem: docker-test  # SSH Hostname or Bundlewrap node name (if enabled)
 vars:
   myvar: huhu
-  myvar2: FILE_tests/test_var_input_file
 
-always:
+always:  # <-- The always pipeline is executed even if you just want to print the commands!
   - local: echo 'Print this always :-)'
-  - python: |
+  - python: |  # <-- For multiline commands you can use YAML multiline strings (reference: https://yaml-multiline.info/)
       from uuid import uuid4
       from pprint import pprint
       import re
+      # We save all local variables (here the imports above) for usage in following commands:
       PERSISTENT_VARS.update(locals())
-  - python: pprint('{myvar}')
-  - python: pprint('''{myvar2}''')
+  - python: pprint('{myvar}')  # Test that our pprint import works and the "normal" way the use the vars.
+  - python: pprint(VARS.myvar)  # Alternative (new) way to access the variable in Python commands.
 pipeline:
-  - python: PVARS.moin = True
-  - PVARS.moin?local: echo 'Moin'
-  - python: PVARS = False
-  - PVARS.moin!?local: echo 'Moin Moin :-)'
-  - a=python: re.match(r'\d*', '12345')
-  - nonexistent?local: echo 'Hups ...'
-  - python: print(str(uuid4()) + ' test ' + str(VARS.a.string))
-  - python: del PERSISTENT_VARS['uuid4']
-  - a=local: uptime
-  - remote@testsystem: whoami
-  - python: print('{myvar2}')
-  - cond=python: 'None'
-  - cond?python: | 
+  - python: PVARS.moin = True  # We can also use the PERSISTENT_VARS shortcut PVARS to save variables for later use.
+  - PVARS.moin?local: echo 'Moin'  # Instead of an Automatix variable, we can also use PVARS (only shortcut) in conditions.
+  - python: PVARS.moin = False
+  - PVARS.moin!?local: echo 'Moin Moin :-)'  # Conditions can be inverted by '!?' instead of '?'.
+  - a=python: re.match(r'\d*', '12345')  # Another import check and a "normal" variable assertion, but wait 'a' is now a match object.
+  - python: print(str(uuid4()) + ' test ' + str(VARS.a.string))  # Here we access the 'string' attribute of the match object.
+  - nonexistent?local: echo 'Hups ...'  # non-existent variables count as False
+  - python: del PERSISTENT_VARS['uuid4']  # Oh we can also delete a variable from PERSISTENT_VARS
+  - a=local: uptime  # And we can overwrite them
+  - remote@testsystem: whoami  # A remote command
+  - cond=python: 'None' # Caution! It looks like a string and it is in YAML, but for Python it is the None value.
+  - cond?python: |  # And that's why this condition is not met and will not be executed.
       print(f'Das ging wohl daneben: {SYSTEMS.testsystem}')
-  - cond!?python: print('Und nun?')
+  - cond!?python: print('Und nun?')  # But this one is!
+  # Following is how you can check things in Bash.
+  # The test fails and therefore we have an empty output.
+  # This is desired because every string but an empty one would lead to True.
+  # The 'exit 0' is necessary, because otherwise Automatix would stop thinking there is an error (non-zero exitcode).
   - cond2=local: test "confluence" == "jira" && echo -n "True"; exit 0
-  - cond2?python: print('Das ging wohl daneben 2')
-  - python: raise Exception('moin')
+  - cond2?python: print('Das ging wohl daneben 2')  # So this is not printed.
+  - python: raise Exception('moin')  # And here Automatix will stop and ask, because an exception occurred in our code.
+
+# --- Variables magic ---
+  # 1) Automatix Variable
+  - a=python: '5' # Notice: This is a YAML string, but as Python command it becomes an integer.
+  # is equivalent to
+  - python: VARS.a = 5
+  # it can be used in the following ways:
+  - a?local: echo 'bool({a}) is True so condition is met. Works for all types of commands.'
+    # First (VARS.a) is the variable itself,
+    # while for the {a} the whole command is formatted with the variable values.
+  - python: assert VARS.a == {a}
+  # 2) PERSISTENT_VARS, shortcut PVARS; might be better to use always the shortcut as it has additional features
+  - python: PVARS.b = 7
+  # it can be used in the following ways:
+  - PVARS.b?local: echo 'bool({PVARS.b}) is True so condition is met. Works for all types of commands.'
+  - python: assert b == {PVARS.b} == PVARS.b
+
+# --- Dirty Hacks ---
+  # Inject a new system at runtime
+  - python: SYSTEMS._systems['my_system2'] = 'docker-test'
+  - remote@my_system2: echo "This should work"
+
+# --- Possibly dangerous things, do not do this, even if it might work ---
+  # Overwriting PVARS, SYSTEMS or other predefined objects.
+  # Luckily this one overwrites the PVARS only for the actual command.
+  - python: PVARS = 'something'
+  # Let's check it:
+  - python: pprint(PVARS)
+
 cleanup:
   - local: echo 'Cleaning up.'
   - python: pprint('{myvar}')
-  - python: pprint('''{myvar2}''')
