@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import patch
 
-from automatix.config import _overwrite, _tupelize, check_deprecated_syntax, check_version
+from automatix.config import _overwrite, _tupelize, check_deprecated_syntax, check_version, VersionError
 
 tc = TestCase()
 
@@ -74,22 +74,22 @@ def test__check_version__pass():
 
 @patch('automatix.config.VERSION', '2.1.5')
 def test__check_version__fail():
-    with tc.assertRaises(AssertionError):
+    with tc.assertRaises(VersionError):
         check_version('<2.0.0')
 
-    with tc.assertRaises(AssertionError):
+    with tc.assertRaises(VersionError):
         check_version('>1.0, <2')
 
-    with tc.assertRaises(AssertionError):
+    with tc.assertRaises(VersionError):
         check_version('~= 2.2')
 
-    with tc.assertRaises(AssertionError):
+    with tc.assertRaises(VersionError):
         check_version('~= 3.1')
 
-    with tc.assertRaises(AssertionError):
+    with tc.assertRaises(VersionError):
         check_version('~= 3')
 
-    with tc.assertRaises(AssertionError):
+    with tc.assertRaises(VersionError):
         check_version('<=2.1')
 
     with tc.assertRaises(SyntaxError):

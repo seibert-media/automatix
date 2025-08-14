@@ -266,31 +266,43 @@ def check_version(version_str: str):
 
         match operator:
             case '==':
-                assert installed_version == required_version
+                check_passed = installed_version == required_version
             case '!=':
-                assert installed_version != required_version
+                check_passed = installed_version != required_version
             case '>=' | '':
-                assert installed_version >= required_version
+                check_passed = installed_version >= required_version
             case '<=':
-                assert installed_version <= required_version
+                check_passed = installed_version <= required_version
             case '>':
-                assert installed_version > required_version
+                check_passed = installed_version > required_version
             case '<':
-                assert installed_version < required_version
+                check_passed = installed_version < required_version
             case '~=':
-                assert installed_version[:len(required_version) - 1] == required_version[:-1]
-                assert installed_version >= required_version
+                check1 = installed_version[:len(required_version) - 1] == required_version[:-1]
+                check2 = installed_version >= required_version
+                check_passed = check1 and check2
             case _:
                 raise SyntaxError(f'Unknown operator "{operator}"')
+
+        if not check_passed:
+            raise VersionError()
 
 
 def validate_script(script: dict):
     version_str = script.get('require_version', '0.0.0')
     try:
         check_version(version_str=version_str)
-    except AssertionError:
+    except VersionError:
         LOG.error(f'The script requires version {version_str}. We have {VERSION}.')
         sys.exit(1)
+
+    # This would collide with the command.SystemsWrapper.
+    if '_systems' in script.get('systems', []):
+        raise ValidationError('"_systems" is not allowed as name for a system. Please choose a different name.')
+
+    # This would collide with the command.ConstantsWrapper.
+    if '_constants' in script.get('constants', []):
+        raise ValidationError('"_constants" is not allowed as name for a constant. Please choose a different name.')
 
     warn = 0
     for pipeline in ['always', 'pipeline', 'cleanup']:
@@ -344,4 +356,12 @@ def update_script_from_row(row: dict, script: dict, index: int):
 
 
 class UnknownSecretTypeException(Exception):
+    pass
+
+
+class VersionError(Exception):
+    pass
+
+
+class ValidationError(Exception):
     pass
