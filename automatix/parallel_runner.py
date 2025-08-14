@@ -2,6 +2,7 @@ import os
 import pickle
 import subprocess
 from argparse import Namespace
+from collections import defaultdict
 from tempfile import TemporaryDirectory
 from time import time
 
@@ -12,12 +13,10 @@ from .parallel_ui import screen_switch_loop
 
 
 def get_batch_groups(batch_items: list) -> dict:
-    batch_groups = {'_default_': []}
+    batch_groups = defaultdict(list)
     for batch_item in batch_items:
         if group := batch_item.get('group'):
             assert group != '_default_', 'The group name "_default_" is reserved. Please use something different.'
-            if group not in batch_groups.keys():
-                batch_groups[group] = []
             batch_groups[group].append(batch_item)
         else:
             batch_groups['_default_'].append(batch_item)
@@ -38,7 +37,7 @@ def create_auto_files(script: dict, batch_items: list, args: Namespace, tempdir:
     LOG.info(f'Using temporary directory to save object files: {tempdir}')
 
     batch_groups = get_batch_groups(batch_items=batch_items)
-    default_group = batch_groups.pop('_default_')
+    default_group = batch_groups.pop('_default_', [])
 
     digits = len(str(len(batch_groups) + len(default_group)))
 
