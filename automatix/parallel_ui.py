@@ -168,7 +168,7 @@ def process_user_input(cw: CursesWriter, autos: Autos) -> str | None:
         cw.input_buffer += char
 
 
-def parallel_ui(stdscr: curses.window, tempdir: str):
+def parallel_ui(stdscr: curses.window, tempdir: str) -> tuple[str, str | None]:
     cw = CursesWriter(stdscr=stdscr)
 
     # Wait until the status file exists
@@ -194,16 +194,12 @@ def parallel_ui(stdscr: curses.window, tempdir: str):
             cw.stdscr.nodelay(False)
             while cw.stdscr.getch() not in [ord('q'), ord('Q')]:
                 sleep(0.1)
-            return 'quit'
+            return 'quit', None
 
         # 4. Process user input
         screen_to_switch = process_user_input(cw=cw, autos=autos)
         if screen_to_switch:
-            # Important: End curses before an external program takes control of the terminal
-            curses.endwin()
-            print(f"Switching to screen '{screen_to_switch}'... (Return with <ctrl>+a d)")
-            subprocess.run(['screen', '-r', screen_to_switch])
-            return 'restart'
+            return 'restart', screen_to_switch
 
         sleep(0.2)  # Short pause to reduce CPU load
 
@@ -211,7 +207,10 @@ def parallel_ui(stdscr: curses.window, tempdir: str):
 def screen_switch_loop(tempdir: str):
     while True:
         try:
-            exit_reason = curses.wrapper(parallel_ui, tempdir)
+            exit_reason, screen_to_switch = curses.wrapper(parallel_ui, tempdir)
+            if screen_to_switch:
+                print(f"Switching to screen '{screen_to_switch}'... (Return with <ctrl>+a d)")
+                subprocess.run(['screen', '-r', screen_to_switch])
         except curses.error as exc:
             LOG.error(f"Curses error: {exc}")
             LOG.error("Could not start the curses interface. Is the terminal compatible?")
