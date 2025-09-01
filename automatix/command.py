@@ -96,7 +96,7 @@ class Command:
 
     @property
     def precommand(self):
-        return self.env.script.get('precommand', {}).get(self.get_type(), None)
+        return self.env.script.get('precommands', {}).get(self.get_type(), None)
 
     def get_type(self):
         if self.key == 'local':
