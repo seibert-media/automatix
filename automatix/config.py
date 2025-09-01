@@ -305,6 +305,12 @@ def validate_script(script: dict):
         raise ValidationError('"_constants" is not allowed as name for a constant. Please choose a different name.')
 
     warn = 0
+
+    if script.get('imports'):
+        LOG.warning('Using "imports" is deprecated. '
+                    'Please refactor your script or use the "precommand" feature instead.')
+        warn += 1
+
     for key, value in script.get('vars', {}).items():
         if str(value).startswith('FILE_'):
             LOG.warning(f'[vars:{key}] FILE_ feature was removed in 2.12.0.'

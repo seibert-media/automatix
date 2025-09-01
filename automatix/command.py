@@ -94,6 +94,10 @@ class Command:
         overall_command_count = self.env.batch_items_count * self.env.command_count
         return round(own_position / overall_command_count * 100, 1)
 
+    @property
+    def precommand(self):
+        return self.env.script.get('precommand', {}).get(self.get_type(), None)
+
     def get_type(self):
         if self.key == 'local':
             return 'local'
@@ -410,10 +414,13 @@ class Command:
             self.env.LOG.info(KEYBOARD_INTERRUPT_MESSAGE)
             return 130
 
-    def _build_command(self, path: str) -> str:
-        if not self.env.imports:
+    def _build_command(self, path: str = '') -> str:
+        if self.precommand:
+            return f'{self.precommand}; {self.get_resolved_value()}'
+        elif self.env.imports:
+            return f'. {path}/' + f'; . {path}/'.join(self.env.imports) + '; ' + self.get_resolved_value()
+        else:
             return self.get_resolved_value()
-        return f'. {path}/' + f'; . {path}/'.join(self.env.imports) + '; ' + self.get_resolved_value()
 
     def _run_local_command(self, cmd: str) -> int:
         process_environment = os.environ.copy()
@@ -459,7 +466,7 @@ class Command:
 
     def _get_remote_command(self, hostname: str) -> str:
         ssh_cmd = self.env.config["ssh_cmd"].format(hostname=hostname)
-        remote_cmd = self.get_resolved_value()
+        remote_cmd = self._build_command()
         prefix = ''
         if self.env.imports:
             # How is this working?

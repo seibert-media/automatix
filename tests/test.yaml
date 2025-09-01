@@ -12,7 +12,12 @@ systems:
 vars:
   myvar: huhu
 
+precommands: # only for main pipeline
+  local: . tests/test.sh
+  remote: . /tmp/test.sh
+
 always:  # <-- The always pipeline is executed even if you just want to print the commands!
+  - local: scp meinimportfile {SYSTEMS.testsystem}:/tmp/
   - local: echo 'Print this always :-)'
   - python: |  # <-- For multiline commands you can use YAML multiline strings (reference: https://yaml-multiline.info/)
       from uuid import uuid4
@@ -21,7 +26,8 @@ always:  # <-- The always pipeline is executed even if you just want to print th
       # We save all local variables (here the imports above) for usage in following commands:
       PERSISTENT_VARS.update(locals())
   - python: pprint('{myvar}')  # Test that our pprint import works and the "normal" way the use the vars.
-  - python: pprint(VARS.myvar)  # Alternative (new) way to access the variable in Python commands.
+  - python: pprint(VARS.myvar) # Alternative (new) way to access the variable in Python commands.
+  - local: scp tests/test.sh {SYSTEMS.testsystem}:/tmp/test.sh
 pipeline:
   - python: PVARS.moin = True  # We can also use the PERSISTENT_VARS shortcut PVARS to save variables for later use.
   - PVARS.moin?local: echo 'Moin'  # Instead of an Automatix variable, we can also use PVARS (only shortcut) in conditions.
@@ -33,6 +39,8 @@ pipeline:
   - python: del PERSISTENT_VARS['uuid4']  # Oh we can also delete a variable from PERSISTENT_VARS
   - a=local: uptime  # And we can overwrite them
   - remote@testsystem: whoami  # A remote command
+  - local: testfunction # Function which we sourced in our precommand
+  - remote@testsystem: testfunction # Same as the remote variant
   - cond=python: 'None' # Caution! It looks like a string and it is in YAML, but for Python it is the None value.
   - cond?python: |  # And that's why this condition is not met and will not be executed.
       print(f'Das ging wohl daneben: {SYSTEMS.testsystem}')
