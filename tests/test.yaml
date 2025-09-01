@@ -17,7 +17,6 @@ precommands: # only for main pipeline
   remote: . /tmp/test.sh
 
 always:  # <-- The always pipeline is executed even if you just want to print the commands!
-  - local: scp meinimportfile {SYSTEMS.testsystem}:/tmp/
   - local: echo 'Print this always :-)'
   - python: |  # <-- For multiline commands you can use YAML multiline strings (reference: https://yaml-multiline.info/)
       from uuid import uuid4
