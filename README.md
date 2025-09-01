@@ -232,9 +232,10 @@ The **scriptfile** has to contain valid YAML.
     secrets:
       web_user: v6GQag_username
       web_pw: v6GQag_password
-    # Imports for functions you like to use (path may be modified in configuration)
-    imports:
-      - myfunctions.sh
+    # Precommands, which are executed before each shell command in the main pipeline
+    precommands:
+      local: '. myfunctions'
+      remote: '. /tmp/myfunctions'
     # like command pipeline but will be exectuted always beforehand
     always:
       - python: |
@@ -298,12 +299,17 @@ You can refer to these systems in the command pipeline in multiple ways:
  The resolved secret values are accessible in command line via
  {secretname}. *(only if teamvault is enabled)*
 
-**imports** _(list)_
+**imports** _(list)_, deprecated
 : Listed shell files (see **CONFIGURATION** section, _import_path_)
  will be sourced before every local or remote command execution.
  For remote commands, these files are transferred via tar and ssh to
  your home directory on the remote system beforehand and deleted
  afterwards. This is meant to define some functions you may need.
+
+**precommands** _(associative array)_
+: Define a command which is executed before every shell command.
+ You can specify a command for local and remote commands separately.
+ This can be useful to source files with shell functions you want to use.
 
 **always**, **cleanup** _(list of associative arrays)_
 : See **ALWAYS / CLEANUP PIPELINE** section.
