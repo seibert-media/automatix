@@ -13,7 +13,7 @@
 - Conditions
 - Process multiple instances (defined in CSV file) sequentially or parallel (via GNU screen)
 
-- Import (source) Bash functions
+- Precommands for shell functions
 - Bundlewrap + Teamvault support
 
 - Shell completion
