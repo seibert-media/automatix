@@ -308,7 +308,7 @@ def validate_script(script: dict):
 
     if script.get('imports'):
         LOG.warning('Using "imports" is deprecated. '
-                    'Please refactor your script or use the "precommand" feature instead.')
+                    'Please refactor your script or use the "precommands" feature instead.')
         warn += 1
 
     for key, value in script.get('vars', {}).items():
