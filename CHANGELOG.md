@@ -1,5 +1,10 @@
 # Changelog
 
+# 2.13.0
+- Using "imports" is now deprecated
+- Feature: Precommands for shell commands
+- Fix: Curses crashes when switching screens in parallel mode
+
 # 2.12.0
 - Removed FILE_ Feature for variables (introduced in 1.2.0)
 
