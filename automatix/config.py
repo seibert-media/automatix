@@ -40,10 +40,8 @@ CONFIG = {
     'script_dir': '~/automatix-config',
     'constants': {},
     'encoding': 'utf-8',
-    'import_path': '.',
     'bash_path': '/bin/bash',
     'ssh_cmd': 'ssh {hostname} sudo ',
-    'remote_tmp_dir': 'automatix_tmp',
     'logger': 'automatix',
     'logfile_dir': 'automatix_logs',
     'bundlewrap': False,
@@ -307,7 +305,7 @@ def validate_script(script: dict):
     warn = 0
 
     if script.get('imports'):
-        LOG.warning('Using "imports" is deprecated. '
+        LOG.warning('The "imports" feature was removed in 3.0.0. '
                     'Please refactor your script or use the "precommands" feature instead.')
         warn += 1
 

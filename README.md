@@ -71,18 +71,12 @@ All (string) configuration values can be overwritten by the
     
     # Encoding
     encoding: 'utf-8'
-    
-    # Path for shell imports
-    import_path: '.'
 
     # Path to local bash (default: /bin/bash)
     bash_path: '/bin/bash'
     
     # SSH Command used for remote connections
     ssh_cmd: 'ssh {hostname} sudo '
-    
-    # Temporary directory on remote machines for shell imports
-    remote_tmp_dir: 'automatix_tmp'
     
     # Logger
     logger: 'mylogger'
@@ -299,13 +293,6 @@ You can refer to these systems in the command pipeline in multiple ways:
  The resolved secret values are accessible in command line via
  {secretname}. *(only if teamvault is enabled)*
 
-**imports** _(list)_, deprecated
-: Listed shell files (see **CONFIGURATION** section, _import_path_)
- will be sourced before every local or remote command execution.
- For remote commands, these files are transferred via tar and ssh to
- your home directory on the remote system beforehand and deleted
- afterwards. This is meant to define some functions you may need.
-
 **precommands** _(associative array)_
 : Define a command which is executed before every shell command.
  You can specify a command for local and remote commands separately.
@@ -515,10 +502,9 @@ Do the same with variable content like URLs, to make it possible to
  parameters.
 
 Preferred way of using **automatix** is to put often used and complex
- algorithms in shell functions or python libraries (shelllib/pylib)
- and import them. Advantage of this approach is that you can use your
- implemented functions multiple times and build up a toolbox of nice
- functionality over time.
+ algorithms in python libraries and import them. Advantage of this
+ approach is that you can use your  implemented functions multiple
+ times and build up a toolbox of nice functionality over time.
 
 
 # NOTES

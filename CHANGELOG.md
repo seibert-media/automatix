@@ -3,6 +3,7 @@
 # 3.0.0
 - Removed deprecated syntax and features:
   - `a_vars`
+  - "imports" feature (replaced with precommands)
 
 # 2.13.0
 - Using "imports" is now deprecated
