@@ -341,7 +341,7 @@ Here you define the commands automatix shall execute.
 4) **python**: Python code to execute.
    * `PERSISTENT_VARS`, `PVARS`, `SkipBatchItemException`, `AbortException`
      are available, see corresponding sections in **TIPS & TRICKS** 
-   * Notice that the variable `VARS` (deprecated `a_vars`) contains
+   * Notice that the variable `VARS` contains
      the Automatix variables as a dictionary. `VARS` supports also
      the attribute notation like `VARS.myvariable`. You can use it 
      to access or change the variables directly.
