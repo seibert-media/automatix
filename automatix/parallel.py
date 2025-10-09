@@ -23,7 +23,7 @@ class Autos:
     count: int
     tempdir: str
 
-    max_parallel: int = 2
+    max_parallel: int = 10
     waiting: list = field(default_factory=list)
     running: list = field(default_factory=list)
     user_input: list = field(default_factory=list)
