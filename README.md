@@ -76,7 +76,8 @@ All (string) configuration values can be overwritten by the
     bash_path: '/bin/bash'
     
     # SSH Command used for remote connections
-    ssh_cmd: 'ssh {hostname} sudo '
+    # You propably want -tt for pseudo-terminal allocation here.
+    ssh_cmd: 'ssh -tt {hostname} sudo '
     
     # Logger
     logger: 'mylogger'

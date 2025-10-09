@@ -41,7 +41,7 @@ CONFIG = {
     'constants': {},
     'encoding': 'utf-8',
     'bash_path': '/bin/bash',
-    'ssh_cmd': 'ssh {hostname} sudo ',
+    'ssh_cmd': 'ssh -tt {hostname} sudo ',
     'logger': 'automatix',
     'logfile_dir': 'automatix_logs',
     'bundlewrap': False,
@@ -254,6 +254,16 @@ def check_deprecated_syntax(ckey: str, entry: str, script: dict, prefix: str) ->
     return warn
 
 
+def check_command_syntax(script: dict) -> int:
+    warn = 0
+    for pipeline in ['always', 'pipeline', 'cleanup']:
+        for index, command in enumerate(script.get(pipeline, [])):
+            for ckey, entry in command.items():
+                warn += check_deprecated_syntax(ckey=ckey, entry=entry, script=script, prefix=f'[{pipeline}:{index}]')
+                break  # there always should be only one entry
+    return warn
+
+
 def check_version(version_str: str):
     installed_version = _tupelize(VERSION)
 
@@ -283,17 +293,10 @@ def check_version(version_str: str):
                 raise SyntaxError(f'Unknown operator "{operator}"')
 
         if not check_passed:
-            raise VersionError()
+            raise VersionError(f'The script requires version {version_str}. We have {VERSION}.')
 
 
-def validate_script(script: dict):
-    version_str = script.get('require_version', '0.0.0')
-    try:
-        check_version(version_str=version_str)
-    except VersionError:
-        LOG.error(f'The script requires version {version_str}. We have {VERSION}.')
-        sys.exit(1)
-
+def check_reserved_keys(script: dict):
     # This would collide with the command.SystemsWrapper.
     if '_systems' in script.get('systems', []):
         raise ValidationError('"_systems" is not allowed as name for a system. Please choose a different name.')
@@ -302,24 +305,44 @@ def validate_script(script: dict):
     if '_constants' in script.get('constants', []):
         raise ValidationError('"_constants" is not allowed as name for a constant. Please choose a different name.')
 
-    warn = 0
 
+def check_removed_features(script: dict) -> int:
+    warn = 0
     if script.get('imports'):
         LOG.warning('The "imports" feature was removed in 3.0.0. '
                     'Please refactor your script or use the "precommands" feature instead.')
         warn += 1
-
     for key, value in script.get('vars', {}).items():
         if str(value).startswith('FILE_'):
             LOG.warning(f'[vars:{key}] FILE_ feature was removed in 2.12.0.'
                         f' Please use: "- {key}=local: cat {value[5:]}" instead')
             warn += 1
+    return warn
 
-    for pipeline in ['always', 'pipeline', 'cleanup']:
-        for index, command in enumerate(script.get(pipeline, [])):
-            for ckey, entry in command.items():
-                warn += check_deprecated_syntax(ckey=ckey, entry=entry, script=script, prefix=f'[{pipeline}:{index}]')
-                break  # there always should be only one entry
+
+def check_proper_config() -> int:
+    warn = 0
+    if '-tt' not in CONFIG['ssh_cmd']:
+        LOG.warning(
+            'Your configured SSH command seems not to contain pseudo-terminal allocation.'
+            ' This may lead to a behaviour where signals like CTRL-C are not passed'
+            ' to a remote system and processes will still continue running.'
+        )
+        warn += 1
+
+    return warn
+
+
+def validate_script(script: dict):
+    version_str = script.get('require_version', '0.0.0')
+    check_version(version_str=version_str)
+    check_reserved_keys(script=script)
+
+    warn = 0
+    warn += check_proper_config()
+    warn += check_removed_features(script=script)
+    warn += check_command_syntax(script=script)
+
     if warn:
         # To give people a chance to see warnings before the following output happens.
         sleep(5)
