@@ -55,7 +55,7 @@ def test__check_deprecated_syntax__vars(caplog):
 
 def test__check_deprecated_syntax__a_vars(caplog):
     check_deprecated_syntax(ckey='python', entry='a_vars["myvar"] = xyz', script={}, prefix='[pipeline:7]')
-    assert '[pipeline:7] Using "a_vars["myvar"]" is deprecated. Use "VARS.myvar" instead.' in caplog.text
+    assert '[pipeline:7] Using "a_vars["myvar"]" does not work any longer. Use "VARS.myvar" instead.' in caplog.text
 
 
 @patch('automatix.config.VERSION', '2.1.5')

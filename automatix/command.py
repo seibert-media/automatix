@@ -350,7 +350,6 @@ class Command:
     def _generate_python_vars(self) -> dict:
         # For BWCommand this method is overridden
         return {
-            'a_vars': self.env.vars,  # deprecated, for backwards compatibility
             'VARS': self.env.vars,
         }
 
