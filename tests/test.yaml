@@ -40,6 +40,11 @@ pipeline:
   - remote@testsystem: whoami  # A remote command
   - local: testfunction # Function which we sourced in our precommand
   - remote@testsystem: testfunction # Same as the remote variant
+  - some_var=remote@testsystem: testfunction2
+  - remote@testsystem: testfunction2
+  - local: |
+      echo 'Was passiert eigentlich, wenn ich da jetzt ein CTRL-C in meiner Variable habe?'
+      echo [{some_var}]
   - cond=python: 'None' # Caution! It looks like a string and it is in YAML, but for Python it is the None value.
   - cond?python: |  # And that's why this condition is not met and will not be executed.
       print(f'Das ging wohl daneben: {SYSTEMS.testsystem}')

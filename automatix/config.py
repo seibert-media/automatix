@@ -41,7 +41,7 @@ CONFIG = {
     'constants': {},
     'encoding': 'utf-8',
     'bash_path': '/bin/bash',
-    'ssh_cmd': 'ssh -tt {hostname} sudo ',
+    'ssh_cmd': 'ssh -t {hostname} sudo ',
     'logger': 'automatix',
     'logfile_dir': 'automatix_logs',
     'bundlewrap': False,
@@ -322,7 +322,7 @@ def check_removed_features(script: dict) -> int:
 
 def check_proper_config() -> int:
     warn = 0
-    if '-tt' not in CONFIG['ssh_cmd']:
+    if '-t' not in CONFIG['ssh_cmd']:
         LOG.warning(
             'Your configured SSH command seems not to contain pseudo-terminal allocation.'
             ' This may lead to a behaviour where signals like CTRL-C are not passed'
