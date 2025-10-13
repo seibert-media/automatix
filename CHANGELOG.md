@@ -4,6 +4,7 @@
 - Removed deprecated syntax and features:
   - `a_vars`
   - "imports" feature (replaced with precommands)
+- Default for parallel screens is now 10
 
 # 2.13.0
 - Using "imports" is now deprecated

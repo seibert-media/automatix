@@ -555,7 +555,7 @@ The main programm stays in a loop while attaching to the screen sessions and you
  if you detach a screen session. The **automatix-manager** runs in its own screen session and is
  responsible for starting the automatix screens and status updates.
 
-By default the programm starts with 2 parallel automatix instances. Use the main programm loop controls
+By default the programm starts with 10 parallel automatix instances. Use the main programm loop controls
  to change the number of allowed parallel sessions (pressing 'm' followed by your desired number).
 
 If you force the programm to terminate (e.g. keyboard interrupt, process kill, ...),
