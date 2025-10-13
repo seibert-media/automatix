@@ -29,7 +29,7 @@ DEPRECATED_SYNTAX = {
     (r'{\s*const_(\w*)\s*}', '{{CONST.{group[0]}}}', 'r'),  # Removed in 2.0.0
     (r'(?<!\w)global\s+(\w*)', 'PERSISTENT_VARS[\'{group[0]}\'] = {group[0]}', 'pr'),  # Removed in 2.4.0
     (r'(?<!\w)vars\[[\'"](\w+)[\'"]\]', 'VARS.{group[0]}', 'pr'),  # Changed vars -> VARS in 2.6.0
-    (r'(?<!\w)a_vars\[[\'"](\w+)[\'"]\]', 'VARS.{group[0]}', 'p'),  # Changed a_vars -> VARS in 2.6.0
+    (r'(?<!\w)a_vars\[[\'"](\w+)[\'"]\]', 'VARS.{group[0]}', 'pr'),  # Removed in 3.0.0
 }
 
 SCRIPT_FIELDS = OrderedDict()
