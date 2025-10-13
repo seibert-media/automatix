@@ -143,6 +143,7 @@ def test__show_and_change_variables(mock_empty_queued_input_data: mock.MagicMock
         'myvar': 'huhu',
         'cond': '{cond}',
         'cond2': '{cond2}',
+        'some_var': '{some_var}',
     }
     with mock.patch.object(builtins, 'input', lambda _: 'var1=xyz'):
         cmd.show_and_change_variables()
@@ -159,6 +160,7 @@ def test__show_and_change_variables(mock_empty_queued_input_data: mock.MagicMock
         'cond': '{cond}',
         'cond2': '!dgkls=432',
         'var1': 'xyz',
+        'some_var': '{some_var}',
     }
 
     mock_empty_queued_input_data.assert_called()
