@@ -50,7 +50,6 @@ class PipelineEnvironment:
         self.name = script['name']
         self.script_file_path = script['_script_file_path']
         self.systems = script.get('systems', {})
-        self.imports = script.get('imports', [])
         self.batch_mode = script.get('_batch_mode', False)
         self.batch_items_count = script.get('_batch_items_count', 1)
 

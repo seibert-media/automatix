@@ -406,18 +406,16 @@ class Command:
             return 1
 
     def _local_action(self) -> int:
-        cmd = self._build_command(path=self.env.config['import_path'])
+        cmd = self._build_command()
         try:
             return self._run_local_command(cmd=cmd)
         except KeyboardInterrupt:
             self.env.LOG.info(KEYBOARD_INTERRUPT_MESSAGE)
             return 130
 
-    def _build_command(self, path: str = '') -> str:
+    def _build_command(self) -> str:
         if self.precommand:
             return f'{self.precommand}; {self.get_resolved_value()}'
-        elif self.env.imports:
-            return f'. {path}/' + f'; . {path}/'.join(self.env.imports) + '; ' + self.get_resolved_value()
         else:
             return self.get_resolved_value()
 
@@ -458,28 +456,11 @@ class Command:
             exitcode = 130
             self._remote_handle_keyboard_interrupt(hostname=hostname)
 
-        if self.env.imports:
-            self._remote_cleanup_imports(hostname=hostname)
-
         return exitcode
 
     def _get_remote_command(self, hostname: str) -> str:
         ssh_cmd = self.env.config["ssh_cmd"].format(hostname=hostname)
-        remote_cmd = self._build_command()
-        prefix = ''
-        if self.env.imports:
-            # How is this working?
-            # - Create a tar archive with all imports
-            # - Pipe it through SSH
-            # - Create tmp dir on remote
-            # - Extract tar archive there
-            # - Source imports in _build_command
-            prefix = f'tar -C {self.env.config["import_path"]} -cf - ' + ' '.join(self.env.imports) + ' | '
-            remote_cmd = f'mkdir {self.env.config["remote_tmp_dir"]};' \
-                         f' tar -C {self.env.config["remote_tmp_dir"]} -xf -;' \
-                         f' {self._build_command(path=self.env.config["remote_tmp_dir"])}'
-
-        return f'{prefix}{ssh_cmd}{quote("RUNNING_INSIDE_AUTOMATIX=1 bash -c " + quote(remote_cmd))}'
+        return f'{ssh_cmd}{quote("RUNNING_INSIDE_AUTOMATIX=1 bash -c " + quote(self._build_command()))}'
 
     def _remote_handle_keyboard_interrupt(self, hostname: str):
         ssh_cmd = self.env.config["ssh_cmd"].format(hostname=hostname)
@@ -536,19 +517,6 @@ class Command:
         ).decode(self.env.config["encoding"]).split()
 
         return pids
-
-    def _remote_cleanup_imports(self, hostname: str):
-        ssh_cmd = self.env.config["ssh_cmd"].format(hostname=hostname)
-        cleanup_cmd = f'{ssh_cmd} rm -r {self.env.config["remote_tmp_dir"]}'
-        self.env.LOG.debug(f'Executing: {cleanup_cmd}')
-        proc = subprocess.run(cleanup_cmd, shell=True, executable=self.bash_path)
-        if proc.returncode != 0:
-            self.env.LOG.warning(
-                'Failed to remove {tmp_dir}, exitcode: {return_code}'.format(
-                    tmp_dir=self.env.config["remote_tmp_dir"],
-                    return_code=proc.returncode,
-                )
-            )
 
 
 def parse_key(key) -> tuple[str, ...]:

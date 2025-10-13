@@ -10,17 +10,11 @@ constants:
 # Encoding
 encoding: 'utf-8'
 
-# Path to shell imports
-import_path: '.'
-
 # Path to local bash (default: /bin/bash)
 bash_path: '/bin/bash'
 
 # SSH Command used for remote connections
 ssh_cmd: 'ssh {hostname} sudo '
-
-# Temporary directory on remote machines for shell imports
-remote_tmp_dir: 'automatix_tmp'
 
 # Logger
 logger: 'mylogger'
