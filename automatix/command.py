@@ -3,6 +3,7 @@ import re
 import subprocess
 from code import InteractiveConsole
 from dataclasses import dataclass
+from pathlib import Path
 from shlex import quote
 from time import time
 
@@ -291,6 +292,8 @@ class Command:
         empty_queued_input_data()
         answer = input(question)
         self.env.send_status('user_input_remove')
+        if self.env.config['progress_bar']:
+            draw_progress_bar(self.progress_portion)
 
         if answer == '':  # default
             answer = PA.proceed.answer
@@ -422,6 +425,8 @@ class Command:
     def _run_local_command(self, cmd: str) -> int:
         process_environment = os.environ.copy()
         process_environment['RUNNING_INSIDE_AUTOMATIX'] = '1'
+        process_environment['AUTOMATIX_SCRIPT_LOCATION'] = str(self.env.script_file_path.parent)
+        process_environment['AUTOMATIX_SCRIPT_NAME'] = str(self.env.script_file_path.name)
         self.env.LOG.debug(f'Executing: {repr(cmd)} with environment {repr(process_environment)}')
         if self.assignment_var:
             proc = subprocess.run(
