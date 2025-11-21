@@ -1,5 +1,6 @@
 from argparse import Namespace
 from logging import getLogger
+from pathlib import Path
 
 from .config import init_logger
 
@@ -48,7 +49,7 @@ class PipelineEnvironment:
         self.cmd_args = cmd_args
 
         self.name = script['name']
-        self.script_file_path = script['_script_file_path']
+        self.script_file_path = Path(script['_script_file_path'])
         self.systems = script.get('systems', {})
         self.batch_mode = script.get('_batch_mode', False)
         self.batch_items_count = script.get('_batch_items_count', 1)
