@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.1.0
+- Feature: Add AUTOMATIX_SCRIPT_LOCATION and AUTOMATIX_SCRIPT_NAME as environment variables for shell actions
+
 # 3.0.0
 - Removed deprecated syntax and features:
   - `a_vars`
