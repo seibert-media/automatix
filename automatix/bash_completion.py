@@ -5,7 +5,7 @@ from argparse import Action, Namespace
 
 from argcomplete import warn
 
-from .helpers import read_yaml
+from .helpers import read_yaml, search_script
 
 
 def _call(*args, **kwargs):
@@ -52,9 +52,10 @@ class ScriptFieldCompleter:
             if parsed_args.scriptfile is None:
                 return []
 
-            s_file = parsed_args.scriptfile
-            if not os.path.isfile(parsed_args.scriptfile):
-                s_file = f'{self.script_dir}/{parsed_args.scriptfile}'
+            s_file = search_script(name=parsed_args.scriptfile, script_dir=self.script_dir, non_interactive=True)
+            if not s_file:
+                warn('Script not found or multiple options. Cannot complete.')
+                return []
 
             script = read_yaml(s_file)
             completion = [f'{key}=' for key in script.get(action.dest, {}).keys()]

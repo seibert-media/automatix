@@ -8,7 +8,7 @@ from importlib import metadata, import_module
 from time import sleep
 
 from .colors import red
-from .helpers import read_yaml, selector
+from .helpers import read_yaml, selector, search_script
 
 try:
     from argcomplete import autocomplete
@@ -173,16 +173,6 @@ def _tupelize(string) -> tuple:
     return tuple([int(i) for i in string.split('.')])
 
 
-def search_script(name: str) -> str:
-    paths = []
-    for dirpath, dirnames, filenames in os.walk(SCRIPT_DIR):
-        for filename in filenames:
-            if filename == name:
-                path = str(os.path.join(dirpath, filename))
-                paths.append((path, path))  # Second one is the label for the selector
-    return selector(entries=paths, message='Script found at multiple locations. Please choose:')
-
-
 def get_script_path(name: str):
     s_file = name
     LOG.debug(f'Scriptfile input: {s_file}')
@@ -194,7 +184,7 @@ def get_script_path(name: str):
     if not os.path.isfile(s_file):
         LOG.debug('Script not found at relative path from SCRIPT_DIR')
         # Third search and offer selection
-        s_file = search_script(name=name)
+        s_file = search_script(name=name, script_dir=SCRIPT_DIR)
     if not s_file:
         LOG.debug('Script not found at all.')
         raise ValueError('Script not found')
