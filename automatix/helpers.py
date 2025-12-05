@@ -41,6 +41,18 @@ def selector(entries: List[tuple], message: str = 'Found multiple entries, pleas
                 return selector(entries)
 
 
+def search_script(name: str, script_dir: str, non_interactive: bool = False) -> str | None:
+    paths = []
+    for dirpath, dirnames, filenames in os.walk(script_dir):
+        for filename in filenames:
+            if filename == name:
+                path = str(os.path.join(dirpath, filename))
+                paths.append((path, path))  # Second one is the label for the selector
+    if non_interactive and len(paths) != 1:
+        return None
+    return selector(entries=paths, message='Script found at multiple locations. Please choose:')
+
+
 class FileWithLock:
     def __init__(self, file_path: str, method: str):
         self.file_path = file_path
