@@ -1,4 +1,3 @@
-import builtins
 from copy import deepcopy
 from subprocess import CalledProcessError
 from unittest import mock
@@ -135,8 +134,7 @@ def test__parse_key():
     assert parse_key('is_jira!?python') == ('is_jira!', None, 'python')
 
 
-@mock.patch('automatix.command.empty_queued_input_data')
-def test__show_and_change_variables(mock_empty_queued_input_data: mock.MagicMock):
+def test__show_and_change_variables():
     cmd = Command(cmd={'python': 'pass'}, index=2, pipeline='pipeline', env=deepcopy(environment), position=1)
     assert cmd.env.vars == {
         'a': '{a}',
@@ -145,15 +143,17 @@ def test__show_and_change_variables(mock_empty_queued_input_data: mock.MagicMock
         'cond2': '{cond2}',
         'some_var': '{some_var}',
     }
-    with mock.patch.object(builtins, 'input', lambda _: 'var1=xyz'):
+
+    with mock.patch.object(
+            cmd.env,
+            'interact',
+            side_effect=['var1=xyz', 'myvar=hallo', ' cond2  =  !dgkls=432 \n\t  ']
+    ) as mock_interact:
+        cmd.show_and_change_variables()
+        cmd.show_and_change_variables()
         cmd.show_and_change_variables()
 
-    with mock.patch.object(builtins, 'input', lambda _: 'myvar=hallo'):
-        cmd.show_and_change_variables()
-
-    with mock.patch.object(builtins, 'input', lambda _: ' cond2  =  !dgkls=432 \n\t  '):
-        cmd.show_and_change_variables()
-
+    assert mock_interact.call_count == 3
     assert cmd.env.vars == {
         'a': '{a}',
         'myvar': 'hallo',
@@ -162,5 +162,3 @@ def test__show_and_change_variables(mock_empty_queued_input_data: mock.MagicMock
         'var1': 'xyz',
         'some_var': '{some_var}',
     }
-
-    mock_empty_queued_input_data.assert_called()

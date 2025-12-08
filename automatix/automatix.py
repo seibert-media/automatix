@@ -100,9 +100,11 @@ class Automatix:
         warn = 0
         for key, value in self.env.vars.items():
             if isinstance(value, str) and value.lower() == 'false':
-                self.env.LOG.warning(f'[vars:{key}] This variable is a string with value "{value}".'
-                                     ' Be aware that this becomes `True` for conditions and other boolean operations without conversion,'
-                                     ' because any non-empty string in Python is evaluated as `True`.')
+                self.env.LOG.warning(
+                    f'[vars:{key}] This variable is a string with value "{value}".'
+                    ' Be aware that this becomes `True` for conditions and other boolean operations without conversion,'
+                    ' because any non-empty string in Python is evaluated as `True`.'
+                )
                 warn += 1
 
         if warn:
