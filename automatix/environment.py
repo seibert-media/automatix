@@ -3,6 +3,8 @@ from logging import getLogger
 from pathlib import Path
 
 from .config import init_logger
+from .helpers import empty_queued_input_data
+from .progress_bar import block_progress_bar, draw_progress_bar
 
 
 class AttributedDict(dict):
@@ -70,3 +72,14 @@ class PipelineEnvironment:
     def send_status(self, status: str):
         # In parallel processing this method is overwritten to communicate with the UI
         return
+
+    def interact(self, question: str, progress_portion: int = None) -> str:
+        if progress_portion is not None and self.config['progress_bar']:
+            block_progress_bar(progress_portion)
+        self.send_status('user_input_add')
+        empty_queued_input_data()
+        answer = input(question)
+        self.send_status('user_input_remove')
+        if progress_portion is not None and self.config['progress_bar']:
+            draw_progress_bar(progress_portion)
+        return answer
