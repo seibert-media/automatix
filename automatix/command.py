@@ -3,13 +3,12 @@ import re
 import subprocess
 from code import InteractiveConsole
 from dataclasses import dataclass
-from pathlib import Path
 from shlex import quote
 from time import time
 
+from .colors import italic, yellow
 from .environment import PipelineEnvironment, AttributedDict, AttributedDummyDict
-from .helpers import empty_queued_input_data
-from .progress_bar import draw_progress_bar, block_progress_bar
+from .progress_bar import draw_progress_bar
 
 PERSISTENT_VARS = PVARS = AttributedDict()
 
@@ -129,15 +128,20 @@ class Command:
     def show_and_change_variables(self):
         print()
         self.env.LOG.info('Variables:')
+        keylen = max([len(key) for key in self.env.vars.keys()])
+        typelen = len(italic(yellow(''))) + 4
         for key, value in self.env.vars.items():
-            self.env.LOG.info(f" {key}: {value}")
+            self.env.LOG.info(f" {key:<{keylen+1}}:{italic(yellow(type(value).__name__)):<{typelen}} {value}")
         print()
         self.env.LOG.info('To change/set variable write variable + "=" followed by value.')
         self.env.LOG.info('Example: var1=xyz')
-        self.env.LOG.info('Notice: You can only change 1 variable at a time. Repeat if necessary.')
+        print()
+        self.env.LOG.info('You can only change 1 variable at a time. Repeat if necessary.')
+        self.env.LOG.info('Notice: All values are strings here! Use python debugging shell '
+                          'and the VARS dictionary to assign values with other types.')
+        print()
         self.env.LOG.info('To not change anything just press "ENTER".')
-        empty_queued_input_data()
-        answer = input('\n')
+        answer = self.env.interact('\n', progress_portion=self.progress_portion)
         try:
             key, value = answer.split('=', maxsplit=1)
             self.env.vars[key.strip()] = value.strip()
@@ -286,14 +290,7 @@ class Command:
         Asks user and handles all answers except PA.retry, PA.skip and PA.proceed.
         Retry, skip and proceed require different handling, based on where in the code the function is called.
         """
-        if self.env.config['progress_bar']:
-            block_progress_bar(self.progress_portion)
-        self.env.send_status('user_input_add')
-        empty_queued_input_data()
-        answer = input(question)
-        self.env.send_status('user_input_remove')
-        if self.env.config['progress_bar']:
-            draw_progress_bar(self.progress_portion)
+        answer = self.env.interact(question, progress_portion=self.progress_portion)
 
         if answer == '':  # default
             answer = PA.proceed.answer
@@ -486,12 +483,12 @@ class Command:
                         ' parallel or in background, be aware that the signals chosen are sent to ALL'
                         ' identified processes. This is probably not what you want!'
                     )
-                self.env.send_status('user_input_add')
-                empty_queued_input_data()
-                answer = input(
+
+                answer = self.env.interact(
                     '[RR] What should I do? '
-                    '(i: send SIGINT (default), t: send SIGTERM, k: send SIGKILL, p: do nothing and proceed) \n\a')
-                self.env.send_status('user_input_remove')
+                    '(i: send SIGINT (default), t: send SIGTERM, k: send SIGKILL, p: do nothing and proceed) \n\a',
+                    progress_portion=self.progress_portion,
+                )
 
                 if answer == 'p':
                     break

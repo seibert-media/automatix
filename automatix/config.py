@@ -8,7 +8,7 @@ from importlib import metadata, import_module
 from time import sleep
 
 from .colors import red
-from .helpers import read_yaml, selector, search_script
+from .helpers import read_yaml, search_script
 
 try:
     from argcomplete import autocomplete

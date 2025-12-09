@@ -1,5 +1,4 @@
 import locale
-import os
 import subprocess
 from argparse import Action, Namespace
 
