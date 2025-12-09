@@ -95,6 +95,7 @@ class Automatix:
         self.env.LOG.info('Commandline Steps:')
         for cmd in command_list:
             self.env.LOG.info(f"({cmd.index}) [{cmd.orig_key}]: {cmd.get_resolved_value(dummy=True)}")
+        print()
 
     def check_possibly_dangerous_vars(self):
         warn = 0

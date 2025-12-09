@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from shlex import quote
 from time import time
 
+from .colors import italic, yellow
 from .environment import PipelineEnvironment, AttributedDict, AttributedDummyDict
 from .progress_bar import draw_progress_bar
 
@@ -127,8 +128,10 @@ class Command:
     def show_and_change_variables(self):
         print()
         self.env.LOG.info('Variables:')
+        keylen = max([len(key) for key in self.env.vars.keys()])
+        typelen = len(italic(yellow(''))) + 4
         for key, value in self.env.vars.items():
-            self.env.LOG.info(f" {key}: {value}")
+            self.env.LOG.info(f" {key:<{keylen+1}}:{italic(yellow(type(value).__name__)):<{typelen}} {value}")
         print()
         self.env.LOG.info('To change/set variable write variable + "=" followed by value.')
         self.env.LOG.info('Example: var1=xyz')
