@@ -135,7 +135,11 @@ class Command:
         print()
         self.env.LOG.info('To change/set variable write variable + "=" followed by value.')
         self.env.LOG.info('Example: var1=xyz')
-        self.env.LOG.info('Notice: You can only change 1 variable at a time. Repeat if necessary.')
+        print()
+        self.env.LOG.info('You can only change 1 variable at a time. Repeat if necessary.')
+        self.env.LOG.info('Notice: All values are strings here! Use python debugging shell '
+                          'and the VARS dictionary to assign values with other types.')
+        print()
         self.env.LOG.info('To not change anything just press "ENTER".')
         answer = self.env.interact('\n', progress_portion=self.progress_portion)
         try:
