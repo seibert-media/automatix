@@ -95,6 +95,23 @@ class Automatix:
         self.env.LOG.info('Commandline Steps:')
         for cmd in command_list:
             self.env.LOG.info(f"({cmd.index}) [{cmd.orig_key}]: {cmd.get_resolved_value(dummy=True)}")
+        print()
+
+    def check_possibly_dangerous_vars(self):
+        warn = 0
+        for key, value in self.env.vars.items():
+            if isinstance(value, str) and value.lower() == 'false':
+                self.env.LOG.warning(
+                    f'[vars:{key}] This variable is a string with value "{value}".'
+                    ' Be aware that this becomes `True` for conditions and other boolean operations without conversion,'
+                    ' because any non-empty string in Python is evaluated as `True`.'
+                )
+                warn += 1
+
+        if warn:
+            answer = self.env.interact(question='Do you want to proceed? Then type "yes" and ENTER.\n')
+            if answer != 'yes':
+                sys.exit(0)
 
     def _execute_command_list(self, name: str, start_index: int, treat_as_main: bool):
         try:
@@ -149,8 +166,9 @@ class Automatix:
 
         self.print_main_data()
         self.print_command_line_steps(command_list=self.command_list('main'))
+        self.check_possibly_dangerous_vars()
         if self.env.cmd_args.print_overview:
-            sys.exit()
+            sys.exit(0)
 
         try:
             self.execute_pipeline(name='main')
