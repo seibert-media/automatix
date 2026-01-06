@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.2.0 (not released yet)
+- Optional Dependencies: Renaming "bash completion" -> "shell_completion"
+- Reworked progress bar
+
 # 3.1.0
 - Feature: Add AUTOMATIX_SCRIPT_LOCATION and AUTOMATIX_SCRIPT_NAME as environment variables for shell actions
 
