@@ -1,6 +1,6 @@
-import curses
 import shutil
 from time import time
+
 from tqdm import tqdm
 
 
@@ -41,17 +41,7 @@ class TqdmProgressBar:
         self.start_time = 0
 
     def setup(self):
-        # Setup curses support (to get information about the terminal we are running in)
-        # This was in the original code and might be necessary for some terminals
-        try:
-            curses.setupterm()
-        except Exception:
-            pass
-
-        # Setup start time for ETA calculation
         self.start_time = time()
-
-        # Get terminal size
         cols, lines = shutil.get_terminal_size()
 
         # We reserve the last line for the bar AND one empty line above it.
@@ -69,7 +59,7 @@ class TqdmProgressBar:
         Cursor.set_scroll_region(0, scroll_region_bottom)
 
         Cursor.restore()
-        
+
         # Move cursor up twice because we scrolled down twice? 
         # Actually, CODE_CURSOR_IN_SCROLL_AREA moves up 1 line.
         # If we are at the bottom, and region ends at lines-2...
@@ -110,12 +100,12 @@ class TqdmProgressBar:
         )
 
         print(bar_str, end='', flush=True)
-        
+
         # Also clear the line above the bar (the separator line) to keep it clean
         # Move cursor up one line
         Cursor.move_to(lines - 1, 0)
         Cursor.clear_line()
-        
+
         Cursor.restore()
 
     def block(self, percentage: int | None):
@@ -135,15 +125,15 @@ class TqdmProgressBar:
 
         # We are done so clear the scroll bar and the separator line
         Cursor.save()
-        
+
         # Clear bar line
         Cursor.move_to(lines, 0)
         Cursor.clear_line()
-        
+
         # Clear separator line
         Cursor.move_to(lines - 1, 0)
         Cursor.clear_line()
-        
+
         Cursor.restore()
 
         # Scroll down a bit to avoid visual glitch when the screen area grows by one row
