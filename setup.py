@@ -20,7 +20,8 @@ setup(
     ],
     extras_require={
         'tests': ['cython<3.0.0', 'pytest', 'pytest-docker', 'flake8'],
-        'bash completion': ['argcomplete'],
+        'shell_completion': ['argcomplete'],
+        'progress_bar': ['tqdm>=4.66.0'],
     },
     packages=find_packages(),
     entry_points={
