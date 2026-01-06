@@ -3,14 +3,37 @@ import shutil
 from time import time
 from tqdm import tqdm
 
-# ANSI Codes
-CODE_SAVE_CURSOR = "\033[s"
-CODE_RESTORE_CURSOR = "\033[u"
-CODE_CURSOR_IN_SCROLL_AREA = "\033[1A"
 
+class Cursor:
+    @staticmethod
+    def _print(code: str):
+        print(code, end='', flush=True)
 
-def _print_control_code(code):
-    print(code, end='', flush=True)
+    @staticmethod
+    def save():
+        Cursor._print("\033[s")
+
+    @staticmethod
+    def restore():
+        Cursor._print("\033[u")
+
+    @staticmethod
+    def move_up(lines: int = 1):
+        Cursor._print(f"\033[{lines}A")
+
+    @staticmethod
+    def move_to(row: int, col: int):
+        Cursor._print(f"\033[{row};{col}f")
+
+    @staticmethod
+    def clear_line():
+        Cursor._print("\033[2K")
+
+    @staticmethod
+    def set_scroll_region(top: int, bottom: int):
+        # ANSI standard is 1-based.
+        # Original code used 0, which most terminals treat as 1.
+        Cursor._print(f"\033[{top};{bottom}r")
 
 
 class TqdmProgressBar:
@@ -36,25 +59,23 @@ class TqdmProgressBar:
         scroll_region_bottom = lines - 2
 
         # Scroll down a bit to avoid visual glitch when the screen area shrinks by one row
-        _print_control_code("\n\n")
+        print("\n\n", end='', flush=True)
 
-        # Save cursor
-        _print_control_code(CODE_SAVE_CURSOR)
+        Cursor.save()
 
         # Set scroll region (this will place the cursor in the top left usually)
-        # ANSI: ESC [ {top} ; {bottom} r
         # Note: Original code used 0;...r. ANSI standard is 1-based. 
         # Most terminals treat 0 as 1. We stick to the original logic to be safe.
-        _print_control_code(f"\033[0;{scroll_region_bottom}r")
+        Cursor.set_scroll_region(0, scroll_region_bottom)
 
-        # Restore cursor but ensure its inside the scrolling area
-        _print_control_code(CODE_RESTORE_CURSOR)
+        Cursor.restore()
+        
         # Move cursor up twice because we scrolled down twice? 
         # Actually, CODE_CURSOR_IN_SCROLL_AREA moves up 1 line.
         # If we are at the bottom, and region ends at lines-2...
         # Let's just restore and move up to be safe inside the region.
-        _print_control_code(CODE_CURSOR_IN_SCROLL_AREA)
-        _print_control_code(CODE_CURSOR_IN_SCROLL_AREA)
+        Cursor.move_up()
+        Cursor.move_up()
 
         # Draw initial empty progress bar
         self.draw(0)
@@ -65,14 +86,13 @@ class TqdmProgressBar:
 
         cols, lines = shutil.get_terminal_size()
 
-        # Save cursor
-        _print_control_code(CODE_SAVE_CURSOR)
+        Cursor.save()
 
         # Move cursor position to last row
-        _print_control_code(f"\033[{lines};0f")
+        Cursor.move_to(lines, 0)
 
         # Clear progress bar line
-        _print_control_code("\033[2K")
+        Cursor.clear_line()
 
         # Calculate stats for tqdm
         elapsed = time() - self.start_time
@@ -93,16 +113,10 @@ class TqdmProgressBar:
         
         # Also clear the line above the bar (the separator line) to keep it clean
         # Move cursor up one line
-        _print_control_code(f"\033[{lines-1};0f")
-        _print_control_code("\033[2K")
+        Cursor.move_to(lines - 1, 0)
+        Cursor.clear_line()
         
-        # Draw a separator line? Or just empty?
-        # Let's draw a thin separator line using unicode box drawing characters if you like?
-        # Or just keep it empty. Empty is cleaner.
-        # print("─" * (cols-1), end='', flush=True) 
-
-        # Restore cursor position
-        _print_control_code(CODE_RESTORE_CURSOR)
+        Cursor.restore()
 
     def block(self, percentage: int | None):
         self.draw(percentage, color='yellow')
@@ -110,29 +124,27 @@ class TqdmProgressBar:
     def destroy(self):
         cols, lines = shutil.get_terminal_size()
 
-        # Save cursor
-        _print_control_code(CODE_SAVE_CURSOR)
+        Cursor.save()
 
         # Reset scroll region (0 to lines -> full screen)
-        _print_control_code(f"\033[0;{lines}r")
+        Cursor.set_scroll_region(0, lines)
 
-        # Restore cursor
-        _print_control_code(CODE_RESTORE_CURSOR)
-        _print_control_code(CODE_CURSOR_IN_SCROLL_AREA)
-        _print_control_code(CODE_CURSOR_IN_SCROLL_AREA)
+        Cursor.restore()
+        Cursor.move_up()
+        Cursor.move_up()
 
         # We are done so clear the scroll bar and the separator line
-        _print_control_code(CODE_SAVE_CURSOR)
+        Cursor.save()
         
         # Clear bar line
-        _print_control_code(f"\033[{lines};0f")
-        _print_control_code("\033[2K")
+        Cursor.move_to(lines, 0)
+        Cursor.clear_line()
         
         # Clear separator line
-        _print_control_code(f"\033[{lines-1};0f")
-        _print_control_code("\033[2K")
+        Cursor.move_to(lines - 1, 0)
+        Cursor.clear_line()
         
-        _print_control_code(CODE_RESTORE_CURSOR)
+        Cursor.restore()
 
         # Scroll down a bit to avoid visual glitch when the screen area grows by one row
-        _print_control_code("\n\n\n")
+        print("\n\n\n", end='', flush=True)
