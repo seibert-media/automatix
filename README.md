@@ -587,7 +587,8 @@ Automatix will recognize the installed module and offer the completion automatic
 
 ## Progress bar (experimental)
 You can activate an "apt-like" progress bar based on the amount of commands
- by setting the configuration option `progress_bar` to `True` (config file or environment).
+ by installing tqdm (`pip install tqdm`) and setting the configuration
+ option `progress_bar` to `True` (config file or environment).
 
 The status on the right displays `[elapsed time<remaining time, rate]`,
  where rate is percentage/second if fast and second/percentage if slow.

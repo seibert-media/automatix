@@ -6,10 +6,9 @@ import sys
 from time import time, strftime, gmtime
 
 from .batch_runner import get_script_and_batch_items, run_batch_items
-from .config import init_logger, CONFIG, LOG, VERSION, arguments, MAGIC_SELECTION_INT
+from .config import init_logger, CONFIG, LOG, VERSION, arguments, MAGIC_SELECTION_INT, progress_bar
 from .helpers import empty_queued_input_data, selector
 from .parallel_runner import run_parallel_screens
-from .progress_bar import setup_scroll_area, destroy_scroll_area
 
 
 def check_for_original_automatix():
@@ -97,13 +96,10 @@ def main():
         sys.exit(0)
 
     try:
-        if CONFIG['progress_bar']:
-            setup_scroll_area()
-
+        progress_bar.setup()
         run_batch_items(script=script, batch_items=batch_items, args=args)
     finally:
-        if CONFIG['progress_bar']:
-            destroy_scroll_area()
+        progress_bar.destroy()
 
     if 'AUTOMATIX_TIME' in os.environ:
         LOG.info(f'The Automatix script took {round(time() - starttime)}s!')

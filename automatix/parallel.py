@@ -9,9 +9,8 @@ from time import sleep, strftime, gmtime
 
 from .batch_runner import run_automatix_list
 from .colors import yellow, green, red, cyan
-from .config import LOG, init_logger, CONFIG
+from .config import LOG, init_logger, CONFIG, progress_bar
 from .helpers import FileWithLock
-from .progress_bar import setup_scroll_area, destroy_scroll_area
 
 STATUS_TEMPLATE = 'waiting: {w}, running: {r}, user input required: {u}, finished: {f}'
 
@@ -188,10 +187,8 @@ def run_auto_from_file():
     args = parser.parse_args()
 
     try:
-        if CONFIG['progress_bar']:
-            setup_scroll_area()
+        progress_bar.setup()
 
         run_auto(tempdir=args.tempdir, time_id=args.time_id, auto_file=args.auto_file)
     finally:
-        if CONFIG['progress_bar']:
-            destroy_scroll_area()
+        progress_bar.destroy()
