@@ -8,7 +8,7 @@ from importlib import metadata, import_module
 from time import sleep
 
 from .colors import red
-from .helpers import read_yaml, search_script
+from .helpers import read_yaml, search_script, JustDoNothing
 
 try:
     from argcomplete import autocomplete
@@ -87,6 +87,15 @@ if CONFIG['teamvault']:
     import bwtv
 
     SCRIPT_FIELDS['secrets'] = 'Secrets'
+
+progress_bar = JustDoNothing()
+if CONFIG['progress_bar']:
+    try:
+        from .progress_bar import TqdmProgressBar
+
+        progress_bar = TqdmProgressBar()
+    except ImportError:
+        pass
 
 
 def create_parser() -> argparse.ArgumentParser:

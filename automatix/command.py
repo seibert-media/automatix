@@ -7,8 +7,8 @@ from shlex import quote
 from time import time
 
 from .colors import italic, yellow
+from .config import progress_bar
 from .environment import PipelineEnvironment, AttributedDict, AttributedDummyDict
-from .progress_bar import draw_progress_bar
 
 PERSISTENT_VARS = PVARS = AttributedDict()
 
@@ -165,8 +165,7 @@ class Command:
             # _ask_user handles are answers but PA.retry, PA.skip, PA.proceed
             # PA.retry and PA.proceed are not in allowed options
             # PA.skip means 'skip' so we can just go on
-        if self.env.config['progress_bar']:
-            draw_progress_bar(self.progress_portion)
+        progress_bar.draw(self.progress_portion)
 
     def _execute(self, interactive: bool = False, force: bool = False):
         self.print_command()

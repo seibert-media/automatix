@@ -1,21 +1,8 @@
-# Most of the code in this file is copied from or inspired by
-# https://github.com/pollev/python_progress_bar/blob/master/python_progress_bar/progress_bar.py
-
 import curses
 import os
-
 from time import time
 
-# Usage:
-# setup_scroll_area()              <- create empty progress bar
-# draw_progress_bar(10)            <- advance progress bar
-# draw_progress_bar(40)            <- advance progress bar
-# block_progress_bar(45)           <- turns the progress bar yellow to indicate some action is requested from the user
-# draw_progress_bar(90)            <- advance progress bar
-# destroy_scroll_area()            <- remove progress bar
-
-
-# Constants
+# ANSI Codes
 CODE_SAVE_CURSOR = "\033[s"
 CODE_RESTORE_CURSOR = "\033[u"
 CODE_CURSOR_IN_SCROLL_AREA = "\033[1A"
@@ -26,181 +13,175 @@ RESTORE_FG = '\033[39m'
 RESTORE_BG = '\033[49m'
 
 
-class ProgressStatus:
-    progress_blocked = False
-    current_nr_lines = 0
-    start_time = 0
-    rate_bar = True
+class TqdmProgressBar:
+    def __init__(self):
+        self.start_time = 0
+        self.current_nr_lines = 0
+        self.progress_blocked = False
+        self.rate_bar = True
 
+    def _get_current_nr_lines(self):
+        stream = os.popen('tput lines')
+        output = stream.read()
+        return int(output)
 
-def get_current_nr_lines():
-    stream = os.popen('tput lines')
-    output = stream.read()
-    return int(output)
+    def _get_current_nr_cols(self):
+        stream = os.popen('tput cols')
+        output = stream.read()
+        return int(output)
 
+    def _print_control_code(self, code):
+        print(code, end='', flush=True)
 
-def get_current_nr_cols():
-    stream = os.popen('tput cols')
-    output = stream.read()
-    return int(output)
+    def _tput(self, cmd, *args):
+        print(curses.tparm(curses.tigetstr("el")).decode(), end='', flush=True)
 
+    def setup(self, rate_bar=True):
+        # Enable/disable right side of progress bar with statistics
+        self.rate_bar = rate_bar
+        # Setup curses support (to get information about the terminal we are running in)
+        curses.setupterm()
 
-def setup_scroll_area(rate_bar=True):
-    # Enable/disable right side of progress bar with statistics
-    ProgressStatus.rate_bar = rate_bar
-    # Setup curses support (to get information about the terminal we are running in)
-    curses.setupterm()
+        self.current_nr_lines = self._get_current_nr_lines()
+        lines = self.current_nr_lines - 1
+        # Scroll down a bit to avoid visual glitch when the screen area shrinks by one row
+        self._print_control_code("\n")
 
-    ProgressStatus.current_nr_lines = get_current_nr_lines()
-    lines = ProgressStatus.current_nr_lines - 1
-    # Scroll down a bit to avoid visual glitch when the screen area shrinks by one row
-    __print_control_code("\n")
+        # Save cursor
+        self._print_control_code(CODE_SAVE_CURSOR)
+        # Set scroll region (this will place the cursor in the top left)
+        self._print_control_code("\033[0;" + str(lines) + "r")
 
-    # Save cursor
-    __print_control_code(CODE_SAVE_CURSOR)
-    # Set scroll region (this will place the cursor in the top left)
-    __print_control_code("\033[0;" + str(lines) + "r")
+        # Restore cursor but ensure its inside the scrolling area
+        self._print_control_code(CODE_RESTORE_CURSOR)
+        self._print_control_code(CODE_CURSOR_IN_SCROLL_AREA)
 
-    # Restore cursor but ensure its inside the scrolling area
-    __print_control_code(CODE_RESTORE_CURSOR)
-    __print_control_code(CODE_CURSOR_IN_SCROLL_AREA)
+        # Start empty progress bar
+        self.draw(0)
 
-    # Start empty progress bar
-    draw_progress_bar(0)
+        # Setup start time
+        self.start_time = time()
 
-    # Setup start time
-    ProgressStatus.start_time = time()
+    def destroy(self):
+        lines = self._get_current_nr_lines()
+        # Save cursor
+        self._print_control_code(CODE_SAVE_CURSOR)
+        # Set scroll region (this will place the cursor in the top left)
+        self._print_control_code("\033[0;" + str(lines) + "r")
 
+        # Restore cursor but ensure its inside the scrolling area
+        self._print_control_code(CODE_RESTORE_CURSOR)
+        self._print_control_code(CODE_CURSOR_IN_SCROLL_AREA)
 
-def destroy_scroll_area():
-    lines = get_current_nr_lines()
-    # Save cursor
-    __print_control_code(CODE_SAVE_CURSOR)
-    # Set scroll region (this will place the cursor in the top left)
-    __print_control_code("\033[0;" + str(lines) + "r")
+        # We are done so clear the scroll bar
+        self._clear_progress_bar()
 
-    # Restore cursor but ensure its inside the scrolling area
-    __print_control_code(CODE_RESTORE_CURSOR)
-    __print_control_code(CODE_CURSOR_IN_SCROLL_AREA)
+        # Scroll down a bit to avoid visual glitch when the screen area grows by one row
+        self._print_control_code("\n\n")
 
-    # We are done so clear the scroll bar
-    __clear_progress_bar()
+    def draw(self, percentage: int | None):
+        if percentage is None:
+            return
 
-    # Scroll down a bit to avoid visual glitch when the screen area grows by one row
-    __print_control_code("\n\n")
+        lines = self._get_current_nr_lines()
 
+        if lines != self.current_nr_lines:
+            self.setup()
 
-def draw_progress_bar(percentage):
-    lines = get_current_nr_lines()
+        # Save cursor
+        self._print_control_code(CODE_SAVE_CURSOR)
 
-    if lines != ProgressStatus.current_nr_lines:
-        setup_scroll_area()
+        # Move cursor position to last row
+        self._print_control_code("\033[" + str(lines) + ";0f")
 
-    # Save cursor
-    __print_control_code(CODE_SAVE_CURSOR)
+        # Clear progress bar
+        self._tput("el")
 
-    # Move cursor position to last row
-    __print_control_code("\033[" + str(lines) + ";0f")
+        # Draw progress bar
+        self.progress_blocked = False
+        self._print_bar_text(percentage)
 
-    # Clear progress bar
-    __tput("el")
+        # Restore cursor position
+        self._print_control_code(CODE_RESTORE_CURSOR)
 
-    # Draw progress bar
-    ProgressStatus.progress_blocked = False
-    __print_bar_text(percentage)
+    def block(self, percentage: int | None):
+        if percentage is None:
+            return
 
-    # Restore cursor position
-    __print_control_code(CODE_RESTORE_CURSOR)
+        lines = self._get_current_nr_lines()
+        # Save cursor
+        self._print_control_code(CODE_SAVE_CURSOR)
 
+        # Move cursor position to last row
+        self._print_control_code("\033[" + str(lines) + ";0f")
 
-def block_progress_bar(percentage):
-    lines = get_current_nr_lines()
-    # Save cursor
-    __print_control_code(CODE_SAVE_CURSOR)
+        # Clear progress bar
+        self._tput("el")
 
-    # Move cursor position to last row
-    __print_control_code("\033[" + str(lines) + ";0f")
+        # Draw progress bar
+        self.progress_blocked = True
+        self._print_bar_text(percentage)
 
-    # Clear progress bar
-    __tput("el")
+        # Restore cursor position
+        self._print_control_code(CODE_RESTORE_CURSOR)
 
-    # Draw progress bar
-    ProgressStatus.progress_blocked = True
-    __print_bar_text(percentage)
+    def _clear_progress_bar(self):
+        lines = self._get_current_nr_lines()
+        # Save cursor
+        self._print_control_code(CODE_SAVE_CURSOR)
 
-    # Restore cursor position
-    __print_control_code(CODE_RESTORE_CURSOR)
+        # Move cursor position to last row
+        self._print_control_code("\033[" + str(lines) + ";0f")
 
+        # clear progress bar
+        self._tput("el")
 
-def __clear_progress_bar():
-    lines = get_current_nr_lines()
-    # Save cursor
-    __print_control_code(CODE_SAVE_CURSOR)
+        # Restore cursor position
+        self._print_control_code(CODE_RESTORE_CURSOR)
 
-    # Move cursor position to last row
-    __print_control_code("\033[" + str(lines) + ";0f")
+    def _print_bar_text(self, percentage):
+        color = f"{COLOR_FG}{COLOR_BG_BLOCKED}" if self.progress_blocked else f"{COLOR_FG}{COLOR_BG}"
 
-    # clear progress bar
-    __tput("el")
+        cols = self._get_current_nr_cols()
+        if self.rate_bar:
+            # Create right side of progress bar with statistics
+            r_bar = self._prepare_r_bar(percentage)
+            bar_size = cols - 21 - len(r_bar)
+        else:
+            r_bar = ""
+            bar_size = cols - 20
 
-    # Restore cursor position
-    __print_control_code(CODE_RESTORE_CURSOR)
+        # Prepare progress bar
+        complete_size = round((bar_size * percentage) / 100)
+        remainder_size = bar_size - complete_size
+        progress_bar = f"[{color}{'#' * complete_size}{RESTORE_FG}{RESTORE_BG}{'.' * remainder_size}]"
+        percentage_str = ' 100' if percentage == 100 else f"{percentage:4.1f}"
 
+        # Print progress bar
+        self._print_control_code(f" Progress {percentage_str}% {progress_bar} {r_bar}\r")
 
-def __print_bar_text(percentage):
-    color = f"{COLOR_FG}{COLOR_BG_BLOCKED}" if ProgressStatus.progress_blocked else f"{COLOR_FG}{COLOR_BG}"
+    def _prepare_r_bar(self, n):
+        elapsed = time() - self.start_time
+        elapsed_str = self._format_interval(elapsed)
 
-    cols = get_current_nr_cols()
-    if ProgressStatus.rate_bar:
-        # Create right side of progress bar with statistics
-        r_bar = __prepare_r_bar(percentage)
-        bar_size = cols - 21 - len(r_bar)
-    else:
-        r_bar = ""
-        bar_size = cols - 20
+        # Percentage/second rate (or second/percentage if slow)
+        rate = n / elapsed if elapsed > 0 else 0
+        inv_rate = 1 / rate if rate else None
+        rate_noinv_fmt = f"{f'{rate:5.2f}' if rate else '?'}pct/s"
+        rate_inv_fmt = f"{f'{inv_rate:5.2f}' if inv_rate else '?'}s/pct"
+        rate_fmt = rate_inv_fmt if inv_rate and inv_rate > 1 else rate_noinv_fmt
 
-    # Prepare progress bar
-    complete_size = round((bar_size * percentage) / 100)
-    remainder_size = bar_size - complete_size
-    progress_bar = f"[{color}{'#' * complete_size}{RESTORE_FG}{RESTORE_BG}{'.' * remainder_size}]"
-    percentage_str = ' 100' if percentage == 100 else f"{percentage:4.1f}"
+        # Remaining time
+        remaining = (100 - n) / rate if rate else 0
+        remaining_str = self._format_interval(remaining) if rate else "?"
 
-    # Print progress bar
-    __print_control_code(f" Progress {percentage_str}% {progress_bar} {r_bar}\r")
+        r_bar = f"[{elapsed_str}<{remaining_str}, {rate_fmt}]"
+        return r_bar
 
-
-def __prepare_r_bar(n):
-    elapsed = time() - ProgressStatus.start_time
-    elapsed_str = __format_interval(elapsed)
-
-    # Percentage/second rate (or second/percentage if slow)
-    rate = n / elapsed
-    inv_rate = 1 / rate if rate else None
-    rate_noinv_fmt = f"{f'{rate:5.2f}' if rate else '?'}pct/s"
-    rate_inv_fmt = f"{f'{inv_rate:5.2f}' if inv_rate else '?'}s/pct"
-    rate_fmt = rate_inv_fmt if inv_rate and inv_rate > 1 else rate_noinv_fmt
-
-    # Remaining time
-    remaining = (100 - n) / rate if rate else 0
-    remaining_str = __format_interval(remaining) if rate else "?"
-
-    r_bar = f"[{elapsed_str}<{remaining_str}, {rate_fmt}]"
-    return r_bar
-
-
-def __format_interval(t):
-    h_m, s = divmod(int(t), 60)
-    h, m = divmod(h_m, 60)
-    if h:
-        return f"{h:d}:{m:02d}:{s:02d}"
-    else:
-        return f"{m:02d}:{s:02d}"
-
-
-def __tput(cmd, *args):
-    print(curses.tparm(curses.tigetstr("el")).decode(), end='')
-    # print(curses.tparm(curses.tigetstr("el")).decode())
-
-
-def __print_control_code(code):
-    print(code, end='')
+    def _format_interval(self, t):
+        h_m, s = divmod(int(t), 60)
+        h, m = divmod(h_m, 60)
+        if h:
+            return f"{h:d}:{m:02d}:{s:02d}"
+        else:
+            return f"{m:02d}:{s:02d}"

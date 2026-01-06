@@ -53,6 +53,13 @@ def search_script(name: str, script_dir: str, non_interactive: bool = False) -> 
     return selector(entries=paths, message='Script found at multiple locations. Please choose:')
 
 
+class JustDoNothing:
+    def __getattr__(self, name):
+        return lambda *args, **kwargs: None
+
+
+# --- File Locking ---
+
 class FileWithLock:
     def __init__(self, file_path: str, method: str):
         self.file_path = file_path
