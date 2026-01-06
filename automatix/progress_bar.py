@@ -54,13 +54,13 @@ class TqdmProgressBar:
         Cursor.save()
 
         # Set scroll region (this will place the cursor in the top left usually)
-        # Note: Original code used 0;...r. ANSI standard is 1-based. 
+        # Note: Original code used 0;...r. ANSI standard is 1-based.
         # Most terminals treat 0 as 1. We stick to the original logic to be safe.
         Cursor.set_scroll_region(0, scroll_region_bottom)
 
         Cursor.restore()
 
-        # Move cursor up twice because we scrolled down twice? 
+        # Move cursor up twice because we scrolled down twice?
         # Actually, CODE_CURSOR_IN_SCROLL_AREA moves up 1 line.
         # If we are at the bottom, and region ends at lines-2...
         # Let's just restore and move up to be safe inside the region.
