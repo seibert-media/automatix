@@ -16,7 +16,7 @@ def get_script_and_batch_items(args: Namespace) -> (dict, list):
     batch_items: list[dict] = [{}]
     if args.vars_file:
         with open(args.vars_file) as csvfile:
-            batch_items = list(DictReader(csvfile))
+            batch_items = list(DictReader(filter(lambda row: row[0] != '#', csvfile)))
 
     return script, batch_items
 
