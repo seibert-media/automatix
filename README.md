@@ -314,9 +314,9 @@ Here you define the commands automatix shall execute.
 1) **manual**: Some manual instruction for the user. The user has to
  confirm, that automatix may proceed.
 
-2) **local**: Local shell command to execute. Imports will be sourced
- beforehand. The Bash specified in `bash_path` (default: /bin/bash) will
- be used for execution. The environment is inherited with additional
+2) **local**: Local shell command to execute. The Bash specified 
+ in `bash_path` (default: /bin/bash) will be used for execution.
+ The environment is inherited with additional 
  **RUNNING_INSIDE_AUTOMATIX** set to 1.
 
 3) **remote@systemname**: Remote shell command to execute. Systemname
@@ -526,7 +526,7 @@ Because the **always** pipeline should not change anything, aborting
 If you want to abort the **pipeline** without triggering the
  **cleanup** pipeline, use CRTL+C.
 
-While **aborting remote functions** (via imports), automatix is not
+While **aborting remote functions** automatix is not
  able to determine still running processes invoked by the function,
  because it only checks the processes for the commands (in this case
  the function name) which is called in the pipeline.
