@@ -1,5 +1,10 @@
 # Changelog
 
+# 3.2.0
+ - Added check for dangerous var values
+ - Filtering comments in VARs file(CSV)
+ - Fix: Shell completion now recursively searches from sub directories
+
 # 3.1.0
 - Feature: Add AUTOMATIX_SCRIPT_LOCATION and AUTOMATIX_SCRIPT_NAME as environment variables for shell actions
 
