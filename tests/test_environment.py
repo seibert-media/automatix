@@ -38,6 +38,7 @@ testauto = Automatix(
 )
 
 testauto.env.attach_logger()
+testauto.set_command_count()
 
 environment = testauto.env
 
