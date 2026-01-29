@@ -142,6 +142,7 @@ def test__show_and_change_variables():
         'cond': '{cond}',
         'cond2': '{cond2}',
         'some_var': '{some_var}',
+        'myvar2': 5.,
     }
 
     with mock.patch.object(
@@ -161,4 +162,5 @@ def test__show_and_change_variables():
         'cond2': '!dgkls=432',
         'var1': 'xyz',
         'some_var': '{some_var}',
+        'myvar2': 5.,
     }
