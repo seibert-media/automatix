@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.3.0 (not released yet)
+- Reworked progress bar
+
 # 3.2.0
  - Added check for dangerous var values
  - Filtering comments in VARs file(CSV)
