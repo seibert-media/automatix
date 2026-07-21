@@ -1,0 +1,38 @@
+[build-system]
+requires = ['setuptools>=61.0']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = 'automatix'
+version = '3.2.1'
+description = 'Automation wrapper for bash and python commands'
+readme = { file = 'README.md', content-type = 'text/markdown' }
+requires-python = '>=3.10'
+license = { text = 'MIT' }
+authors = [
+    { name = 'Johannes Paul', email = 'johannes.paul@seibert.group' },
+    { name = 'Johannes Paul', email = 'vanadinit@quantentunnel.de' },
+]
+keywords = ['bash', 'shell', 'command', 'automation', 'process', 'wrapper', 'devops', 'system administration']
+classifiers = [
+    'Programming Language :: Python :: 3',
+    'License :: OSI Approved :: MIT License',
+]
+dependencies = [
+    'pyyaml>=5.1',
+]
+
+[project.optional-dependencies]
+tests = ['cython<3.0.0', 'pytest', 'pytest-docker', 'flake8']
+bash-completion = ['argcomplete']
+
+[project.urls]
+Homepage = 'https://github.com/seibert-media/automatix'
+
+[project.scripts]
+automatix = 'automatix:main'
+automatix-manager = 'automatix.parallel:run_manager'
+automatix-from-file = 'automatix.parallel:run_auto_from_file'
+
+[tool.setuptools.packages.find]
+include = ['automatix*']
