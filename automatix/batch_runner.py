@@ -17,6 +17,7 @@ def get_script_and_batch_items(args: Namespace) -> (dict, list):
     if args.vars_file:
         with open(args.vars_file) as csvfile:
             batch_items = list(DictReader(filter(lambda row: row[0] != '#', csvfile)))
+        batch_items = sanitize_batch_items(batch_items)
 
     return script, batch_items
 
@@ -68,3 +69,11 @@ def run_automatix_list(automatix_list: list[Automatix], send_status_callback: Ca
 def run_batch_items(script: dict, batch_items: list, args: Namespace):
     automatix_list = create_automatix_list(script=script, batch_items=batch_items, args=args)
     run_automatix_list(automatix_list=automatix_list)
+
+def sanitize_batch_items(batch_items: list[dict]) -> list[dict]:
+    for batch_item in batch_items:
+        for key,value in batch_item.items():
+            if key.startswith('vars'):
+                if isinstance(value, str) and value.lower() == "false":
+                    batch_item[key] = False
+    return batch_items
