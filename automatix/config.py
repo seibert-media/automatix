@@ -214,6 +214,19 @@ def get_script(args: argparse.Namespace) -> dict:
         exclude = script['_exclude'] = args.steps.startswith('e')
         script['_steps'] = {int(s) for s in (args.steps[1:] if exclude else args.steps).split(',')}
 
+    script['_var_types'] = {}
+    for variable_name in list(script.get('vars')):
+        if match := re.match(r'(\w+)\|(.*)', variable_name):
+            v_name = match.group(2)
+            v_type = match.group(1)
+            if v_type not in ['int', 'float', 'bool', 'str']:
+                LOG.error(f'[vars:{v_name}] Unknown type "{v_type}" not allowed.'
+                          f' Known types are "int", "float", "bool", "str".')
+                sys.exit(1)
+            script['_var_types'][v_name] = v_type
+            script['vars'][v_name] = script['vars'][variable_name]
+            del script['vars'][variable_name]
+
     for field in SCRIPT_FIELDS.keys():
         if vars(args).get(field):
             _overwrite(script=script, key=field, data=vars(args)[field])
@@ -359,6 +372,22 @@ def collect_vars(script: dict) -> dict:
                 var_dict[key] = bwtv.file(sid)
             else:
                 raise UnknownSecretTypeException(field)
+
+    for key, value in script.get('_var_types', {}).items():
+        match value:
+            case 'int':
+                var_dict[key] = int(var_dict[key])
+                LOG.info(f'Casting "{key}" to int')
+            case 'float':
+                var_dict[key] = float(var_dict[key])
+                LOG.info(f'Casting "{key}" to float')
+            case 'bool':
+                var_dict[key] = bool(var_dict[key])
+                LOG.info(f'Casting "{key}" to bool')
+            case 'str':
+                var_dict[key] = str(var_dict[key])
+                LOG.info(f'Casting "{key}" to str')
+
     return var_dict
 
 

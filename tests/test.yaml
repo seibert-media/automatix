@@ -11,6 +11,7 @@ systems:
   testsystem: docker-test  # SSH Hostname or Bundlewrap node name (if enabled)
 vars:
   myvar: huhu
+  float|myvar2: 5
 
 precommands: # only for main pipeline
   local: . tests/test.sh
